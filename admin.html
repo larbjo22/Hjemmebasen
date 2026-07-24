@@ -2,7 +2,7 @@
 <html lang="no">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
 <link rel="manifest" href="manifest.webmanifest">
 <meta name="theme-color" content="#f97316">
 <link rel="apple-touch-icon" href="ikoner/apple-touch-icon.png">
@@ -186,24 +186,27 @@ document.getElementById('bm-lagre').addEventListener('click', async () => {
 
   // Sekundær app-instans så admin ikke logges ut av opprettelsen (ADR-0002)
   const sekundaer = initializeApp(firebaseConfig, 'sekundaer-' + Date.now());
+  const sekAuth = getAuth(sekundaer);
   try {
-    const sekAuth = getAuth(sekundaer);
     const cred = await createUserWithEmailAndPassword(sekAuth, epost, passord);
     await set(ref(db, 'brukere/' + cred.user.uid), {
       familieId: modalFamilieId, navn, epost,
       opprettet: Date.now(), sistSett: 0,
     });
-    await signOut(sekAuth);
     document.getElementById('bruker-modal').style.display = 'none';
     setStatus(navn + ' er opprettet – del e-post og startpassord med dem ✓', 'ok');
     await lastAlt();
   } catch (e) {
-    const tekst = e.code === 'auth/email-already-in-use' ? 'E-posten er allerede i bruk.'
+    const tekst = e.code === 'auth/email-already-in-use'
+      ? 'E-posten er allerede i bruk. (Halvveis opprettet tidligere? Slett kontoen i Firebase Console → Authentication, eller bruk en annen adresse.)'
       : e.code === 'auth/invalid-email' ? 'Ugyldig e-postadresse.'
       : e.code === 'auth/weak-password' ? 'Passordet er for svakt.'
       : 'Kunne ikke opprette: ' + e.message;
     setStatus(tekst, 'err');
   } finally {
+    // Alltid ut av den midlertidige sesjonen – også ved feil halvveis
+    // (ellers blir den nye brukerens sesjon liggende i nettleseren).
+    await signOut(sekAuth).catch(() => {});
     deleteApp(sekundaer).catch(() => {});
     btn.disabled = false; btn.textContent = 'Opprett medlem';
   }

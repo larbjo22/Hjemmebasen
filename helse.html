@@ -2,7 +2,7 @@
 <html lang="no">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
 <link rel="manifest" href="manifest.webmanifest">
 <meta name="theme-color" content="#f97316">
 <link rel="apple-touch-icon" href="ikoner/apple-touch-icon.png">
@@ -31,7 +31,7 @@
 <body>
 <div class="fw">
   <div class="top-bar">
-    <p class="app-title"><a href="index.html" title="Til forsiden" style="text-decoration:none;margin-right:2px">🏠</a>🩹 Helse</p>
+    <p class="app-title">🩹 Helse</p>
     <div class="top-right">
       <button class="icon-btn" id="theme-btn"></button>
     </div>
@@ -127,6 +127,7 @@ let barn=[];            // fra personregisteret: [{id,navn,fodt}]
 let helse=null;
 let dataLoaded=false;   // datatap-vernet håndheves også av dbSet
 let lastSave=0;
+let sistSkrevet=''; // ekko-vern: JSON av egen siste skriving
 let hdBarnId=null, hdMedId=null, modalType=null, visAlleDoser=false;
 
 function normaliser(d){
@@ -165,6 +166,7 @@ async function load(){
 async function save(){
   if(!dataLoaded){setStatus('Ikke lagret – data er ikke lastet','err');return false;}
   try{
+    sistSkrevet=JSON.stringify(helse);
     await dbSet(FAMILIE,APP,helse);
     lastSave=Date.now();
     setStatus('Lagret ✓','ok');
@@ -177,9 +179,10 @@ function startListen(){
   if(stopListen)return;
   stopListen=dbListen(FAMILIE,APP,saved=>{
     if(!saved)return;
-    if(formAktiv()||Date.now()-lastSave<5000)return;
+    if(JSON.stringify(saved)===sistSkrevet)return; // ekko av egen skriving
     const s=JSON.stringify(normaliser(saved));
-    if(s===JSON.stringify(helse))return;
+    if(s===JSON.stringify(helse))return;           // uendret
+    if(formAktiv())return;                         // ekte redigering pågår
     helse=JSON.parse(s);
     render();
   });

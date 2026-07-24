@@ -8,7 +8,7 @@ import { ref, get } from 'https://www.gstatic.com/firebasejs/10.14.1/firebase-da
 import { APP_NAVN, APP_IKON } from './seed.js';
 
 const NAV_STIL = `
-.app-nav{position:sticky;top:0;z-index:90;display:flex;align-items:center;gap:6px;padding:8px 10px;background:var(--surface);border-bottom:1px solid var(--border);overflow-x:auto;-webkit-overflow-scrolling:touch;scrollbar-width:none}
+.app-nav{position:sticky;top:0;z-index:90;display:flex;align-items:center;gap:6px;padding:8px 10px;padding-top:calc(8px + env(safe-area-inset-top));background:var(--surface);border-bottom:1px solid var(--border);overflow-x:auto;-webkit-overflow-scrolling:touch;scrollbar-width:none}
 .app-nav::-webkit-scrollbar{display:none}
 .nav-hjem{display:inline-flex;align-items:center;gap:5px;font-size:13px;font-weight:700;padding:7px 14px;border-radius:18px;background:var(--accent,var(--orange,#f97316));color:#fff;text-decoration:none;flex-shrink:0}
 .nav-app{font-size:19px;padding:5px 9px;border-radius:12px;text-decoration:none;flex-shrink:0;line-height:1;border:1px solid transparent}

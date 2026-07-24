@@ -2,7 +2,7 @@
 <html lang="no">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
 <link rel="manifest" href="manifest.webmanifest">
 <meta name="theme-color" content="#f97316">
 <link rel="apple-touch-icon" href="ikoner/apple-touch-icon.png">
@@ -219,7 +219,7 @@ body.embed .status-bar{display:none}
 <body>
 <main class="fw" id="app">
   <div class="top-bar">
-    <h1 class="app-title"><a href="index.html" title="Til forsiden" aria-label="Til forsiden" style="text-decoration:none;margin-right:2px">🏠</a><i class="ti ti-bowl" aria-hidden="true"></i>Middagsplanlegger</h1>
+    <h1 class="app-title"><i class="ti ti-bowl" aria-hidden="true"></i>Middagsplanlegger</h1>
     <div style="display:flex;align-items:center;gap:8px">
       <span style="font-size:11px;color:var(--text3)" id="total-label"></span>
       <button id="theme-btn" onclick="toggleTheme()" title="Bytt tema" aria-label="Bytt mellom lyst og mørkt tema" style="width:28px;height:28px;border-radius:50%;border:1px solid var(--border);background:var(--surface2);cursor:pointer;font-size:14px;display:flex;align-items:center;justify-content:center;color:var(--text2)"></button>
@@ -520,7 +520,7 @@ async function load(){
     // dbGet kaster ved feil og gir null KUN når noden er tom (autoritativt svar,
     // ingen MQTT-tvetydighet). Tom node = ny husstand → trygt å starte blankt.
     const saved=await dbGet(FAMILIE,APP);
-    if(saved&&saved.meals)adoptData(saved);
+    if(saved)adoptData(saved);
     dataLoaded=true;
     // Personregisteret er kilden (ADR-0005): nye voksne flettes ALLTID inn,
     // så endringer i oppsettet speiles i alle appene. Kun i minnet til neste save().
@@ -538,13 +538,13 @@ async function load(){
   render();
 }
 
-let lastSave=0;
+let sistSkrevet='';
 async function save(){
   if(!dataLoaded){setStatus('Ikke lagret – data er ikke lastet ennå. Last siden på nytt.','err');return;}
   setStatus('Lagrer...');
   try{
+    sistSkrevet=JSON.stringify(data); // ekko-sjekk i lytteren
     await dbSet(FAMILIE,APP,data);
-    lastSave=Date.now();
     setStatus('Lagret ✓','ok');
   }catch(e){
     setStatus('Kunne ikke lagre – prøv igjen','err');
@@ -565,8 +565,9 @@ let stopListen=null;
 function startListen(){
   if(stopListen)return;
   stopListen=dbListen(FAMILIE,APP,saved=>{
-    if(!saved||!saved.meals)return;
-    if(isEditing()||Date.now()-lastSave<5000)return;
+    if(!saved)return;
+    if(JSON.stringify(saved)===sistSkrevet)return; // ekko fra egen lagring
+    if(isEditing())return;
     if(JSON.stringify(saved)===JSON.stringify(data))return;
     adoptData(saved);
     dataLoaded=true;
@@ -1297,8 +1298,8 @@ async function confirmWeekShop(){
     // og gir null KUN når noden er tom (autoritativt svar) → trygt å starte
     // blankt. Lesningen markerer også noden som lest, som dbSet krever.
     let hl=await dbGet(FAMILIE,'handleliste');
-    if(!hl||hl.items===undefined)hl={items:[]};
-    if(!Array.isArray(hl.items))hl.items=[];
+    if(!hl)hl={};                                  // helt ny node
+    if(!Array.isArray(hl.items))hl.items=[];       // reparer KUN items – resten av noden bevares
     const hist=Array.isArray(hl.history)?hl.history:[];
     let nextId=Math.max(100,...hl.items.map(i=>i.id||0),...(hl.templates||[]).map(t=>t.id||0),...(hl.other||[]).map(o=>o.id||0))+1;
     const seen=new Set();let added=0,already=0;
@@ -1344,7 +1345,7 @@ function renderRulett(){
 }
 
 function initTheme(){
-  const saved=localStorage.getItem('middag_theme');
+  const saved=localStorage.getItem('hjemmebasen_theme');
   const prefersDark=window.matchMedia('(prefers-color-scheme:dark)').matches;
   const theme=saved||(prefersDark?'dark':'light');
   setTheme(theme,false);
@@ -1353,7 +1354,7 @@ function setTheme(theme,save=true){
   document.documentElement.setAttribute('data-theme',theme);
   const btn=document.getElementById('theme-btn');
   if(btn)btn.textContent=theme==='dark'?'☀️':'🌙';
-  if(save)localStorage.setItem('middag_theme',theme);
+  if(save)localStorage.setItem('hjemmebasen_theme',theme);
 }
 function toggleTheme(){
   const current=document.documentElement.getAttribute('data-theme')||'light';

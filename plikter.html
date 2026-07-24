@@ -2,7 +2,7 @@
 <html lang="no">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
 <link rel="manifest" href="manifest.webmanifest">
 <meta name="theme-color" content="#f97316">
 <link rel="apple-touch-icon" href="ikoner/apple-touch-icon.png">
@@ -148,7 +148,7 @@ input:focus-visible,select:focus-visible,button:focus-visible,[role="button"]:fo
 <body>
 <main class="fw">
   <div class="top-bar">
-    <h1 class="app-title"><a href="index.html" title="Til forsiden" aria-label="Til forsiden" style="text-decoration:none;margin-right:2px">🏠</a><i class="ti ti-stars" aria-hidden="true"></i>Plikter</h1>
+    <h1 class="app-title"><i class="ti ti-stars" aria-hidden="true"></i>Plikter</h1>
     <div class="top-right">
       <span class="count-badge" id="count-badge" aria-label="Stjerner denne uka"><i class="ti ti-star-filled" style="font-size:11px" aria-hidden="true"></i> 0</span>
       <button class="theme-btn" id="theme-btn" onclick="toggleTheme()" title="Bytt tema" aria-label="Bytt mellom lyst og mørkt tema"></button>
@@ -367,8 +367,8 @@ function resetAccentColor(mode){localStorage.removeItem(APP_KEY+'_color_'+mode);
 function initAccentColors(){['light','dark'].forEach(mode=>{const s=localStorage.getItem(APP_KEY+'_color_'+mode);if(s)applyAccentColor(mode,s);});updateColorPickers();}
 function updateColorPickers(){['light','dark'].forEach(mode=>{const s=localStorage.getItem(APP_KEY+'_color_'+mode)||DEFAULT_COLORS[mode];const i=document.getElementById('color-'+mode);if(i)i.value=s;});}
 initAccentColors();
-function initTheme(){const s=localStorage.getItem(APP_KEY+'_theme');const dark=window.matchMedia('(prefers-color-scheme:dark)').matches;setTheme(s||(dark?'dark':'light'),false);}
-function setTheme(t,save=true){document.documentElement.setAttribute('data-theme',t);const b=document.getElementById('theme-btn');if(b)b.textContent=t==='dark'?'☀️':'🌙';if(save)localStorage.setItem(APP_KEY+'_theme',t);}
+function initTheme(){const s=localStorage.getItem('hjemmebasen_theme');const dark=window.matchMedia('(prefers-color-scheme:dark)').matches;setTheme(s||(dark?'dark':'light'),false);}
+function setTheme(t,save=true){document.documentElement.setAttribute('data-theme',t);const b=document.getElementById('theme-btn');if(b)b.textContent=t==='dark'?'☀️':'🌙';if(save)localStorage.setItem('hjemmebasen_theme',t);}
 function toggleTheme(){setTheme(document.documentElement.getAttribute('data-theme')==='dark'?'light':'dark');}
 initTheme();
 
@@ -377,11 +377,11 @@ function kidColor(name){let h=0;for(let i=0;i<name.length;i++)h=(h+name.charCode
 // ── Lagring (Firebase via felles/storage.js) ─────────────────
 function adoptData(saved){
   data=saved;
-  if(!data.kids)data.kids=[];
-  if(!data.chores)data.chores=[];
-  if(!data.log)data.log=[];
-  if(!data.rewards)data.rewards=[];
-  if(!data.spent)data.spent=[];
+  if(!Array.isArray(data.kids))data.kids=[];
+  if(!Array.isArray(data.chores))data.chores=[];
+  if(!Array.isArray(data.log))data.log=[];
+  if(!Array.isArray(data.rewards))data.rewards=[];
+  if(!Array.isArray(data.spent))data.spent=[];
   if(!data.settings)data.settings={krPerPoint:0,pin:'',requireApproval:false};
   const ids=[...data.kids,...data.chores,...data.log,...data.rewards,...data.spent].map(x=>x.id).filter(Boolean);
   nextId=ids.length?Math.max(...ids)+1:100;
@@ -398,7 +398,7 @@ async function load(){
     // dbGet kaster ved feil og gir null KUN når noden er tom (autoritativt svar,
     // ingen MQTT-tvetydighet). Tom node = ny husstand → trygt å starte blankt.
     const saved=await dbGet(FAMILIE,APP);
-    if(saved&&saved.kids!==undefined)adoptData(saved);
+    if(saved)adoptData(saved);
     dataLoaded=true;
     // Personregisteret er kilden (ADR-0005): barna synkes ALLTID inn –
     // nye barn legges til, navnebytter følger id. Ekstra felter på
@@ -407,7 +407,11 @@ async function load(){
       const p=await dbGet(FAMILIE,'personer');
       const reg=(p?.barn||[]).filter(b=>b.navn);
       if(reg.length){
-        data.kids=reg.map(b=>{const eks=(data.kids||[]).find(k=>k.id===b.id);return {...(eks||{}),id:b.id,name:b.navn};});
+        // Union: register-barna først (flettet/omdøpt via id), deretter
+        // manuelt tillagte barn som ikke finnes i registeret – de beholdes.
+        const fraRegister=reg.map(b=>{const eks=(data.kids||[]).find(k=>k.id===b.id);return {...(eks||{}),id:b.id,name:b.navn};});
+        const manuelle=(data.kids||[]).filter(k=>!reg.some(b=>b.id===k.id));
+        data.kids=[...fraRegister,...manuelle];
       }
       const kidIds=(data.kids||[]).map(k=>k.id).filter(x=>typeof x==='number');
       if(kidIds.length)nextId=Math.max(nextId,Math.max(...kidIds)+1);
@@ -417,13 +421,13 @@ async function load(){
   }catch(e){setStatus('Kunne ikke laste – '+(e.message||'prøv igjen'),'err');}
   render();
 }
-let lastSave=0;
+let sistSkrevet='';
 async function save(){
   if(!dataLoaded){setStatus('Ikke lagret – data er ikke lastet ennå. Last siden på nytt.','err');return;}
   setStatus('Lagrer...');
   try{
+    sistSkrevet=JSON.stringify(data); // ekko-sjekk i lytteren
     await dbSet(FAMILIE,APP,data);
-    lastSave=Date.now();
     setStatus('Lagret ✓','ok');
   }catch(e){
     setStatus('Kunne ikke lagre – prøv igjen','err');
@@ -437,7 +441,7 @@ function isEditing(){
   const inp=document.getElementById('new-kid');
   if(inp&&inp.value.trim())return true;
   const ae=document.activeElement;
-  if(ae&&/^(INPUT|TEXTAREA|SELECT)$/.test(ae.tagName))return true;
+  if(ae&&/^(INPUT|TEXTAREA|SELECT)$/.test(ae.tagName)&&(ae.value||'').trim())return true;
   return ['chore-modal','reward-modal','redeem-modal'].some(id=>{
     const e=document.getElementById(id);return e&&e.style.display&&e.style.display!=='none';
   });
@@ -446,8 +450,9 @@ let stopListen=null;
 function startListen(){
   if(stopListen)return;
   stopListen=dbListen(FAMILIE,APP,saved=>{
-    if(!saved||saved.kids===undefined)return;
-    if(isEditing()||Date.now()-lastSave<5000)return;
+    if(!saved)return;
+    if(JSON.stringify(saved)===sistSkrevet)return; // ekko fra egen lagring
+    if(isEditing())return;
     if(JSON.stringify(saved)===JSON.stringify(data))return;
     adoptData(saved);
     dataLoaded=true;

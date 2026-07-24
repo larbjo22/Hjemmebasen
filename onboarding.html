@@ -2,7 +2,7 @@
 <html lang="no">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
 <link rel="manifest" href="manifest.webmanifest">
 <meta name="theme-color" content="#f97316">
 <link rel="apple-touch-icon" href="ikoner/apple-touch-icon.png">
@@ -60,6 +60,10 @@ if (!familieId) location.replace('index.html');
 // Eksisterende data (dbGet markerer nodene som lest → trygt å skrive)
 const meta = (await dbGet(familieId, 'meta')) || {};
 const personerLagret = (await dbGet(familieId, 'personer')) || {};
+// Barn-id-er gjenbrukes ALDRI (review H2): et nytt barn skal ikke kunne
+// arve et slettet barns søvn-/helse-/pliktehistorikk. Telleren lagres.
+let nesteBarnId = Math.max(personerLagret.nesteBarnId || 1,
+  ...((personerLagret.barn || []).map(b => (b.id || 0) + 1)), 1);
 
 // Veiviser-tilstand
 const st = {
@@ -189,8 +193,7 @@ function koble() {
   const bBtn = document.getElementById('ob-barn-btn');
   if (bBtn) bBtn.addEventListener('click', () => {
     lesSteg();
-    const id = Math.max(0, ...st.barn.map(b => b.id || 0)) + 1;
-    st.barn.push({ id, navn: '', fodt: '' }); render();
+    st.barn.push({ id: nesteBarnId++, navn: '', fodt: '' }); render();
   });
   document.querySelectorAll('[data-fjern-barn]').forEach(b =>
     b.addEventListener('click', () => { lesSteg(); st.barn.splice(+b.dataset.fjernBarn, 1); render(); }));
@@ -226,19 +229,26 @@ async function fullfor() {
   try {
     const barn = st.barn.filter(b => b.navn);
     // Personregisteret – kilden til sannhet for alle appene (ADR-0005)
-    await dbSet(familieId, 'personer', { voksne: st.voksne, barn });
+    await dbSet(familieId, 'personer', { voksne: st.voksne, barn, nesteBarnId });
+    // Fersk meta-lesning rett før skriving – admin kan ha endret brytere
+    // mens veiviseren sto åpen (review M-funn).
+    const metaFersk = (await dbGet(familieId, 'meta')) || meta;
     await dbSet(familieId, 'meta', {
-      ...meta, navn: st.navn, apper: st.apper,
+      ...metaFersk, navn: st.navn, apper: st.apper,
       sted: st.sted || null, onboardet: true,
     });
-    // Seed personlister i appene som har dem (leses først – datatap-vernet)
+    // Personlister i appene FLETTES (app-tillagte personer som «Bestemor»
+    // skal overleve en ny runde i veiviseren – review M-funn).
     const middag = await dbGet(familieId, 'middag');
     if (middag) {
-      const folk = [...st.voksne, 'Felles'].filter((v, i, a) => a.indexOf(v) === i);
+      const folk = [...(middag.people || []), ...st.voksne, 'Felles'].filter((v, i, a) => a.indexOf(v) === i);
       await dbSet(familieId, 'middag', { ...middag, people: folk });
     }
     const oppgaver = await dbGet(familieId, 'oppgaver');
-    if (oppgaver) await dbSet(familieId, 'oppgaver', { ...oppgaver, people: [...st.voksne] });
+    if (oppgaver) {
+      const folk = [...(oppgaver.people || []), ...st.voksne].filter((v, i, a) => a.indexOf(v) === i);
+      await dbSet(familieId, 'oppgaver', { ...oppgaver, people: folk });
+    }
     location.replace('index.html');
   } catch (e) {
     setStatus('Kunne ikke lagre: ' + (e.message || 'prøv igjen'), 'err');

@@ -2,7 +2,7 @@
 <html lang="no">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
 <link rel="manifest" href="manifest.webmanifest">
 <meta name="theme-color" content="#f97316">
 <link rel="apple-touch-icon" href="ikoner/apple-touch-icon.png">
@@ -161,7 +161,7 @@ input:focus-visible,select:focus-visible,button:focus-visible,[role="button"]:fo
 <body>
 <main class="fw">
   <div class="top-bar">
-    <h1 class="app-title"><a href="index.html" title="Til forsiden" aria-label="Til forsiden" style="text-decoration:none;margin-right:2px">🏠</a><i class="ti ti-shopping-cart" aria-hidden="true"></i>Handleliste</h1>
+    <h1 class="app-title"><i class="ti ti-shopping-cart" aria-hidden="true"></i>Handleliste</h1>
     <div class="top-right">
       <span class="count-badge" id="count-badge">0 varer</span>
       <button class="theme-btn" id="theme-btn" onclick="toggleTheme()" title="Bytt tema" aria-label="Bytt mellom lyst og mørkt tema"></button>
@@ -393,8 +393,8 @@ function resetAccentColor(mode){localStorage.removeItem(APP_KEY+'_color_'+mode);
 function initAccentColors(){['light','dark'].forEach(mode=>{const s=localStorage.getItem(APP_KEY+'_color_'+mode);if(s)applyAccentColor(mode,s);});updateColorPickers();}
 function updateColorPickers(){['light','dark'].forEach(mode=>{const s=localStorage.getItem(APP_KEY+'_color_'+mode)||DEFAULT_COLORS[mode];const i=document.getElementById('color-'+mode);const v=document.getElementById('color-'+mode+'-val');if(i)i.value=s;if(v)v.textContent=s;});}
 initAccentColors();
-function initTheme(){const s=localStorage.getItem(APP_KEY+'_theme');const dark=window.matchMedia('(prefers-color-scheme:dark)').matches;setTheme(s||(dark?'dark':'light'),false);}
-function setTheme(t,save=true){document.documentElement.setAttribute('data-theme',t);const b=document.getElementById('theme-btn');if(b)b.textContent=t==='dark'?'☀️':'🌙';if(save)localStorage.setItem(APP_KEY+'_theme',t);}
+function initTheme(){const s=localStorage.getItem('hjemmebasen_theme');const dark=window.matchMedia('(prefers-color-scheme:dark)').matches;setTheme(s||(dark?'dark':'light'),false);}
+function setTheme(t,save=true){document.documentElement.setAttribute('data-theme',t);const b=document.getElementById('theme-btn');if(b)b.textContent=t==='dark'?'☀️':'🌙';if(save)localStorage.setItem('hjemmebasen_theme',t);}
 function toggleTheme(){setTheme(document.documentElement.getAttribute('data-theme')==='dark'?'light':'dark');}
 initTheme();
 
@@ -437,15 +437,21 @@ function setStatus(msg,type=''){
 }
 
 // ── Lagring (Firebase via felles/storage.js) ─────────────────
+// Firebase RTDB lagrer IKKE tomme arrays – feltet fjernes fra noden.
+// Derfor må ALLE arrayfelter defaultes her, og adopsjon må aldri gates
+// på at et enkeltfelt finnes (da forkastes hele noden → datatap).
+function normaliser(d){
+  if(!Array.isArray(d.items))d.items=[];
+  if(!Array.isArray(d.categories)||!d.categories.length)d.categories=[...DEFAULT_CATS];
+  if(!Array.isArray(d.templates))d.templates=[...DEFAULT_DATA.templates];
+  if(!Array.isArray(d.history))d.history=[];
+  if(!Array.isArray(d.other))d.other=[];
+  if(!Array.isArray(d.otherPlaces)||!d.otherPlaces.length)d.otherPlaces=[...DEFAULT_PLACES];
+  if(!Array.isArray(d.otherHistory))d.otherHistory=[];
+  return d;
+}
 function adoptData(saved){
-  data=saved;
-  if(!data.items)data.items=[];
-  if(!data.categories?.length)data.categories=[...DEFAULT_CATS];
-  if(!data.templates)data.templates=[...DEFAULT_DATA.templates];
-  if(!data.history)data.history=[];
-  if(!data.other)data.other=[];
-  if(!data.otherPlaces?.length)data.otherPlaces=[...DEFAULT_PLACES];
-  if(!data.otherHistory)data.otherHistory=[];
+  data=normaliser(saved);
   nextId=Math.max(100,...data.items.map(i=>i.id),...data.templates.map(t=>t.id),...data.other.map(o=>o.id))+1;
 }
 async function load(){
@@ -460,7 +466,7 @@ async function load(){
     // dbGet kaster ved feil og gir null KUN når noden er tom (autoritativt svar,
     // ingen MQTT-tvetydighet). Tom node = ny husstand → trygt å starte blankt.
     const saved=await dbGet(FAMILIE,APP);
-    if(saved?.items!==undefined)adoptData(saved);
+    if(saved)adoptData(saved);
     dataLoaded=true;
     setStatus('');
     startListen();
@@ -468,13 +474,13 @@ async function load(){
   render();
 }
 
-let lastSave=0;
+let sistSkrevet=''; // JSON av egen siste skriving – brukes til å ignorere ekko fra lytteren
 async function save(){
   if(!dataLoaded){setStatus('Ikke lagret – data er ikke lastet ennå. Last siden på nytt.','err');return;}
   setStatus('Lagrer...');
   try{
+    sistSkrevet=JSON.stringify(data);
     await dbSet(FAMILIE,APP,data);
-    lastSave=Date.now();
     setStatus('Lagret ✓','ok');
   }catch(e){
     setStatus('Kunne ikke lagre – prøv igjen','err');
@@ -482,7 +488,7 @@ async function save(){
 }
 
 // Stille re-henting: oppdaterer lista når appen åpnes igjen / mens den står åpen.
-// Hopper over hvis du skriver eller har en modal oppe, og rett etter en lagring.
+// Hopper over hvis du skriver eller har en modal oppe (tomme fokuserte felt blokkerer ikke).
 function isEditing(){
   const inp=document.getElementById('new-item');
   if(inp&&inp.value.trim())return true;
@@ -493,14 +499,16 @@ function isEditing(){
   });
 }
 // Sanntidssynk: lytteren fyrer ved alle endringer (også andres telefoner).
-// Hopper over mens man redigerer og rett etter egen lagring (ekko).
+// Ekko av egen skriving gjenkjennes på innhold (sistSkrevet), ikke tidsvindu.
 let stopListen=null;
 function startListen(){
   if(stopListen)return;
   stopListen=dbListen(FAMILIE,APP,saved=>{
-    if(!saved||saved.items===undefined)return;
-    if(isEditing()||Date.now()-lastSave<5000)return;
-    if(JSON.stringify(saved)===JSON.stringify(data))return;
+    if(!saved)return;
+    const s=JSON.stringify(normaliser(saved));
+    if(s===sistSkrevet)return;               // ekko av egen skriving – alltid ignorér
+    if(s===JSON.stringify(data))return;      // ingen reell endring
+    if(isEditing())return;                   // ekte endring – vent til brukeren er ferdig
     adoptData(saved);
     dataLoaded=true;
     render();
@@ -525,6 +533,8 @@ function populateCatSelect(id,selected){
     sorted.map(c=>'<option value="'+esc(c)+'"'+(c===selected?' selected':'')+'>'+esc(c)+'</option>').join('');
 }
 function toggleSort(){sortAlpha=!sortAlpha;document.getElementById('sort-alpha').classList.toggle('active',sortAlpha);render();}
+// Vis/skjul handlede varer: navngitt funksjon fordi inline-tilordning ikke når modul-variabler.
+function toggleShowChecked(){showChecked=!showChecked;render();}
 function addCategory(){
   const inp=document.getElementById('new-cat-name');
   const name=inp.value.trim();
@@ -1024,7 +1034,7 @@ function renderOther(){
     html+='</div>';
   }
   if(checked.length){
-    html+='<div class="checked-section"><div class="checked-header" onclick="showChecked=!showChecked;render()"><i class="ti ti-'+(showChecked?'chevron-down':'chevron-right')+'"></i>Fullført ('+checked.length+')</div>';
+    html+='<div class="checked-section"><div class="checked-header" onclick="toggleShowChecked()"><i class="ti ti-'+(showChecked?'chevron-down':'chevron-right')+'"></i>Fullført ('+checked.length+')</div>';
     if(showChecked)checked.forEach(it=>{html+=renderOtherItem(it);});
     html+='</div>';
   }
@@ -1124,7 +1134,7 @@ function renderList(unchecked,checked){
     }
   }
   if(checked.length){
-    html+='<div class="checked-section"><div class="checked-header" onclick="showChecked=!showChecked;render()"><i class="ti ti-'+(showChecked?'chevron-down':'chevron-right')+'"></i>Handlet ('+checked.length+')</div>';
+    html+='<div class="checked-section"><div class="checked-header" onclick="toggleShowChecked()"><i class="ti ti-'+(showChecked?'chevron-down':'chevron-right')+'"></i>Handlet ('+checked.length+')</div>';
     if(showChecked)checked.forEach(item=>{html+=renderItem(item);});
     html+='</div>';
   }
@@ -1307,7 +1317,7 @@ deleteItem,deleteOther,deleteTemplate,doManualMerge,doMerge,hideCatModal,hideHis
 hideMergeModal,hideModal,hideOtherModal,hideOtherSuggest,hideSuggest,manualPreview,
 openEditModal,openMergeModal,openOtherDetaljer,openOtherModal,otherNameLookup,render,
 renderOther,resetAccentColor,saveHistModal,saveModal,saveOtherModal,saveOtherModalAndNew,
-setAccentColor,setView,suggestInput,suggestOther,toggleCheck,toggleOther,toggleSort,toggleTheme});
+setAccentColor,setView,suggestInput,suggestOther,toggleCheck,toggleOther,toggleShowChecked,toggleSort,toggleTheme});
 
 load();
 </script>
