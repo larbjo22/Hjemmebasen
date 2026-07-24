@@ -89,6 +89,9 @@ section{padding:2.2rem 0}
 .kontakt-kort{max-width:440px}
 .feil{display:none;font-size:12.5px;color:var(--danger);background:rgba(229,62,62,.08);border:1px solid rgba(229,62,62,.3);border-radius:8px;padding:8px 10px;margin-bottom:10px;line-height:1.4}
 textarea.hinput{resize:vertical;min-height:90px;font-family:inherit}
+.robot-sjekk{display:flex;align-items:center;gap:10px;margin-top:16px;padding:12px 13px;border:1px solid var(--border);border-radius:8px;background:var(--surface2);cursor:pointer;font-size:13.5px;font-weight:600;color:var(--text);user-select:none}
+.robot-sjekk input{width:19px;height:19px;accent-color:var(--accent);flex-shrink:0;cursor:pointer}
+.skjema-note{font-size:11px;color:var(--text3);text-align:center;margin-top:10px;line-height:1.5}
 .takk{display:none;text-align:center;padding:1.4rem 1rem}
 .takk i{font-size:34px;color:var(--green)}
 .takk h3{font-size:15px;font-weight:700;margin-top:8px}
@@ -272,13 +275,17 @@ footer a{color:var(--accent-text)}
       <input class="hinput" id="k-navn" maxlength="60" placeholder="F.eks. Kari Nordmann" autocomplete="name">
       <label for="k-epost">E-posten din</label>
       <input class="hinput" id="k-epost" type="email" autocomplete="email" inputmode="email">
+      <label for="k-kilde">Hvor hørte du om Hjemmebasen?</label>
+      <input class="hinput" id="k-kilde" maxlength="80" placeholder="F.eks. «Kari tipset meg»">
       <label for="k-melding">Melding</label>
       <textarea class="hinput" id="k-melding" maxlength="1000" placeholder="Hei! Vi er en familie på fire som gjerne vil prøve Hjemmebasen …"></textarea>
       <!-- Honningkrukke mot roboter: skjult felt som mennesker aldri fyller ut -->
       <input class="hinput" id="k-adresse" tabindex="-1" autocomplete="off" style="position:absolute;left:-9999px" aria-hidden="true">
+      <label class="robot-sjekk"><input type="checkbox" id="k-robot"> Jeg er ikke en robot</label>
       <div style="margin-top:14px">
         <button class="btn-primary" id="send-btn"><i class="ti ti-send"></i> Send melding</button>
       </div>
+      <p class="skjema-note">Jeg bruker e-posten din bare til å svare deg.</p>
     </div>
     <div class="card kontakt-kort takk" id="takk-kort">
       <i class="ti ti-circle-check"></i>
@@ -306,19 +313,30 @@ const MOTTAKER = atob('bGFyc3BlYmpAZ21haWwuY29t');
 
 const feilEl = document.getElementById('feil');
 function visFeil(msg) { feilEl.textContent = msg; feilEl.style.display = 'block'; }
+function visTakk() {
+  document.getElementById('skjema-kort').style.display = 'none';
+  document.getElementById('takk-kort').style.display = 'block';
+}
+
+// Tidspunktet siden ble åpnet – brukes som usynlig spamfelle (se under).
+const apnet = Date.now();
 
 document.getElementById('send-btn').addEventListener('click', async () => {
   const navn = document.getElementById('k-navn').value.trim();
   const epost = document.getElementById('k-epost').value.trim();
+  const kilde = document.getElementById('k-kilde').value.trim();
   const melding = document.getElementById('k-melding').value.trim();
-  // Robot som fylte honningkrukka? Lat som alt gikk bra, uten å sende.
-  if (document.getElementById('k-adresse').value) {
-    document.getElementById('skjema-kort').style.display = 'none';
-    document.getElementById('takk-kort').style.display = 'block';
-    return;
-  }
-  if (!navn || !epost || !melding) { visFeil('Fyll inn navn, e-post og melding.'); return; }
+
+  // Spamfelle 1: honningkrukka. En bot fyller det skjulte feltet – vi later
+  // som alt gikk bra, men sender ingenting.
+  if (document.getElementById('k-adresse').value) { visTakk(); return; }
+  // Spamfelle 2: skjemaet ble sendt mistenkelig raskt (under 2,5 sek).
+  if (Date.now() - apnet < 2500) { visTakk(); return; }
+
+  if (!navn || !epost || !kilde || !melding) { visFeil('Fyll inn alle feltene før du sender.'); return; }
   if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(epost)) { visFeil('E-postadressen ser ikke riktig ut.'); return; }
+  if (!document.getElementById('k-robot').checked) { visFeil('Kryss av for at du ikke er en robot.'); return; }
+
   const btn = document.getElementById('send-btn');
   btn.disabled = true; btn.textContent = 'Sender …';
   feilEl.style.display = 'none';
@@ -328,14 +346,14 @@ document.getElementById('send-btn').addEventListener('click', async () => {
       headers: { 'Content-Type': 'application/json', 'Accept': 'application/json' },
       body: JSON.stringify({
         navn, epost, melding,
+        'hvor hørte de om oss': kilde,
         _subject: 'Hjemmebasen: henvendelse fra ' + navn,
         _replyto: epost,
         _template: 'table',
       }),
     });
     if (!res.ok) throw new Error('HTTP ' + res.status);
-    document.getElementById('skjema-kort').style.display = 'none';
-    document.getElementById('takk-kort').style.display = 'block';
+    visTakk();
   } catch (e) {
     visFeil('Fikk ikke sendt meldingen. Prøv igjen – eller kontakt meg direkte hvis det ikke løser seg.');
     btn.disabled = false; btn.innerHTML = '<i class="ti ti-send"></i> Send melding';
