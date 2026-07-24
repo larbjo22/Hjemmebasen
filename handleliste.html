@@ -354,6 +354,7 @@ input:focus-visible,select:focus-visible,button:focus-visible,[role="button"]:fo
 import { requireAuth } from './felles/auth.js';
 import { dbGet, dbSet, dbListen } from './felles/storage.js';
 import { esc, todayStr } from './felles/ui.js';
+import { monterNav } from './felles/nav.js';
 const APP='handleliste';
 let FAMILIE=null;
 const DEFAULT_CATS=['Frukt & Grønt','Kjøtt & Fisk','Meieri & Egg','Brød & Bakevarer','Tørrvarer','Frysevarer','Drikke','Rengjøring','Personlig pleie','Annet'];
@@ -448,6 +449,7 @@ async function load(){
       const ctx=await requireAuth();
       if(!ctx.familieId){setStatus('Ingen husstand – kontakt administrator','err');return;}
       FAMILIE=ctx.familieId;
+      monterNav(FAMILIE,APP); // felles app-meny øverst
     }
     // dbGet kaster ved feil og gir null KUN når noden er tom (autoritativt svar,
     // ingen MQTT-tvetydighet). Tom node = ny husstand → trygt å starte blankt.

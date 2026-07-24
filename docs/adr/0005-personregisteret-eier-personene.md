@@ -1,7 +1,7 @@
 # Personregisteret eier voksne og barn; appene refererer med id
 
 Hver app i ha-apper har sin egen personliste (middag.people, chores.kids,
-helse.barn, hardkodet barnenavn i leander). I Hjemmebasen eier
+helse.barn, hardkodet barnenavn i ha-appers søvnapp). I Hjemmebasen eier
 personregisteret (`familier/<id>/personer`) alle personene: onboarding fyller
 det én gang, appene seedes derfra, og barn refereres med id – aldri
 navnestreng.

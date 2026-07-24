@@ -1,0 +1,400 @@
+<!DOCTYPE html>
+<html lang="no">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Helse</title>
+<link rel="stylesheet" href="felles/stil.css">
+<style>
+.hchip{font-size:13px;padding:7px 13px;border-radius:16px;border:1px solid var(--border);background:var(--surface2);color:var(--text2);cursor:pointer;display:inline-block;user-select:none}
+.hchip.on{background:var(--accent-bg);border-color:var(--accent-border);color:var(--accent-text);font-weight:600}
+.chiprad{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:8px}
+.h-ok{color:var(--green);font-weight:700}
+.h-wait{color:var(--danger);font-weight:700}
+.hrow-val{font-size:13px;font-weight:700;color:var(--text2);text-align:right;white-space:nowrap}
+.felt-lbl{font-size:11px;color:var(--text3);margin-bottom:4px}
+.disclaimer{font-size:11px;color:var(--text3);margin-top:8px;line-height:1.45}
+.med-admin-rad{display:flex;align-items:center;gap:6px;padding:7px 0;border-bottom:1px solid var(--border2)}
+.med-admin-rad:last-child{border-bottom:none}
+.med-admin-rad .navn{flex:1;font-size:13px;font-weight:600;min-width:0}
+.med-admin-rad input{width:52px;text-align:center}
+.med-admin-rad .enh{font-size:11px;color:var(--text3)}
+@media(min-width:700px){.fw{max-width:560px}}
+</style>
+</head>
+<body>
+<div class="fw">
+  <div class="top-bar">
+    <p class="app-title"><a href="index.html" title="Til forsiden" style="text-decoration:none;margin-right:2px">🏠</a>🩹 Helse</p>
+    <div class="top-right">
+      <button class="icon-btn" id="theme-btn"></button>
+    </div>
+  </div>
+
+  <div id="ingen-barn" class="card" style="display:none">
+    <p style="font-size:13px;color:var(--text2);line-height:1.5">Ingen barn er registrert i husstanden ennå.
+    Legg til barn i <a href="onboarding.html" style="color:var(--accent-text)">Endre oppsett</a>, så dukker de opp her.</p>
+  </div>
+
+  <div id="hoved" style="display:none">
+    <div class="card">
+      <div class="card-title">💊 Medisin – neste dose</div>
+      <div id="helse-status"></div>
+    </div>
+
+    <div class="card">
+      <div class="card-title">➕ Logg dose</div>
+      <div class="felt-lbl">Barn</div>
+      <div class="chiprad" id="hd-barn-chips"></div>
+      <div class="felt-lbl">Medisin</div>
+      <div class="chiprad" id="hd-med-chips"></div>
+      <div style="display:flex;gap:6px;align-items:center">
+        <input type="text" id="hd-dose" class="hinput" placeholder="Dose, f.eks. 120 mg (valgfritt)" style="flex:1;min-width:0" />
+        <button class="btn-primary" style="flex:0 0 auto;width:auto;padding:10px 18px" id="hd-logg-btn">Logg</button>
+      </div>
+      <label style="display:flex;align-items:center;gap:6px;font-size:12px;color:var(--text2);margin-top:8px;cursor:pointer">
+        <input type="checkbox" id="hd-time-toggle"> Annet tidspunkt enn nå
+      </label>
+      <div id="hd-time-wrap" style="display:none;margin-top:6px">
+        <input type="datetime-local" id="hd-time" class="hinput" style="width:100%" />
+      </div>
+      <p class="disclaimer">Intervall og maks per døgn er veiledende – følg alltid pakningsvedlegg eller lege.</p>
+    </div>
+
+    <div class="card">
+      <div class="card-title">🕐 Siste doser</div>
+      <div id="helse-doser"></div>
+    </div>
+
+    <div class="card">
+      <div class="card-title">💉 Vaksiner</div>
+      <div id="helse-vaksiner"></div>
+      <button class="btn-ghost" style="width:100%;margin-top:8px" id="ny-vaksine-btn">+ Legg til vaksine</button>
+    </div>
+
+    <div class="card">
+      <div class="card-title">🤒 Sykedager</div>
+      <div id="helse-syk"></div>
+      <button class="btn-ghost" style="width:100%;margin-top:8px" id="ny-syk-btn">+ Registrer sykedag</button>
+    </div>
+
+    <div class="card">
+      <div class="card-title">⚙️ Medisiner · minste intervall (timer) og maks per døgn</div>
+      <div id="helse-med-admin"></div>
+      <div style="display:flex;gap:6px;margin-top:8px">
+        <input type="text" id="hm-new-name" class="hinput" placeholder="Medisin..." style="flex:1;min-width:0" />
+        <input type="number" id="hm-new-int" class="hinput" placeholder="t" min="1" max="48" title="Minste timer mellom doser" style="width:52px;text-align:center" />
+        <input type="number" id="hm-new-max" class="hinput" placeholder="maks" min="1" max="12" title="Maks doser per døgn" style="width:58px;text-align:center" />
+        <button class="btn-ghost" id="hm-add-btn">+</button>
+      </div>
+      <p class="disclaimer">Barna administreres i <a href="onboarding.html" style="color:var(--accent-text)">Endre oppsett</a>.</p>
+    </div>
+  </div>
+
+  <div class="status-bar" id="status-bar"></div>
+</div>
+
+<!-- Legg til vaksine / sykedag -->
+<div class="modal-bg" id="helse-modal" style="display:none">
+  <div class="modal">
+    <p class="modal-title" id="helse-modal-title">Legg til</p>
+    <div id="helse-modal-body"></div>
+    <div class="modal-actions">
+      <button class="btn-ghost" id="hm-avbryt">Avbryt</button>
+      <button class="btn-primary" id="hm-lagre">Lagre</button>
+    </div>
+  </div>
+</div>
+
+<script type="module">
+import { requireAuth } from './felles/auth.js';
+import { dbGet, dbSet, dbListen } from './felles/storage.js';
+import { esc, initTheme, toggleTheme, setStatus } from './felles/ui.js';
+import { monterNav } from './felles/nav.js';
+
+initTheme();
+document.getElementById('theme-btn').addEventListener('click', toggleTheme);
+
+const APP='helse';
+let FAMILIE=null;
+let barn=[];            // fra personregisteret: [{id,navn,fodt}]
+let helse=null;
+let dataLoaded=false;   // datatap-vernet håndheves også av dbSet
+let lastSave=0;
+let hdBarnId=null, hdMedId=null, modalType=null, visAlleDoser=false;
+
+function normaliser(d){
+  const h=d||{};
+  if(!Array.isArray(h.medisiner)||!h.medisiner.length)h.medisiner=[
+    {id:1,name:'Paracet',intervalH:4,maxDay:4},
+    {id:2,name:'Ibux',intervalH:6,maxDay:3},
+  ];
+  if(!Array.isArray(h.doser))h.doser=[];
+  if(!Array.isArray(h.vaksiner))h.vaksiner=[];
+  if(!Array.isArray(h.syk))h.syk=[];
+  const maxId=Math.max(9,...h.medisiner.map(m=>m.id||0),...h.doser.map(x=>x.id||0),...h.vaksiner.map(x=>x.id||0),...h.syk.map(x=>x.id||0));
+  if(!h.nextHid||h.nextHid<=maxId)h.nextHid=maxId+1;
+  return h;
+}
+
+async function load(){
+  setStatus('Laster...');
+  try{
+    const ctx=await requireAuth();
+    if(!ctx.familieId){setStatus('Ingen husstand – kontakt administrator','err');return;}
+    FAMILIE=ctx.familieId;
+      monterNav(FAMILIE,APP); // felles app-meny øverst
+    const p=await dbGet(FAMILIE,'personer');
+    barn=(p?.barn||[]).filter(b=>b.navn);
+    helse=normaliser(await dbGet(FAMILIE,APP));
+    dataLoaded=true;
+    setStatus('');
+    startListen();
+  }catch(e){setStatus('Kunne ikke laste – '+(e.message||'prøv igjen'),'err');return;}
+  if(hdBarnId===null&&barn.length)hdBarnId=barn[0].id;
+  if(hdMedId===null&&helse.medisiner.length)hdMedId=helse.medisiner[0].id;
+  render();
+}
+
+async function save(){
+  if(!dataLoaded){setStatus('Ikke lagret – data er ikke lastet','err');return false;}
+  try{
+    await dbSet(FAMILIE,APP,helse);
+    lastSave=Date.now();
+    setStatus('Lagret ✓','ok');
+    return true;
+  }catch(e){setStatus('Kunne ikke lagre – prøv igjen','err');return false;}
+}
+
+let stopListen=null;
+function startListen(){
+  if(stopListen)return;
+  stopListen=dbListen(FAMILIE,APP,saved=>{
+    if(!saved)return;
+    if(formAktiv()||Date.now()-lastSave<5000)return;
+    const s=JSON.stringify(normaliser(saved));
+    if(s===JSON.stringify(helse))return;
+    helse=JSON.parse(s);
+    render();
+  });
+}
+
+function formAktiv(){
+  if(document.getElementById('helse-modal').style.display==='flex')return true;
+  const ae=document.activeElement;
+  return !!(ae&&/^(INPUT|TEXTAREA|SELECT)$/.test(ae.tagName)&&(ae.value||'').trim());
+}
+
+// ── Hjelpere ──
+function barnNavn(id){const b=barn.find(x=>x.id===id);return b?b.navn:'Ukjent';}
+function medNavn(id){const m=helse.medisiner.find(x=>x.id===id);return m?m.name:'Ukjent';}
+function pad(n){return String(n).padStart(2,'0');}
+function fmtKl(ts){const d=new Date(ts);return pad(d.getHours())+':'+pad(d.getMinutes());}
+function fmtDatoKort(ts){return new Date(ts).toLocaleDateString('nb-NO',{weekday:'short',day:'numeric',month:'short'});}
+function fmtDatoNo(ds){return ds?new Date(ds+'T12:00:00').toLocaleDateString('nb-NO',{day:'numeric',month:'short',year:'numeric'}):'';}
+function fmtVarighet(ms){
+  const t=Math.floor(ms/3600000),m=Math.round(ms%3600000/60000);
+  return (t>0?t+' t ':'')+(m>0||t===0?m+' min':'');
+}
+function toLocalInput(ts){const d=new Date(ts);return d.getFullYear()+'-'+pad(d.getMonth()+1)+'-'+pad(d.getDate())+'T'+pad(d.getHours())+':'+pad(d.getMinutes());}
+
+function doseStatus(bid,mid){
+  const med=helse.medisiner.find(m=>m.id===mid);if(!med)return null;
+  const ds=helse.doser.filter(d=>d.barn===bid&&d.med===mid).sort((a,b)=>b.ts-a.ts);
+  if(!ds.length)return null;
+  const last=ds[0];
+  return {med,last,okAt:last.ts+med.intervalH*3600000,count24:ds.filter(d=>d.ts>Date.now()-86400000).length};
+}
+
+// ── Render ──
+function render(){
+  const harBarn=barn.length>0;
+  document.getElementById('ingen-barn').style.display=harBarn?'none':'block';
+  document.getElementById('hoved').style.display=harBarn?'block':'none';
+  if(!harBarn)return;
+  renderStatus();renderChips();renderDoser();renderVaksiner();renderSyk();renderMedAdmin();
+}
+
+function renderStatus(){
+  const el=document.getElementById('helse-status');
+  const now=Date.now();const rows=[];
+  barn.forEach(b=>helse.medisiner.forEach(m=>{
+    const st=doseStatus(b.id,m.id);
+    if(!st||now-st.last.ts>48*3600000)return; // kun aktive siste 2 døgn
+    const maxed=st.count24>=st.med.maxDay;
+    const canNow=now>=st.okAt&&!maxed;
+    const val=canNow?'<span class="h-ok">Kan gis nå ✓</span>'
+      :(maxed&&now>=st.okAt?'<span class="h-wait">Maks per døgn nådd</span>'
+      :'<span class="h-wait">Neste kl '+fmtKl(st.okAt)+'</span>');
+    const sub='Siste '+fmtKl(st.last.ts)+(st.last.dose?' · '+esc(st.last.dose):'')+' · '+st.count24+'/'+st.med.maxDay+' siste døgn'
+      +(now<st.okAt?' · om '+fmtVarighet(st.okAt-now):'');
+    rows.push('<div class="hrow"><div class="hrow-main"><div class="hrow-title">'+esc(b.navn)+' · '+esc(st.med.name)+'</div><div class="hrow-sub">'+sub+'</div></div><div class="hrow-val">'+val+'</div></div>');
+  }));
+  el.innerHTML=rows.join('')||'<div class="empty-state" style="padding:.6rem">Ingen doser siste 2 døgn 💚</div>';
+}
+
+function renderChips(){
+  document.getElementById('hd-barn-chips').innerHTML=barn.map(b=>
+    '<span class="hchip'+(b.id===hdBarnId?' on':'')+'" data-velg-barn="'+b.id+'">'+esc(b.navn)+'</span>').join('');
+  document.getElementById('hd-med-chips').innerHTML=helse.medisiner.map(m=>
+    '<span class="hchip'+(m.id===hdMedId?' on':'')+'" data-velg-med="'+m.id+'">'+esc(m.name)+' <span style="opacity:.6;font-size:10px">'+m.intervalH+'t</span></span>').join('')
+    ||'<span style="font-size:12px;color:var(--text4)">Legg til medisin nederst</span>';
+}
+
+function renderDoser(){
+  const el=document.getElementById('helse-doser');
+  const ds=[...helse.doser].sort((a,b)=>b.ts-a.ts);
+  const vis=visAlleDoser?ds:ds.slice(0,8);
+  el.innerHTML=(vis.map(d=>'<div class="hrow"><div class="hrow-main"><div class="hrow-title">'+esc(barnNavn(d.barn))+' · '+esc(medNavn(d.med))+(d.dose?' <span style="font-weight:400;color:var(--text2)">'+esc(d.dose)+'</span>':'')+'</div><div class="hrow-sub">'+fmtDatoKort(d.ts)+' kl '+fmtKl(d.ts)+'</div></div><button class="hrow-del" data-slett="doser:'+d.id+'" title="Slett">×</button></div>').join('')
+    ||'<div class="empty-state" style="padding:.6rem">Ingen doser loggført ennå</div>')
+    +(ds.length>8&&!visAlleDoser?'<div style="text-align:center;margin-top:6px"><button class="btn-lenke" id="vis-alle-btn">Vis alle ('+ds.length+')</button></div>':'');
+}
+
+function renderVaksiner(){
+  const vs=[...helse.vaksiner].sort((a,b)=>(b.date||'').localeCompare(a.date||''));
+  document.getElementById('helse-vaksiner').innerHTML=vs.map(v=>
+    '<div class="hrow"><div class="hrow-main"><div class="hrow-title">'+esc(barnNavn(v.barn))+' · '+esc(v.name)+'</div><div class="hrow-sub">'+fmtDatoNo(v.date)+(v.note?' · '+esc(v.note):'')+'</div></div><button class="hrow-del" data-slett="vaksiner:'+v.id+'" title="Slett">×</button></div>').join('')
+    ||'<div class="empty-state" style="padding:.6rem">Ingen vaksiner registrert</div>';
+}
+
+function renderSyk(){
+  const year=String(new Date().getFullYear());
+  const perBarn=barn.map(b=>{
+    const n=helse.syk.filter(s=>s.barn===b.id&&(s.date||'').startsWith(year)).length;
+    return n?esc(b.navn)+': '+n:null;
+  }).filter(Boolean);
+  const ss=[...helse.syk].sort((a,b)=>(b.date||'').localeCompare(a.date||'')).slice(0,10);
+  document.getElementById('helse-syk').innerHTML=
+    (perBarn.length?'<div style="font-size:11px;color:var(--text3);margin-bottom:6px">Sykedager i '+year+' – '+perBarn.join(' · ')+'</div>':'')
+    +(ss.map(s=>'<div class="hrow"><div class="hrow-main"><div class="hrow-title">'+esc(barnNavn(s.barn))+'</div><div class="hrow-sub">'+fmtDatoNo(s.date)+(s.note?' · '+esc(s.note):'')+'</div></div><button class="hrow-del" data-slett="syk:'+s.id+'" title="Slett">×</button></div>').join('')
+    ||'<div class="empty-state" style="padding:.6rem">Ingen sykedager registrert 💚</div>');
+}
+
+function renderMedAdmin(){
+  document.getElementById('helse-med-admin').innerHTML=helse.medisiner.map(m=>
+    '<div class="med-admin-rad"><span class="navn">'+esc(m.name)+'</span>'
+    +'<input type="number" class="hinput" value="'+m.intervalH+'" min="1" max="48" data-med-int="'+m.id+'" /><span class="enh">t</span>'
+    +'<input type="number" class="hinput" value="'+m.maxDay+'" min="1" max="12" data-med-max="'+m.id+'" /><span class="enh">/døgn</span>'
+    +'<button class="hrow-del" data-med-slett="'+m.id+'" title="Fjern">×</button></div>').join('');
+}
+
+// ── Logg dose ──
+document.getElementById('hd-time-toggle').addEventListener('change',e=>{
+  document.getElementById('hd-time-wrap').style.display=e.target.checked?'block':'none';
+  if(e.target.checked)document.getElementById('hd-time').value=toLocalInput(Date.now());
+});
+
+document.getElementById('hd-logg-btn').addEventListener('click',async()=>{
+  const b=barn.find(x=>x.id===hdBarnId);
+  const med=helse.medisiner.find(m=>m.id===hdMedId);
+  if(!b){setStatus('Velg barn','err');return;}
+  if(!med){setStatus('Velg medisin','err');return;}
+  let ts=Date.now();
+  if(document.getElementById('hd-time-toggle').checked){
+    const t=new Date(document.getElementById('hd-time').value).getTime();
+    if(isNaN(t)){setStatus('Ugyldig tidspunkt','err');return;}
+    ts=t;
+  }
+  const dose=document.getElementById('hd-dose').value.trim();
+  const st=doseStatus(b.id,med.id);
+  if(st&&ts<st.okAt&&ts>st.last.ts){
+    if(!confirm('Det er under '+med.intervalH+' timer siden forrige '+med.name+' til '+b.navn+' (kl '+fmtKl(st.last.ts)+'). Logge likevel?'))return;
+  }else if(st&&st.count24>=med.maxDay){
+    if(!confirm(b.navn+' har alt fått '+st.count24+' doser '+med.name+' siste døgn (maks '+med.maxDay+'). Logge likevel?'))return;
+  }
+  helse.doser.push({id:helse.nextHid++,barn:b.id,med:med.id,dose,ts});
+  document.getElementById('hd-dose').value='';
+  document.getElementById('hd-time-toggle').checked=false;
+  document.getElementById('hd-time-wrap').style.display='none';
+  await save();render();
+});
+
+// ── Vaksine/sykedag-modal ──
+function aapneModal(type){
+  modalType=type;
+  document.getElementById('helse-modal-title').textContent=type==='vaksine'?'Legg til vaksine':'Registrer sykedag';
+  const idag=new Date();const ds=idag.getFullYear()+'-'+pad(idag.getMonth()+1)+'-'+pad(idag.getDate());
+  let body='<label>Barn</label><select id="hmb-barn" class="hinput" style="width:100%">'
+    +barn.map(b=>'<option value="'+b.id+'"'+(b.id===hdBarnId?' selected':'')+'>'+esc(b.navn)+'</option>').join('')+'</select>';
+  if(type==='vaksine')body+='<label>Vaksine</label><input type="text" id="hmb-name" class="hinput" style="width:100%" placeholder="F.eks. MMR, 15-månederskontroll..." />';
+  body+='<label>Dato</label><input type="date" id="hmb-date" class="hinput" style="width:100%" value="'+ds+'" />'
+    +'<label>Notat (valgfritt)</label><input type="text" id="hmb-note" class="hinput" style="width:100%" placeholder="'+(type==='vaksine'?'F.eks. litt feber etterpå...':'F.eks. feber, hjemme fra barnehagen...')+'" />';
+  document.getElementById('helse-modal-body').innerHTML=body;
+  document.getElementById('helse-modal').style.display='flex';
+}
+document.getElementById('ny-vaksine-btn').addEventListener('click',()=>aapneModal('vaksine'));
+document.getElementById('ny-syk-btn').addEventListener('click',()=>aapneModal('syk'));
+document.getElementById('hm-avbryt').addEventListener('click',()=>document.getElementById('helse-modal').style.display='none');
+document.getElementById('helse-modal').addEventListener('click',e=>{if(e.target===e.currentTarget)e.currentTarget.style.display='none';});
+
+document.getElementById('hm-lagre').addEventListener('click',async()=>{
+  const bid=parseInt(document.getElementById('hmb-barn').value);
+  const date=document.getElementById('hmb-date').value;
+  const note=document.getElementById('hmb-note').value.trim();
+  if(isNaN(bid)||!date){setStatus('Velg barn og dato','err');return;}
+  if(modalType==='vaksine'){
+    const name=document.getElementById('hmb-name').value.trim();
+    if(!name){document.getElementById('hmb-name').focus();return;}
+    helse.vaksiner.push({id:helse.nextHid++,barn:bid,name,date,note});
+  }else{
+    if(helse.syk.some(s=>s.barn===bid&&s.date===date)){setStatus(barnNavn(bid)+' har allerede sykedag denne datoen','err');return;}
+    helse.syk.push({id:helse.nextHid++,barn:bid,date,note});
+  }
+  document.getElementById('helse-modal').style.display='none';
+  await save();render();
+});
+
+// ── Delegerte lyttere (chips, sletting, medisin-admin) ──
+document.addEventListener('click',async e=>{
+  const vb=e.target.closest('[data-velg-barn]');
+  if(vb){hdBarnId=parseInt(vb.dataset.velgBarn);renderChips();return;}
+  const vm=e.target.closest('[data-velg-med]');
+  if(vm){hdMedId=parseInt(vm.dataset.velgMed);renderChips();return;}
+  if(e.target.id==='vis-alle-btn'){visAlleDoser=true;renderDoser();return;}
+  const sl=e.target.closest('[data-slett]');
+  if(sl){
+    const [kind,id]=sl.dataset.slett.split(':');
+    const lbl={doser:'dosen',vaksiner:'vaksinen',syk:'sykedagen'}[kind];
+    if(!confirm('Slette '+lbl+'?'))return;
+    helse[kind]=helse[kind].filter(x=>x.id!==parseInt(id));
+    await save();render();return;
+  }
+  const ms=e.target.closest('[data-med-slett]');
+  if(ms){
+    const id=parseInt(ms.dataset.medSlett);
+    const m=helse.medisiner.find(x=>x.id===id);if(!m)return;
+    const n=helse.doser.filter(d=>d.med===id).length;
+    if(!confirm('Fjerne '+m.name+'?'+(n?' ('+n+' doser beholdes i loggen.)':'')))return;
+    helse.medisiner=helse.medisiner.filter(x=>x.id!==id);
+    if(hdMedId===id)hdMedId=helse.medisiner[0]?.id??null;
+    await save();render();
+  }
+});
+document.addEventListener('change',async e=>{
+  const mi=e.target.closest('[data-med-int]');const mm=e.target.closest('[data-med-max]');
+  if(!mi&&!mm)return;
+  const id=parseInt((mi||mm).dataset.medInt||(mi||mm).dataset.medMax);
+  const m=helse.medisiner.find(x=>x.id===id);if(!m)return;
+  const v=parseInt(e.target.value);if(isNaN(v)||v<1)return;
+  if(mi)m.intervalH=Math.min(48,v);else m.maxDay=Math.min(12,v);
+  await save();renderStatus();renderChips();
+});
+
+document.getElementById('hm-add-btn').addEventListener('click',async()=>{
+  const name=document.getElementById('hm-new-name').value.trim();
+  const intervalH=parseInt(document.getElementById('hm-new-int').value);
+  const maxDay=parseInt(document.getElementById('hm-new-max').value);
+  if(!name){document.getElementById('hm-new-name').focus();return;}
+  if(isNaN(intervalH)||intervalH<1){setStatus('Sett minste intervall (timer)','err');return;}
+  helse.medisiner.push({id:helse.nextHid++,name,intervalH:Math.min(48,intervalH),maxDay:isNaN(maxDay)?4:Math.min(12,Math.max(1,maxDay))});
+  ['hm-new-name','hm-new-int','hm-new-max'].forEach(i=>document.getElementById(i).value='');
+  await save();render();
+});
+
+// Nedtellingen («neste dose om X») oppdateres jevnlig
+setInterval(()=>{if(dataLoaded&&barn.length&&!formAktiv())renderStatus();},15000);
+
+load();
+</script>
+</body>
+</html>
