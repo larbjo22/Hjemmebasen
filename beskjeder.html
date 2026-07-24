@@ -39,6 +39,15 @@
       <input type="text" id="ny-tekst" class="hinput" maxlength="300" placeholder="F.eks. «Tar bilen i dag» eller «Husk gymtøy fredag»" />
       <button class="btn-primary" style="flex:0 0 auto;width:auto;padding:10px 16px" id="send-btn">Heng opp</button>
     </div>
+    <div style="display:flex;gap:8px;align-items:center;margin-top:8px">
+      <label for="ny-varighet" style="font-size:11.5px;color:var(--text3);margin:0">Vises:</label>
+      <select id="ny-varighet" class="hinput" style="flex:0 1 auto;width:auto;margin:0;font-size:12.5px;padding:6px 8px">
+        <option value="">Til den tas ned</option>
+        <option value="1">1 dag</option>
+        <option value="3">3 dager</option>
+        <option value="7">1 uke</option>
+      </select>
+    </div>
   </div>
 
   <div id="tavle"></div>
@@ -118,12 +127,12 @@ function tidTxt(ts){
 
 function render(){
   const el=document.getElementById('tavle');
-  const lapper=[...data.lapper].sort((a,b)=>b.ts-a.ts);
+  const lapper=data.lapper.filter(l=>!(l.utlop&&Date.now()>l.utlop)).sort((a,b)=>b.ts-a.ts);
   el.innerHTML=lapper.map(l=>
     '<div class="lapp'+(Date.now()-l.ts<3600000?' ny':'')+'" style="border-left-color:'+personFarge(l.fra)+'">'
     +'<div class="lapp-tekst">'+esc(l.tekst)+'</div>'
     +'<div class="lapp-meta"><span class="pfarge" style="width:9px;height:9px;border-radius:50%;display:inline-block;background:'+personFarge(l.fra)+'"></span>'
-    +esc(l.fra)+' · '+esc(tidTxt(l.ts))
+    +esc(l.fra)+' · '+esc(tidTxt(l.ts))+(l.utlop?' · til '+new Date(l.utlop).toLocaleDateString('nb-NO',{day:'numeric',month:'short'}):'')
     +'<button class="hrow-del" data-slett="'+l.id+'" title="Ta ned lappen">×</button></div></div>').join('')
     ||'<div class="empty-state">Tavla er tom – heng opp den første beskjeden.</div>';
 }
@@ -132,7 +141,12 @@ async function sendBeskjed(){
   const inp=document.getElementById('ny-tekst');
   const tekst=inp.value.trim();
   if(!tekst)return;
-  data.lapper.push({id:data.nextId++,tekst,fra:mittNavn,ts:Date.now()});
+  const lapp={id:data.nextId++,tekst,fra:mittNavn,ts:Date.now()};
+  const dgr=parseInt(document.getElementById('ny-varighet').value)||0;
+  if(dgr)lapp.utlop=Date.now()+dgr*86400000;
+  // Utløpte lapper ryddes vekk når noen henger opp en ny
+  data.lapper=data.lapper.filter(l=>!(l.utlop&&Date.now()>l.utlop));
+  data.lapper.push(lapp);
   // Tavla er flyktig: behold de 50 nyeste (ubegrenset vekst unngås)
   if(data.lapper.length>50)data.lapper=data.lapper.sort((a,b)=>b.ts-a.ts).slice(0,50);
   inp.value='';
