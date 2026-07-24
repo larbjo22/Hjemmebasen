@@ -38,6 +38,9 @@
 .hopp{text-align:center;margin-top:10px}
 .oppsummering{font-size:13px;line-height:1.7}
 .oppsummering b{font-weight:700}
+.ob-hopp-meny{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:12px}
+.ob-hopp-chip{font-size:12px;font-weight:600;padding:5px 11px;border-radius:14px;border:1px solid var(--border);background:var(--surface2);color:var(--text2);cursor:pointer}
+.ob-hopp-chip.on{background:var(--accent-bg);border-color:var(--accent-border);color:var(--accent-text)}
 </style>
 <link rel="stylesheet" href="felles/gran.css">
 </head>
@@ -80,6 +83,14 @@ Object.keys(APP_NAVN).forEach(a => { if (st.apper[a] === undefined) st.apper[a] 
 
 let steg = 0;
 const ANT = 6;
+const STEG_NAVN = ['Navn', 'Voksne', 'Barn', 'Sted', 'Apper', 'Oppsummering'];
+const alleredeOnboardet = meta.onboardet === true; // «rediger»-modus i stedet for førstegangs-veiviser
+
+// Hopp-meny når man bare vil rette på én ting (ikke klikke gjennom alle steg)
+function jumpNav() {
+  return '<div class="ob-hopp-meny">' + STEG_NAVN.map((n, i) =>
+    '<button class="ob-hopp-chip' + (i === steg ? ' on' : '') + '" data-jump="' + i + '">' + esc(n) + '</button>').join('') + '</div>';
+}
 
 function alderAar(fodt) {
   if (!fodt) return null;
@@ -92,8 +103,9 @@ function render() {
   const k = document.getElementById('steg-kort');
 
   if (steg === 0) {
-    k.innerHTML = '<div class="ob-tittel">Velkommen til Hjemmebasen!</div>'
-      + '<div class="ob-under">Familiens apper – handleliste, middagsplan, oppgaver og mer – samlet på ett sted. Først: hva skal husstanden hete?</div>'
+    k.innerHTML = (alleredeOnboardet
+        ? '<div class="ob-tittel">Rediger oppsett</div><div class="ob-under">Endre det du vil – hopp rett til riktig del i menyen over. Endringene lagres når du er ferdig.</div>'
+        : '<div class="ob-tittel">Velkommen til Hjemmebasen!</div><div class="ob-under">Familiens apper – handleliste, middagsplan, oppgaver og mer – samlet på ett sted. Først: hva skal husstanden hete?</div>')
       + '<label for="ob-navn">Husstandens navn</label>'
       + '<input class="hinput" id="ob-navn" maxlength="40" value="' + esc(st.navn) + '" placeholder="F.eks. Familien Hansen" />'
       + nav(false);
@@ -140,8 +152,9 @@ function render() {
       + 'Sted: ' + (st.sted ? esc(st.sted.navn) : '<i>ikke valgt</i>') + '<br>'
       + 'Apper: ' + Object.keys(APP_NAVN).filter(a => st.apper[a] !== false).map(a => '<i class="ti ' + APP_IKON[a] + '" style="color:var(--accent-text)"></i>').join(' ')
       + '</div>'
-      + '<div class="ob-nav"><button class="btn-ghost" id="ob-tilbake">Tilbake</button><button class="btn-primary" id="ob-ferdig">Start Hjemmebasen</button></div>';
+      + '<div class="ob-nav"><button class="btn-ghost" id="ob-tilbake">Tilbake</button><button class="btn-primary" id="ob-ferdig">' + (alleredeOnboardet ? 'Lagre endringer' : 'Start Hjemmebasen') + '</button></div>';
   }
+  if (alleredeOnboardet) k.innerHTML = jumpNav() + k.innerHTML;
   koble();
 }
 
@@ -165,6 +178,8 @@ function lesSteg() {
 }
 
 function koble() {
+  document.querySelectorAll('[data-jump]').forEach(b =>
+    b.addEventListener('click', () => { lesSteg(); steg = +b.dataset.jump; render(); }));
   const neste = document.getElementById('ob-neste');
   if (neste) neste.addEventListener('click', () => {
     if (steg === 0 && !document.getElementById('ob-navn').value.trim()) { setStatus('Gi husstanden et navn først', 'err'); return; }

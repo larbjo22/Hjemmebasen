@@ -508,6 +508,11 @@ async function load(){
       (p?.voksne||[]).forEach(v=>{if(!data.people.includes(v))data.people.push(v);});
     }
     dataLoaded=true;
+    // «Min dag» defaulter til den innloginnede – slipper å velge seg selv på nytt.
+    // (Kun når ingenting er valgt før, og navnet finnes i personlista.)
+    if(localStorage.getItem('oppgaver_me')===null && MITT && data.people.includes(MITT)){
+      myName=MITT; localStorage.setItem('oppgaver_me',MITT);
+    }
     autoTasksFromMaint(); // generer oppgaver for forfalt hus-vedlikehold
     setStatus('');
     startListen();
