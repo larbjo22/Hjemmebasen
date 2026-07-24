@@ -89,6 +89,9 @@ section{padding:2.2rem 0}
 .kontakt-kort{max-width:440px}
 .feil{display:none;font-size:12.5px;color:var(--danger);background:rgba(229,62,62,.08);border:1px solid rgba(229,62,62,.3);border-radius:8px;padding:8px 10px;margin-bottom:10px;line-height:1.4}
 textarea.hinput{resize:vertical;min-height:90px;font-family:inherit}
+.robot-sjekk{display:flex;align-items:center;gap:10px;margin-top:16px;padding:12px 13px;border:1px solid var(--border);border-radius:8px;background:var(--surface2);cursor:pointer;font-size:13.5px;font-weight:600;color:var(--text);user-select:none}
+.robot-sjekk input{width:19px;height:19px;accent-color:var(--accent);flex-shrink:0;cursor:pointer}
+.skjema-note{font-size:11px;color:var(--text3);text-align:center;margin-top:10px;line-height:1.5}
 .takk{display:none;text-align:center;padding:1.4rem 1rem}
 .takk i{font-size:34px;color:var(--green)}
 .takk h3{font-size:15px;font-weight:700;margin-top:8px}
@@ -113,10 +116,11 @@ footer a{color:var(--accent-text)}
 
   <div class="hero">
     <div class="hero-tekst">
-      <h1>Familiens hverdag,<br>samlet <span class="gronn">på ett sted</span></h1>
-      <p class="ingress">Hjemmebasen er en app-pakke for husstanden: handleliste, middagsplan,
-        oppgaver, fryseroversikt og mer – laget på norsk, for norske familier.
-        Alle i huset ser det samme, oppdatert i sanntid, rett fra mobilens hjemskjerm.</p>
+      <h1>Appene familien min <span class="gronn">bruker hver dag</span></h1>
+      <p class="ingress">Det begynte som noen apper jeg lagde til min egen familie: handlelista vi
+        deler i butikken, planen for hva vi skal ha til middag, hvem som gjør hva hjemme. Nå har jeg
+        gjort dem klare så venner og kjente kan bruke dem også. Alt ligger på mobilen, og alle i huset
+        ser det samme.</p>
       <div class="hero-knapper">
         <a class="btn-liten fylt" href="#kontakt"><i class="ti ti-mail"></i> Bli med – ta kontakt</a>
         <a class="btn-liten ramme" href="#appene"><i class="ti ti-apps"></i> Se appene</a>
@@ -137,10 +141,9 @@ footer a{color:var(--accent-text)}
   </div>
 
   <section id="appene">
-    <h2 class="sek-tittel"><i class="ti ti-apps"></i> Ti apper – dere velger hvilke</h2>
-    <p class="sek-under">Hver husstand skrur på akkurat de appene dere trenger.
-      Alt deles automatisk mellom alle i huset – ingen sending av skjermbilder
-      eller huskelapper på kjøkkenbenken.</p>
+    <h2 class="sek-tittel"><i class="ti ti-apps"></i> Ti apper å velge mellom</h2>
+    <p class="sek-under">Dere trenger ikke ta alt. Hver husstand velger selv hvilke apper dere vil ha,
+      og resten er skjult. Det én legger inn, ser resten av huset med en gang.</p>
 
     <div class="mockups" aria-hidden="true">
       <div class="tlf">
@@ -200,42 +203,42 @@ footer a{color:var(--accent-text)}
     <p class="mock-hint">Eksempler med fiktive data – slik ser appene ut på mobilen.</p>
 
     <div class="app-oversikt" style="margin-top:1.2rem">
-      <div class="app-kort"><span class="ikon-chip"><i class="ti ti-shopping-cart"></i></span><span><span class="navn">Handleliste</span><p class="om">Felles liste sortert etter butikkens kategorier, med autofullfør fra egen historikk og gjenbrukbare maler.</p></span></div>
-      <div class="app-kort"><span class="ikon-chip"><i class="ti ti-tools-kitchen-2"></i></span><span><span class="navn">Middag</span><p class="om">Ukesplanlegger med idébank og middagsrulett. Hele uka kan sendes rett til handlelista.</p></span></div>
-      <div class="app-kort"><span class="ikon-chip"><i class="ti ti-checkbox"></i></span><span><span class="navn">Oppgaver</span><p class="om">Gjøremål og gjentagende hus-vedlikehold, fordelt på husets voksne – med litt konkurranse på toppen.</p></span></div>
-      <div class="app-kort"><span class="ikon-chip"><i class="ti ti-snowflake"></i></span><span><span class="navn">Fryser</span><p class="om">Oversikt over hva som faktisk ligger i fryseren, og hva som bør brukes opp først.</p></span></div>
-      <div class="app-kort"><span class="ikon-chip"><i class="ti ti-star"></i></span><span><span class="navn">Plikter</span><p class="om">Barnas plikter med poeng og belønninger de selv velger å spare til.</p></span></div>
-      <div class="app-kort"><span class="ikon-chip"><i class="ti ti-moon"></i></span><span><span class="navn">Søvn</span><p class="om">Søvnsporing for de minste, per barn, med anbefalte våkenvinduer ut fra alder.</p></span></div>
-      <div class="app-kort"><span class="ikon-chip"><i class="ti ti-first-aid-kit"></i></span><span><span class="navn">Helse</span><p class="om">Medisindoser med tid-til-neste, vaksiner og sykdomslogg – slutt på «når fikk hun paracet sist?».</p></span></div>
-      <div class="app-kort"><span class="ikon-chip"><i class="ti ti-pin"></i></span><span><span class="navn">Beskjeder</span><p class="om">Husstandens oppslagstavle: korte lapper alle ser på forsiden.</p></span></div>
-      <div class="app-kort"><span class="ikon-chip"><i class="ti ti-backpack"></i></span><span><span class="navn">Pakkelister</span><p class="om">Gjenbrukbare pakkelister til hytta, treninga og ferien – nullstill hakene før neste tur.</p></span></div>
-      <div class="app-kort"><span class="ikon-chip"><i class="ti ti-ruler-2"></i></span><span><span class="navn">Vekst</span><p class="om">Høyde og vekt for barna over tid, med alder ved hver måling.</p></span></div>
+      <div class="app-kort"><span class="ikon-chip"><i class="ti ti-shopping-cart"></i></span><span><span class="navn">Handleliste</span><p class="om">Én felles liste, sortert slik du går gjennom butikken. Den husker det dere pleier å kjøpe, og du kan lage faste maler.</p></span></div>
+      <div class="app-kort"><span class="ikon-chip"><i class="ti ti-tools-kitchen-2"></i></span><span><span class="navn">Middag</span><p class="om">Planlegg uka og samle oppskriftsideer. Når ingen orker å bestemme, kan ruletten gjøre det. Hele uka kan sendes rett til handlelista.</p></span></div>
+      <div class="app-kort"><span class="ikon-chip"><i class="ti ti-checkbox"></i></span><span><span class="navn">Oppgaver</span><p class="om">Gjøremål og ting som må gjøres igjen og igjen, fordelt mellom de voksne. Med en poengtavle for dem som vil kappes litt.</p></span></div>
+      <div class="app-kort"><span class="ikon-chip"><i class="ti ti-snowflake"></i></span><span><span class="navn">Fryser</span><p class="om">Hold styr på hva som faktisk ligger i fryseren, og se hva som bør brukes opp snart.</p></span></div>
+      <div class="app-kort"><span class="ikon-chip"><i class="ti ti-star"></i></span><span><span class="navn">Plikter</span><p class="om">Ukas plikter for barna, med poeng de sparer til belønninger de har valgt selv.</p></span></div>
+      <div class="app-kort"><span class="ikon-chip"><i class="ti ti-moon"></i></span><span><span class="navn">Søvn</span><p class="om">Søvnlogg for de minste, ett barn av gangen, med forslag til våkenvindu ut fra alderen.</p></span></div>
+      <div class="app-kort"><span class="ikon-chip"><i class="ti ti-first-aid-kit"></i></span><span><span class="navn">Helse</span><p class="om">Når fikk barnet sist medisin, og når kan neste dose gis? Her holder du styr på det, pluss vaksiner og sykdom.</p></span></div>
+      <div class="app-kort"><span class="ikon-chip"><i class="ti ti-pin"></i></span><span><span class="navn">Beskjeder</span><p class="om">En oppslagstavle for huset. Korte lapper som alle ser på forsiden.</p></span></div>
+      <div class="app-kort"><span class="ikon-chip"><i class="ti ti-backpack"></i></span><span><span class="navn">Pakkelister</span><p class="om">Faste pakkelister til hytta, treninga og ferien. Huk av mens du pakker, og nullstill før neste tur.</p></span></div>
+      <div class="app-kort"><span class="ikon-chip"><i class="ti ti-ruler-2"></i></span><span><span class="navn">Vekst</span><p class="om">Høyde og vekt for barna over tid, med alderen ved hver måling.</p></span></div>
     </div>
   </section>
 
   <section id="bli-med">
     <h2 class="sek-tittel"><i class="ti ti-door-enter"></i> Slik blir dere med</h2>
-    <p class="sek-under">Hjemmebasen er ikke en åpen tjeneste med selvregistrering –
-      husstander opprettes personlig. Det holder terskelen lav og tjenesten trygg.</p>
+    <p class="sek-under">Du kan ikke bare registrere deg selv her. Jeg setter opp hver husstand
+      for hånd, så jeg vet hvem som er med.</p>
     <div class="steg">
       <div class="kort">
         <div class="nr">1</div>
         <h3>Ta kontakt</h3>
-        <p>Send en melding via skjemaet nederst. Jeg oppretter husstanden deres og
-          sender en invitasjonslenke med kode.</p>
+        <p>Send meg noen ord i skjemaet lenger ned. Så lager jeg husstanden deres og
+          sender en invitasjonslenke.</p>
       </div>
       <div class="kort">
         <div class="nr">2</div>
         <h3>Svar på noen spørsmål</h3>
-        <p>Første innlogging starter en kort veiviser: hvem bor i huset, hvor bor dere,
-          og hvilke apper dere vil bruke. Appene starter ferdig utfylt med fornuftige
-          norske standarddata – aldri tomme.</p>
+        <p>Første gang dere logger inn, spør appen om hvem som bor i huset, hvor dere bor
+          og hvilke apper dere vil ha. Alt er fylt med litt innhold fra start, så dere
+          ikke møter tomme skjermer.</p>
       </div>
       <div class="kort">
         <div class="nr">3</div>
         <h3>Legg til på hjemskjermen</h3>
-        <p>Hjemmebasen er en web-app (PWA): «Legg til på Hjem-skjerm» på mobilen,
-          så ligger den der som en vanlig app – uten App Store og uten oppdateringsmas.</p>
+        <p>Velg «Legg til på Hjem-skjerm» på mobilen, så ligger Hjemmebasen der som en
+          helt vanlig app. Ingen App Store, og den oppdaterer seg selv.</p>
       </div>
     </div>
   </section>
@@ -245,45 +248,49 @@ footer a{color:var(--accent-text)}
     <div class="trygg">
       <div class="punkt"><i class="ti ti-lock"></i><span>
         <h3>Husstanden er en lukket boks</h3>
-        <p>Hver husstand har sitt eget, isolerte dataområde. Tilgangsreglene håndheves
-          på serversiden – ingen andre husstander kan se deres data, uansett.</p></span></div>
+        <p>Hver husstand har sitt eget område i databasen. Andre husstander kommer ikke
+          inn i deres, og det er noe serveren passer på, ikke bare appen.</p></span></div>
       <div class="punkt"><i class="ti ti-eye-off"></i><span>
         <h3>Ingen sporing, ingen reklame</h3>
-        <p>Ingen analyseverktøy, ingen annonser, ingen videresalg. Dette er et
-          hobbyprosjekt laget for familien og folk vi kjenner – ikke en forretningsmodell.</p></span></div>
+        <p>Ingen annonser, ingen sporing, ingenting som selges videre. Dette er et
+          hobbyprosjekt, ikke en bedrift, og jeg tjener ikke en krone på det.</p></span></div>
       <div class="punkt"><i class="ti ti-database"></i><span>
         <h3>Data lagres i Europa</h3>
-        <p>Alt ligger i en europeisk database (Belgia) hos Google Firebase, med
-          kryptert nattlig sikkerhetskopi.</p></span></div>
+        <p>Dataene ligger på en server i Europa (Belgia), hos Google Firebase. Hver natt
+          tas det en kryptert sikkerhetskopi.</p></span></div>
       <div class="punkt"><i class="ti ti-user-check"></i><span>
         <h3>Egen innlogging per person</h3>
-        <p>Hver voksen får egen bruker med e-post og passord. Glemt passord ordner
-          du selv med tilbakestilling på e-post.</p></span></div>
+        <p>Hver voksen får sin egen innlogging med e-post og passord. Har du glemt passordet,
+          ordner du nytt selv på e-post.</p></span></div>
     </div>
   </section>
 
   <section id="kontakt">
-    <h2 class="sek-tittel"><i class="ti ti-mail"></i> Interessert? Ta kontakt</h2>
-    <p class="sek-under">Skriv noen ord, så tar jeg kontakt og setter opp husstanden deres.
-      Tjenesten er gratis og først og fremst for venner og bekjente.</p>
+    <h2 class="sek-tittel"><i class="ti ti-mail"></i> Lyst til å prøve?</h2>
+    <p class="sek-under">Skriv noen ord om hvem dere er, så tar jeg kontakt og setter opp
+      husstanden deres. Det koster ingenting, og er mest ment for folk jeg kjenner.</p>
     <div class="card kontakt-kort" id="skjema-kort">
       <p class="feil" id="feil"></p>
       <label for="k-navn">Navnet ditt</label>
       <input class="hinput" id="k-navn" maxlength="60" placeholder="F.eks. Kari Nordmann" autocomplete="name">
       <label for="k-epost">E-posten din</label>
       <input class="hinput" id="k-epost" type="email" autocomplete="email" inputmode="email">
+      <label for="k-kilde">Hvor hørte du om Hjemmebasen?</label>
+      <input class="hinput" id="k-kilde" maxlength="80" placeholder="F.eks. «Kari tipset meg»">
       <label for="k-melding">Melding</label>
       <textarea class="hinput" id="k-melding" maxlength="1000" placeholder="Hei! Vi er en familie på fire som gjerne vil prøve Hjemmebasen …"></textarea>
       <!-- Honningkrukke mot roboter: skjult felt som mennesker aldri fyller ut -->
       <input class="hinput" id="k-adresse" tabindex="-1" autocomplete="off" style="position:absolute;left:-9999px" aria-hidden="true">
+      <label class="robot-sjekk"><input type="checkbox" id="k-robot"> Jeg er ikke en robot</label>
       <div style="margin-top:14px">
         <button class="btn-primary" id="send-btn"><i class="ti ti-send"></i> Send melding</button>
       </div>
+      <p class="skjema-note">Jeg bruker e-posten din bare til å svare deg.</p>
     </div>
     <div class="card kontakt-kort takk" id="takk-kort">
       <i class="ti ti-circle-check"></i>
       <h3>Takk for meldingen!</h3>
-      <p>Jeg svarer på e-posten du oppga – som regel i løpet av et par dager.</p>
+      <p>Jeg svarer på e-posten du oppga, som regel i løpet av et par dager.</p>
     </div>
   </section>
 
@@ -302,23 +309,34 @@ document.getElementById('theme-btn').addEventListener('click', toggleTheme);
 
 // ── Kontaktskjema via FormSubmit (gratis videresending til e-post) ──
 // Adressen er base64-kodet så den ikke ligger i klartekst for spam-høstere.
-const MOTTAKER = atob('bGFyc0Bxb25kb3IuY29t');
+const MOTTAKER = atob('bGFyc3BlYmpAZ21haWwuY29t');
 
 const feilEl = document.getElementById('feil');
 function visFeil(msg) { feilEl.textContent = msg; feilEl.style.display = 'block'; }
+function visTakk() {
+  document.getElementById('skjema-kort').style.display = 'none';
+  document.getElementById('takk-kort').style.display = 'block';
+}
+
+// Tidspunktet siden ble åpnet – brukes som usynlig spamfelle (se under).
+const apnet = Date.now();
 
 document.getElementById('send-btn').addEventListener('click', async () => {
   const navn = document.getElementById('k-navn').value.trim();
   const epost = document.getElementById('k-epost').value.trim();
+  const kilde = document.getElementById('k-kilde').value.trim();
   const melding = document.getElementById('k-melding').value.trim();
-  // Robot som fylte honningkrukka? Lat som alt gikk bra, uten å sende.
-  if (document.getElementById('k-adresse').value) {
-    document.getElementById('skjema-kort').style.display = 'none';
-    document.getElementById('takk-kort').style.display = 'block';
-    return;
-  }
-  if (!navn || !epost || !melding) { visFeil('Fyll inn navn, e-post og melding.'); return; }
+
+  // Spamfelle 1: honningkrukka. En bot fyller det skjulte feltet – vi later
+  // som alt gikk bra, men sender ingenting.
+  if (document.getElementById('k-adresse').value) { visTakk(); return; }
+  // Spamfelle 2: skjemaet ble sendt mistenkelig raskt (under 2,5 sek).
+  if (Date.now() - apnet < 2500) { visTakk(); return; }
+
+  if (!navn || !epost || !kilde || !melding) { visFeil('Fyll inn alle feltene før du sender.'); return; }
   if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(epost)) { visFeil('E-postadressen ser ikke riktig ut.'); return; }
+  if (!document.getElementById('k-robot').checked) { visFeil('Kryss av for at du ikke er en robot.'); return; }
+
   const btn = document.getElementById('send-btn');
   btn.disabled = true; btn.textContent = 'Sender …';
   feilEl.style.display = 'none';
@@ -328,14 +346,14 @@ document.getElementById('send-btn').addEventListener('click', async () => {
       headers: { 'Content-Type': 'application/json', 'Accept': 'application/json' },
       body: JSON.stringify({
         navn, epost, melding,
+        'hvor hørte de om oss': kilde,
         _subject: 'Hjemmebasen: henvendelse fra ' + navn,
         _replyto: epost,
         _template: 'table',
       }),
     });
     if (!res.ok) throw new Error('HTTP ' + res.status);
-    document.getElementById('skjema-kort').style.display = 'none';
-    document.getElementById('takk-kort').style.display = 'block';
+    visTakk();
   } catch (e) {
     visFeil('Fikk ikke sendt meldingen. Prøv igjen – eller kontakt meg direkte hvis det ikke løser seg.');
     btn.disabled = false; btn.innerHTML = '<i class="ti ti-send"></i> Send melding';
