@@ -1,0 +1,767 @@
+<!DOCTYPE html>
+<html lang="no">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Fryseroversikt</title>
+<meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+<meta http-equiv="Pragma" content="no-cache">
+<meta http-equiv="Expires" content="0">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@2.44.0/tabler-icons.min.css">
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --bg:#f5f5f5;--surface:#fff;--surface2:#f9f9f9;
+  --border:#e0e0e0;--border2:#e8e8e8;
+  --text:#1a1a1a;--text2:#666;--text3:#aaa;--text4:#bbb;
+  --accent:#378ADD;--accent-bg:#e8f0fe;--accent-border:#a4c2f7;--accent-text:#1a56db;
+  --danger:#e53e3e;--warn:#fbbf24;--warn-bg:#fef3c7;--warn-text:#92400e;
+  --expiring-bg:#fffbeb;--expiring-border:#fbbf24;
+  --expired-bg:#fef2f2;--expired-border:#fca5a5;
+  --green:#16a34a;
+}
+@media(prefers-color-scheme:dark){:root{
+  --bg:#111;--surface:#1c1c1e;--surface2:#2c2c2e;
+  --border:#2c2c2e;--border2:#3a3a3c;
+  --text:#f2f2f7;--text2:#aeaeb2;--text3:#636366;--text4:#48484a;
+  --accent:#378ADD;--accent-bg:rgba(55,138,221,.15);--accent-border:rgba(55,138,221,.4);--accent-text:#60a5fa;
+  --danger:#f87171;--warn:#fbbf24;--warn-bg:rgba(251,191,36,.15);--warn-text:#fcd34d;
+  --expiring-bg:rgba(251,191,36,.08);--expiring-border:rgba(251,191,36,.4);
+  --expired-bg:rgba(248,113,113,.08);--expired-border:rgba(248,113,113,.4);
+  --green:#4ade80;
+}}
+[data-theme="dark"]{
+  --bg:#111;--surface:#1c1c1e;--surface2:#2c2c2e;
+  --border:#2c2c2e;--border2:#3a3a3c;
+  --text:#f2f2f7;--text2:#aeaeb2;--text3:#636366;--text4:#48484a;
+  --accent:#378ADD;--accent-bg:rgba(55,138,221,.15);--accent-border:rgba(55,138,221,.4);--accent-text:#60a5fa;
+  --danger:#f87171;--warn:#fbbf24;--warn-bg:rgba(251,191,36,.15);--warn-text:#fcd34d;
+  --expiring-bg:rgba(251,191,36,.08);--expiring-border:rgba(251,191,36,.4);
+  --expired-bg:rgba(248,113,113,.08);--expired-border:rgba(248,113,113,.4);
+  --green:#4ade80;
+}
+[data-theme="light"]{
+  --bg:#f5f5f5;--surface:#fff;--surface2:#f9f9f9;
+  --border:#e0e0e0;--border2:#e8e8e8;
+  --text:#1a1a1a;--text2:#666;--text3:#aaa;--text4:#bbb;
+  --accent:#378ADD;--accent-bg:#e8f0fe;--accent-border:#a4c2f7;--accent-text:#1a56db;
+  --danger:#e53e3e;--warn:#fbbf24;--warn-bg:#fef3c7;--warn-text:#92400e;
+  --expiring-bg:#fffbeb;--expiring-border:#fbbf24;
+  --expired-bg:#fef2f2;--expired-border:#fca5a5;
+  --green:#16a34a;
+}
+body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;background:var(--bg);color:var(--text);font-size:14px}
+/* Synlig fokusmarkør for tastaturbrukere (erstatter outline:none på feltene under) */
+input:focus-visible,select:focus-visible,button:focus-visible,[role="button"]:focus-visible{outline:2px solid var(--accent);outline-offset:1px}
+.fw{max-width:480px;margin:0 auto;padding:.6rem .75rem}
+.top-bar{display:flex;align-items:center;justify-content:space-between;margin-bottom:.6rem}
+.app-title{font-size:15px;font-weight:600;display:flex;align-items:center;gap:6px}
+.app-title i{color:#378ADD}
+.total-badge{font-size:11px;color:var(--text2);background:var(--surface2);border:1px solid var(--border);border-radius:6px;padding:2px 8px}
+.ftabs{display:flex;gap:4px;flex-wrap:wrap;margin-bottom:.6rem}
+.ftab{font-size:12px;padding:4px 10px;border-radius:20px;border:1px solid var(--border);background:var(--surface);color:var(--text2);cursor:pointer;display:flex;align-items:center;gap:4px}
+.ftab.active{background:var(--accent-bg);color:var(--accent-text);border-color:var(--accent-border);font-weight:500}
+.ftab-add{font-size:12px;padding:4px 10px;border-radius:20px;border:1px dashed #ccc;background:transparent;color:#999;cursor:pointer}
+.ftab-icon{font-size:10px;opacity:.4;cursor:pointer;margin-left:1px}
+.ftab-icon:hover{opacity:1}
+.add-section{background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:10px;margin-bottom:.75rem}
+.add-title{font-size:12px;font-weight:500;color:var(--text2);margin-bottom:7px;display:flex;align-items:center;justify-content:space-between}
+.add-title .cat-link{cursor:pointer;font-size:11px;color:#999;font-weight:400}
+.add-full{margin-bottom:6px}
+.add-full input{width:100%;font-size:13px;font-weight:500;padding:7px 9px;border:1px solid var(--border);border-radius:7px;outline:none;background:var(--surface);color:var(--text)}
+.add-full input:focus{border-color:#378ADD}
+.add-row2{display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-bottom:6px}
+.add-row2 input,.add-row2 select{font-size:12px;width:100%;padding:6px 8px;border:1px solid var(--border);border-radius:7px;outline:none;background:var(--surface);color:var(--text)}
+.weight-row{display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-bottom:6px}
+.weight-row input,.weight-row select{font-size:13px;width:100%;padding:6px 8px;border:1px solid var(--border);border-radius:7px;outline:none;background:var(--surface);color:var(--text)}
+.date-row{margin-bottom:7px}
+.date-row input{width:100%;font-size:12px;padding:6px 8px;border:1px solid var(--border);border-radius:7px;outline:none;background:var(--surface);color:var(--text)}
+.add-btn{width:100%;padding:8px;font-size:13px;background:var(--accent-bg);border:1px solid var(--accent-border);border-radius:7px;cursor:pointer;color:var(--accent-text);font-weight:500;display:flex;align-items:center;justify-content:center;gap:5px}
+.add-btn:hover{opacity:.85}
+.toolbar{display:flex;gap:6px;margin-bottom:.6rem;align-items:center}
+.toolbar input{flex:1;font-size:12px;padding:5px 9px;border:1px solid var(--border);border-radius:7px;height:30px;outline:none;background:var(--surface);color:var(--text)}
+.sort-btn{font-size:11px;padding:4px 9px;border:1px solid var(--border);border-radius:7px;background:var(--surface);color:var(--text2);cursor:pointer;height:30px;white-space:nowrap}
+.sort-btn.active{background:var(--accent-bg);color:var(--accent-text);border-color:var(--accent-border)}
+.filter-bar{display:flex;gap:4px;flex-wrap:wrap;margin-bottom:.75rem}
+.filter-btn{font-size:11px;padding:3px 9px;border-radius:20px;border:1px solid var(--border);background:var(--surface);color:var(--text2);cursor:pointer}
+.filter-btn.active{background:var(--accent-bg);color:var(--accent-text);border-color:var(--accent-border);font-weight:500}
+.filter-btn.warn{border-color:#fbbf24;color:#b45309}
+.filter-btn.warn.active{background:#fef3c7;color:#b45309;border-color:#fbbf24}
+.filter-btn.danger{border-color:#fca5a5;color:var(--danger)}
+.filter-btn.danger.active{background:#fef2f2;color:var(--danger);border-color:#fca5a5}
+.cat-header{display:flex;align-items:center;gap:6px;margin:.9rem 0 4px;padding-bottom:3px;border-bottom:1px solid #eee}
+.cat-label{font-size:13px;font-weight:600;color:#888;text-transform:uppercase;letter-spacing:.05em}
+.cat-count{font-size:11px;color:var(--text4);margin-left:auto}
+.item-row{display:flex;align-items:center;gap:6px;padding:5px 8px;border-radius:7px;border:1px solid var(--border2);background:var(--surface);margin-bottom:4px;position:relative}
+.item-row.zero-qty{opacity:.45}
+.item-row.expiring{border-color:#fbbf24;background:var(--expiring-bg)}
+.item-row.expired{border-color:#fca5a5;background:#fef2f2}
+.item-row.old{border-color:#fbbf24;border-style:dashed;background:var(--expiring-bg)}
+.age-old{color:#b45309;font-weight:600}
+.filter-btn.old{border-color:#fbbf24;color:#b45309}
+.filter-btn.old.active{background:#fef3c7;color:#b45309;border-color:#fbbf24}
+.item-info{flex:1;min-width:0}
+.item-name{font-size:13px;color:var(--text);line-height:1.2;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.item-meta{font-size:11px;color:var(--text3);display:flex;gap:8px;flex-wrap:wrap;margin-top:1px}
+.item-meta .exp-warn{color:#b45309;font-weight:500}
+.item-meta .exp-danger{color:var(--danger);font-weight:500}
+.qty-wrap{display:flex;align-items:center;gap:4px;flex-shrink:0}
+.qty-btn{width:24px;height:24px;border-radius:50%;border:1px solid var(--border);background:var(--bg);color:var(--text);cursor:pointer;font-size:15px;display:flex;align-items:center;justify-content:center;line-height:1;flex-shrink:0}
+.qty-btn:hover{background:var(--accent-bg);border-color:var(--accent-border)}
+.qty-num{font-size:13px;font-weight:600;min-width:18px;text-align:center}
+.qty-num.zero{color:var(--text4)}
+.icon-btn{width:26px;height:26px;border-radius:50%;border:none;background:transparent;color:var(--text4);cursor:pointer;font-size:14px;display:flex;align-items:center;justify-content:center;flex-shrink:0;padding:0}
+.icon-btn:hover{color:var(--text2)}
+.icon-btn.danger:hover{color:var(--danger)}
+.icon-btn.cart{color:var(--accent)}
+.icon-btn.cart:hover{color:var(--accent-text)}
+.empty-state{text-align:center;padding:1.5rem;color:var(--text4);font-size:13px}
+.cat-manage{margin-top:8px;padding-top:8px;border-top:1px solid #eee}
+.cat-chip{display:inline-flex;align-items:center;gap:4px;font-size:11px;padding:3px 8px;border:1px solid var(--border);border-radius:20px;background:var(--surface2);margin:2px;color:var(--text2)}
+.cat-chip-del{cursor:pointer;opacity:.4;font-size:10px}
+.cat-chip-del:hover{opacity:1;color:var(--danger)}
+.cat-add-row{display:flex;gap:6px;margin-top:8px}
+.cat-add-row input{flex:1;font-size:12px;padding:5px 8px;border:1px solid var(--border);border-radius:6px;outline:none;background:var(--surface);color:var(--text)}
+.cat-add-row button{font-size:12px;padding:0 10px;border:1px solid var(--border);background:var(--bg);border-radius:6px;cursor:pointer}
+.modal-bg{position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,0.4);display:flex;align-items:flex-start;justify-content:center;padding-top:30px;z-index:100;overflow-y:auto}
+.modal{background:var(--surface);border-radius:12px;padding:1rem;width:90%;max-width:360px;box-shadow:0 8px 32px rgba(0,0,0,0.15);margin:auto}
+.modal-title{font-size:15px;font-weight:600;margin-bottom:.75rem}
+.modal label{font-size:11px;color:#888;display:block;margin-bottom:2px;margin-top:10px}
+.modal label:first-of-type{margin-top:0}
+.modal input,.modal select{width:100%;font-size:13px;padding:7px 9px;border:1px solid var(--border);border-radius:7px;outline:none;background:var(--surface);color:var(--text)}
+.modal-row{display:grid;grid-template-columns:1fr 1fr;gap:7px}
+.modal-row input,.modal-row select{width:100%}
+.modal-actions{display:flex;gap:7px;margin-top:1rem}
+.btn-primary{flex:1;padding:9px;font-size:13px;font-weight:600;background:#1a56db;border:none;border-radius:7px;cursor:pointer;color:#fff}
+.btn-primary:hover{background:#1446b8}
+.btn-ghost{padding:9px 14px;font-size:13px;background:var(--bg);border:1px solid var(--border);border-radius:7px;cursor:pointer;color:var(--text2)}
+.btn-danger{padding:9px 14px;font-size:13px;background:var(--surface);border:1px solid #fca5a5;border-radius:7px;cursor:pointer;color:var(--danger)}
+.btn-danger:hover{background:#fef2f2}
+.dup-warning{background:#fef3c7;border:1px solid #fbbf24;border-radius:7px;padding:7px 10px;font-size:12px;color:#92400e;margin-bottom:8px;display:none}
+.dup-warning i{margin-right:4px}
+.status-bar{font-size:11px;color:var(--text3);text-align:right;margin-top:4px;min-height:14px}
+.status-bar.err{color:var(--danger)}
+.status-bar.ok{color:#16a34a}
+.sug-box{border:1px solid var(--border);border-radius:8px;background:var(--surface);box-shadow:0 6px 16px rgba(0,0,0,.12);margin-bottom:6px;max-height:220px;overflow-y:auto}
+.sug-item{display:flex;align-items:center;gap:8px;padding:8px 10px;cursor:pointer;border-bottom:1px solid var(--border2);font-size:13px}
+.sug-item:last-child{border-bottom:none}
+.sug-item:hover{background:var(--accent-bg)}
+.sug-item span{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.sug-item .sug-cat{font-size:11px;color:var(--text3);margin-left:auto;flex-shrink:0}
+</style>
+</head>
+<body>
+<main class="fw" id="app">
+  <div class="top-bar">
+    <h1 class="app-title"><a href="index.html" title="Til forsiden" aria-label="Til forsiden" style="text-decoration:none;margin-right:2px">🏠</a><i class="ti ti-snowflake" aria-hidden="true"></i>Fryseroversikt</h1>
+    <div style="display:flex;align-items:center;gap:8px">
+      <span class="total-badge" id="total-badge">laster...</span>
+      <button id="theme-btn" onclick="toggleTheme()" title="Bytt tema" aria-label="Bytt mellom lyst og mørkt tema" style="width:28px;height:28px;border-radius:50%;border:1px solid var(--border);background:var(--surface2);cursor:pointer;font-size:14px;display:flex;align-items:center;justify-content:center;color:var(--text2)"></button>
+    </div>
+  </div>
+  <div class="ftabs" id="freezer-tabs"></div>
+
+  <div class="add-section">
+    <div class="add-title">
+      <span><i class="ti ti-plus"></i> Legg til vare</span>
+      <div style="display:flex;gap:10px">
+        <span class="cat-link" role="button" tabindex="0" onclick="toggleCatManager()"><i class="ti ti-tag" aria-hidden="true"></i> Kategorier</span>
+        <span class="cat-link" role="button" tabindex="0" onclick="toggleColorManager()"><i class="ti ti-palette" aria-hidden="true"></i> Farger</span>
+      </div>
+    </div>
+    <div class="dup-warning" id="dup-warning"><i class="ti ti-alert-triangle"></i><span id="dup-text"></span></div>
+    <div class="add-full"><input type="text" id="new-name" placeholder="Navn på vare..." aria-label="Navn på vare" autocomplete="off" oninput="onNameInput()" onblur="setTimeout(hideSuggestFryser,200)" /></div>
+    <div class="sug-box" id="name-suggest" style="display:none"></div>
+    <div class="add-row2">
+      <select id="new-cat" aria-label="Kategori"></select>
+      <input type="number" id="new-qty" placeholder="Antall" aria-label="Antall" min="1" value="1" />
+    </div>
+    <div class="weight-row">
+      <input type="number" id="new-weight" placeholder="Vekt (valgfritt)" aria-label="Vekt (valgfritt)" min="0" step="any" />
+      <select id="new-weight-unit" aria-label="Vektenhet"><option value="g">g</option><option value="kg">kg</option></select>
+    </div>
+    <div class="add-row2">
+      <div><div style="font-size:10px;color:var(--text3);margin-bottom:2px">Inn-dato</div><input type="date" id="new-added" title="Inn-dato" aria-label="Inn-dato" /></div>
+      <div><div style="font-size:10px;color:var(--text3);margin-bottom:2px">Utløp (valgfritt)</div><input type="date" id="new-expiry" title="Utløpsdato (valgfritt)" aria-label="Utløpsdato (valgfritt)" /></div>
+    </div>
+    <button class="add-btn" onclick="addItem()"><i class="ti ti-plus"></i> Legg til</button>
+    <div class="cat-manage" id="cat-manager" style="display:none">
+      <div id="cat-chips"></div>
+      <div class="cat-add-row">
+        <input type="text" id="new-cat-name" placeholder="Ny kategori..." aria-label="Ny kategori" />
+        <button onclick="addCategory()">Legg til</button>
+      </div>
+    </div>
+    <div id="color-manager" style="display:none;margin-top:10px;padding-top:10px;border-top:1px solid var(--border)">
+      <div style="font-size:11px;font-weight:600;color:var(--text2);text-transform:uppercase;letter-spacing:.05em;margin-bottom:8px"><i class="ti ti-palette" style="margin-right:4px"></i>Fargetema</div>
+      <div style="display:flex;align-items:center;gap:8px;margin-bottom:8px">
+        <span style="font-size:12px;color:var(--text2);min-width:80px">☀️ Lys modus</span>
+        <input type="color" id="color-light" onchange="setAccentColor('light',this.value)" style="width:36px;height:30px;border:1px solid var(--border);border-radius:6px;cursor:pointer;background:none;padding:2px" />
+        <button onclick="resetAccentColor('light')" style="font-size:11px;padding:3px 8px;border:1px solid var(--border);border-radius:6px;background:var(--surface2);color:var(--text2);cursor:pointer">↩ Reset</button>
+      </div>
+      <div style="display:flex;align-items:center;gap:8px">
+        <span style="font-size:12px;color:var(--text2);min-width:80px">🌙 Mørk modus</span>
+        <input type="color" id="color-dark" onchange="setAccentColor('dark',this.value)" style="width:36px;height:30px;border:1px solid var(--border);border-radius:6px;cursor:pointer;background:none;padding:2px" />
+        <button onclick="resetAccentColor('dark')" style="font-size:11px;padding:3px 8px;border:1px solid var(--border);border-radius:6px;background:var(--surface2);color:var(--text2);cursor:pointer">↩ Reset</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="toolbar">
+    <input type="text" id="search-input" placeholder="Søk..." aria-label="Søk i varer" oninput="render()" />
+    <button class="sort-btn" id="sort-alpha" onclick="setSort('alpha')" title="A–Å"><i class="ti ti-sort-az"></i></button>
+    <button class="sort-btn" id="sort-qty" onclick="setSort('qty')" title="Antall"><i class="ti ti-sort-descending"></i></button>
+    <button class="sort-btn" id="sort-exp" onclick="setSort('exp')" title="Utløp"><i class="ti ti-calendar"></i></button>
+  </div>
+
+  <div class="filter-bar" id="filter-bar"></div>
+  <div id="item-list"></div>
+  <div class="status-bar" id="status-bar"></div>
+
+  <div class="modal-bg" id="modal" style="display:none" onclick="closeModal(event)">
+    <div class="modal" role="dialog" aria-modal="true" aria-labelledby="modal-title" onclick="event.stopPropagation()">
+      <h2 class="modal-title" id="modal-title">Rediger</h2>
+      <input type="hidden" id="modal-mode" value="edit" />
+      <input type="hidden" id="modal-item-id" />
+      <input type="hidden" id="modal-freezer-id" />
+      <div id="modal-item-fields">
+        <label for="modal-name">Navn</label><input type="text" id="modal-name" />
+        <label for="modal-cat">Kategori</label><select id="modal-cat"></select>
+        <label for="modal-qty">Antall</label><input type="number" id="modal-qty" min="0" />
+        <label for="modal-weight">Vekt (valgfritt)</label>
+        <div class="modal-row">
+          <input type="number" id="modal-weight" placeholder="f.eks. 1.5" min="0" step="any" />
+          <select id="modal-weight-unit" aria-label="Vektenhet"><option value="kg">kg</option><option value="g">g</option></select>
+        </div>
+        <label for="modal-expiry">Utløpsdato (valgfritt)</label>
+        <input type="date" id="modal-expiry" />
+        <label for="modal-added">Inn-dato</label>
+        <input type="date" id="modal-added" />
+        <label for="modal-fid">Flytt til fryser</label><select id="modal-fid"></select>
+      </div>
+      <div id="modal-freezer-fields" style="display:none">
+        <label for="modal-freezer-name">Navn på fryser</label>
+        <input type="text" id="modal-freezer-name" />
+      </div>
+      <div class="modal-actions" id="modal-actions">
+        <button class="btn-ghost" onclick="document.getElementById('modal').style.display='none'">Avbryt</button>
+        <button class="btn-primary" onclick="saveModal()">Lagre</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script type="module">
+// ── Hjemmebasen-port ─────────────────────────────────────────
+// Portet fra ha-apper: MQTT/WebSocket byttet med Firebase (felles/storage.js).
+// Datatap-vernet består (dbSet nekter før lesning); sanntidslytter erstatter polling.
+import { requireAuth } from './felles/auth.js';
+import { dbGet, dbSet, dbListen } from './felles/storage.js';
+import { esc, todayStr } from './felles/ui.js';
+const APP='fryser';
+const SHOP_APP='handleliste'; // handlelista – for «Legg på handleliste»
+let FAMILIE=null;
+const CAT_ICONS={'Middag':'ti-bowl','Brød / Dessert':'ti-bread','Fisk':'ti-fish','Pure / Tilbehør':'ti-leaf','Kjøtt':'ti-meat'};
+const DEFAULT_CATS=['Middag','Brød / Dessert','Fisk','Pure / Tilbehør','Kjøtt'];
+const TODAY = todayStr; // lokal dato (ikke UTC) – fra felles/ui.js
+// Delt versjon: nye husstander starter med TOM varelisten, kun standard frysere/kategorier.
+const DEFAULT_DATA={
+  freezers:[{id:1,name:'Fryser'},{id:2,name:'Bod'}],
+  categories:[...DEFAULT_CATS],
+  history:[],
+  items:[]
+};
+
+let data=JSON.parse(JSON.stringify(DEFAULT_DATA));
+let activeFid=1,activeFilter='alle',sortMode='none',nextId=200;
+let dataLoaded=false; // sant først når en ekte lesning har lyktes – hindrer overskriving
+
+// ── Dato-hjelper ─────────────────────────────────────────────
+function daysUntilExpiry(expiry){
+  if(!expiry)return null;
+  const diff=new Date(expiry)-new Date(TODAY());
+  return Math.ceil(diff/MS_PER_DAY);
+}
+function expiryStatus(expiry){
+  const d=daysUntilExpiry(expiry);
+  if(d===null)return null;
+  if(d<0)return 'expired';
+  if(d<=7)return 'danger';
+  if(d<=30)return 'warning';
+  return 'ok';
+}
+function expiryLabel(expiry){
+  const d=daysUntilExpiry(expiry);
+  if(d===null)return '';
+  if(d<0)return 'Utgått for '+(Math.abs(d))+' dag'+(Math.abs(d)===1?'':'er')+' siden';
+  if(d===0)return 'Går ut i dag!';
+  if(d===1)return 'Går ut i morgen!';
+  if(d<=30)return 'Går ut om '+d+' dager';
+  const date=new Date(expiry);
+  return date.toLocaleDateString('nb-NO',{day:'numeric',month:'short',year:'numeric'});
+}
+
+// ── Alder / «bruk opp gamle varer» ───────────────────────────
+const OLD_DAYS=90; // varer eldre enn dette (og uten nær utløpsdato) flagges som «bruk opp»
+const MS_PER_DAY=86400000; // 1000*60*60*24
+function ageDays(added){if(!added)return null;const diff=new Date(TODAY())-new Date(added);return Math.floor(diff/MS_PER_DAY);}
+function ageLabel(added){const d=ageDays(added);if(d===null||d<0)return '';if(d<30)return d+'d';if(d<365)return Math.round(d/30)+' mnd';return Math.floor(d/365)+' år'+(Math.round((d%365)/30)?' '+Math.round((d%365)/30)+' mnd':'');}
+function isOld(item){const d=ageDays(item.added);if(d===null||d<OLD_DAYS)return false;const st=expiryStatus(item.expiry);return st!=='expired'&&st!=='danger'&&st!=='warning';}
+
+// ── Duplikatsjekk ────────────────────────────────────────────
+function checkDuplicate(){
+  const name=document.getElementById('new-name').value.trim().toLowerCase();
+  const warn=document.getElementById('dup-warning');
+  const txt=document.getElementById('dup-text');
+  if(!name){warn.style.display='none';return;}
+  const dupes=data.items.filter(i=>i.fid===activeFid&&i.name.toLowerCase()===name);
+  if(dupes.length>0){
+    const f=data.freezers.find(f=>f.id===activeFid);
+    txt.textContent='"'+dupes[0].name+'" finnes allerede i '+(f?.name||'?')+' (antall: '+dupes[0].qty+')';
+    warn.style.display='block';
+  }else{
+    warn.style.display='none';
+  }
+}
+
+// ── Status ───────────────────────────────────────────────────
+function setStatus(msg,type=''){
+  const s=document.getElementById('status-bar');
+  s.textContent=msg;s.className='status-bar'+(type?' '+type:'');
+  if(type==='ok')setTimeout(()=>{s.textContent='';s.className='status-bar';},2000);
+}
+
+// ── Lagring (Firebase via felles/storage.js) ─────────────────
+function adoptData(saved){
+  data=saved;
+  if(!data.freezers?.length)data.freezers=JSON.parse(JSON.stringify(DEFAULT_DATA.freezers));
+  if(!data.categories?.length)data.categories=[...DEFAULT_CATS];
+  if(!data.history)data.history=[];
+  if(!data.items)data.items=[];
+  nextId=data.items.length?Math.max(...data.items.map(i=>i.id))+1:200;
+  if(!data.freezers.some(f=>f.id===activeFid))activeFid=data.freezers[0]?.id||1;
+}
+async function load(){
+  setStatus('Laster...');
+  try{
+    if(!FAMILIE){
+      const ctx=await requireAuth();
+      if(!ctx.familieId){setStatus('Ingen husstand – kontakt administrator','err');return;}
+      FAMILIE=ctx.familieId;
+    }
+    // dbGet kaster ved feil og gir null KUN når noden er tom (autoritativt svar,
+    // ingen MQTT-tvetydighet). Tom node = ny husstand → trygt å starte blankt
+    // med standard frysere/kategorier (DEFAULT_DATA har tom varelisten).
+    const saved=await dbGet(FAMILIE,APP);
+    if(saved&&saved.freezers)adoptData(saved);
+    dataLoaded=true;
+    setStatus('');
+    startListen();
+  }catch(e){
+    setStatus('Kunne ikke laste – '+(e.message||'prøv igjen'),'err');
+    render();
+    return;
+  }
+  seedHistory();
+  const na=document.getElementById('new-added');if(na)na.value=TODAY();
+  render();
+}
+function seedHistory(){
+  if(data.history&&data.history.length)return;
+  data.history=[];const seen={};
+  (data.items||[]).forEach(it=>{const k=(it.name||'').toLowerCase();if(k&&!seen[k]){seen[k]=1;data.history.push({name:it.name,cat:it.cat||'',count:1,last:it.added||TODAY()});}});
+}
+let lastSave=0;
+async function save(){
+  if(!dataLoaded){setStatus('Ikke lagret – data er ikke lastet ennå. Last siden på nytt.','err');return;}
+  setStatus('Lagrer...');
+  try{
+    await dbSet(FAMILIE,APP,data);
+    lastSave=Date.now();
+    setStatus('Lagret ✓','ok');
+  }catch(e){
+    setStatus('Kunne ikke lagre – prøv igjen','err');
+  }
+}
+
+// Hopper over sanntidsoppdatering hvis du skriver eller har modalen oppe.
+function isEditing(){
+  const inp=document.getElementById('new-name');
+  if(inp&&inp.value.trim())return true;
+  const ae=document.activeElement;
+  if(ae&&/^(INPUT|TEXTAREA|SELECT)$/.test(ae.tagName))return true;
+  const m=document.getElementById('modal');
+  return !!(m&&m.style.display&&m.style.display!=='none');
+}
+// Sanntidssynk: lytteren fyrer ved alle endringer (også andres telefoner).
+// Hopper over mens man redigerer og rett etter egen lagring (ekko).
+let stopListen=null;
+function startListen(){
+  if(stopListen)return;
+  stopListen=dbListen(FAMILIE,APP,saved=>{
+    if(!saved||!saved.freezers)return;
+    if(isEditing()||Date.now()-lastSave<5000)return;
+    if(JSON.stringify(saved)===JSON.stringify(data))return;
+    adoptData(saved);
+    dataLoaded=true;
+    render();
+  });
+}
+
+// ── Kategorier ───────────────────────────────────────────────
+function setSort(m){sortMode=sortMode===m?'none':m;['alpha','qty','exp'].forEach(s=>document.getElementById('sort-'+s).classList.toggle('active',sortMode===s));render();}
+function toggleCatManager(){const el=document.getElementById('cat-manager');el.style.display=el.style.display==='none'?'block':'none';renderCatChips();}
+function toggleColorManager(){const el=document.getElementById('color-manager');el.style.display=el.style.display==='none'?'block':'none';updateColorPickers();}
+function renderCatChips(){document.getElementById('cat-chips').innerHTML=[...data.categories].sort((a,b)=>a.localeCompare(b,'nb')).map(c=>'<span class="cat-chip">'+esc(c)+'<span class="cat-chip-del" role="button" tabindex="0" aria-label="Slett kategori '+esc(c)+'" data-del-cat="'+esc(c)+'">×</span></span>').join('');}
+function addCategory(){const inp=document.getElementById('new-cat-name');const name=inp.value.trim();if(!name||data.categories.includes(name))return;data.categories.push(name);data.categories.sort((a,b)=>a.localeCompare(b,'nb'));inp.value='';save();render();renderCatChips();}
+function deleteCategory(cat){if(data.items.some(i=>i.cat===cat)){alert('"'+cat+'" er i bruk.');return;}data.categories=data.categories.filter(c=>c!==cat);if(activeFilter===cat)activeFilter='alle';save();render();renderCatChips();}
+document.getElementById('new-cat-name').addEventListener('keydown',e=>{if(e.key==='Enter')addCategory();});
+function populateCatSelect(id,selected){document.getElementById(id).innerHTML=[...data.categories].sort((a,b)=>a.localeCompare(b,'nb')).map(c=>'<option value="'+esc(c)+'"'+(c===selected?' selected':'')+'>'+esc(c)+'</option>').join('');}
+
+// ── Modal ────────────────────────────────────────────────────
+// Standard «Avbryt/Lagre»-knapper; valgfri `prefix` (f.eks. Slett-knapp) legges først.
+function stdModalActions(prefix){
+  return (prefix||'')
+    +'<button class="btn-ghost" onclick="document.getElementById(\'modal\').style.display=\'none\'">Avbryt</button>'
+    +'<button class="btn-primary" onclick="saveModal()">Lagre</button>';
+}
+function showModal(mode){
+  document.getElementById('modal-item-fields').style.display=mode==='edit'?'block':'none';
+  document.getElementById('modal-freezer-fields').style.display=(mode==='freezer-new'||mode==='freezer-edit')?'block':'none';
+  document.getElementById('modal-mode').value=mode;
+  document.getElementById('modal').style.display='flex';
+}
+function openEditModal(id){
+  const item=data.items.find(i=>i.id===id);if(!item)return;
+  document.getElementById('modal-title').textContent='Rediger vare';
+  document.getElementById('modal-item-id').value=id;
+  document.getElementById('modal-name').value=item.name;
+  populateCatSelect('modal-cat',item.cat);
+  document.getElementById('modal-qty').value=item.qty;
+  document.getElementById('modal-weight').value=item.weight!==null?item.weight:'';
+  document.getElementById('modal-weight-unit').value=item.unit||'kg';
+  document.getElementById('modal-expiry').value=item.expiry||'';
+  document.getElementById('modal-added').value=item.added||'';
+  document.getElementById('modal-fid').innerHTML=data.freezers.map(f=>'<option value="'+f.id+'"'+(f.id===item.fid?' selected':'')+'>'+esc(f.name)+'</option>').join('');
+  document.getElementById('modal-actions').innerHTML=stdModalActions();
+  showModal('edit');setTimeout(()=>document.getElementById('modal-name').focus(),50);
+}
+function openAddFreezerModal(){
+  document.getElementById('modal-title').textContent='Ny fryser';
+  document.getElementById('modal-freezer-name').value='';
+  document.getElementById('modal-freezer-id').value='';
+  document.getElementById('modal-actions').innerHTML=stdModalActions();
+  showModal('freezer-new');setTimeout(()=>document.getElementById('modal-freezer-name').focus(),50);
+}
+function openEditFreezerModal(fid){
+  const f=data.freezers.find(f=>f.id===fid);if(!f)return;
+  document.getElementById('modal-title').textContent='Rediger fryser';
+  document.getElementById('modal-freezer-name').value=f.name;
+  document.getElementById('modal-freezer-id').value=fid;
+  document.getElementById('modal-actions').innerHTML=stdModalActions('<button class="btn-danger" onclick="deleteFreezerFromModal('+fid+')">Slett</button>');
+  showModal('freezer-edit');setTimeout(()=>document.getElementById('modal-freezer-name').focus(),50);
+}
+function deleteFreezerFromModal(fid){
+  if(data.freezers.length<=1){alert('Kan ikke slette siste fryser.');return;}
+  if(!confirm('Slette fryser og alle varene?'))return;
+  data.freezers=data.freezers.filter(f=>f.id!==fid);
+  data.items=data.items.filter(i=>i.fid!==fid);
+  activeFid=data.freezers[0].id;
+  document.getElementById('modal').style.display='none';
+  save();render();
+}
+function closeModal(){document.getElementById('modal').style.display='none';}
+function saveModal(){
+  const mode=document.getElementById('modal-mode').value;
+  if(mode==='freezer-new'){
+    const name=document.getElementById('modal-freezer-name').value.trim();if(!name)return;
+    const newFid=data.freezers.length?Math.max(...data.freezers.map(f=>f.id))+1:1;
+    data.freezers.push({id:newFid,name});activeFid=newFid;
+  }else if(mode==='freezer-edit'){
+    const fid=parseInt(document.getElementById('modal-freezer-id').value,10);
+    const name=document.getElementById('modal-freezer-name').value.trim();if(!name)return;
+    const freezer=data.freezers.find(f=>f.id===fid);if(freezer)freezer.name=name;
+  }else{
+    const id=parseInt(document.getElementById('modal-item-id').value,10);
+    const item=data.items.find(i=>i.id===id);if(!item)return;
+    item.name=document.getElementById('modal-name').value.trim()||item.name;
+    item.cat=document.getElementById('modal-cat').value;
+    item.qty=Math.max(0,parseInt(document.getElementById('modal-qty').value,10)||0);
+    const w=parseFloat(document.getElementById('modal-weight').value);
+    item.weight=isNaN(w)?null:w;
+    item.unit=document.getElementById('modal-weight-unit').value;
+    item.expiry=document.getElementById('modal-expiry').value||null;
+    item.added=document.getElementById('modal-added').value||item.added;
+    item.fid=parseInt(document.getElementById('modal-fid').value,10);
+  }
+  document.getElementById('modal').style.display='none';
+  save();render();
+}
+
+function changeQty(id,delta){const item=data.items.find(i=>i.id===id);if(!item)return;item.qty=Math.max(0,item.qty+delta);save();render();}
+
+// ── Legg på handleliste ──────────────────────────────────────
+// Leser handlelista (Firebase-noden 'handleliste'), legger til / øker antall,
+// og skriver tilbake. Vern: dbGet kaster ved feil, så vi skriver aldri i blinde.
+async function addToShoppingList(id){
+  const item=data.items.find(i=>i.id===id);if(!item)return;
+  setStatus('Legger på handleliste...');
+  try{
+    let list=await dbGet(FAMILIE,SHOP_APP);
+    // Tom node (null) er et autoritativt svar: handlelista er aldri brukt ennå.
+    // Da starter vi en minimal liste – handleliste-appen fyller inn resten selv.
+    if(!list)list={items:[]};
+    if(!Array.isArray(list.items)){setStatus('Fant ikke handlelista – prøv igjen','err');return;}
+    const existing=list.items.find(i=>i.name.toLowerCase()===item.name.toLowerCase()&&!i.checked);
+    if(existing){
+      existing.qty=(existing.qty||1)+1;
+    }else{
+      const nid=Math.max(100,
+        ...list.items.map(i=>i.id),
+        ...((list.templates||[]).map(t=>t.id)),
+        ...((list.other||[]).map(o=>o.id)))+1;
+      list.items.push({id:nid,name:item.name,cat:'Frysevarer',qty:1,checked:false,added:TODAY()});
+    }
+    await dbSet(FAMILIE,SHOP_APP,list);
+    setStatus('Lagt på handleliste ✓','ok');
+  }catch(e){
+    setStatus('Kunne ikke legge på handleliste','err');
+  }
+}
+function deleteItem(id){data.items=data.items.filter(i=>i.id!==id);save();render();}
+function addItem(){
+  const name=document.getElementById('new-name').value.trim();
+  if(!name){document.getElementById('new-name').focus();return;}
+  const qty=parseInt(document.getElementById('new-qty').value)||1;
+  const cat=document.getElementById('new-cat').value;
+  const w=parseFloat(document.getElementById('new-weight').value);
+  const unit=document.getElementById('new-weight-unit').value;
+  const expiry=document.getElementById('new-expiry').value||null;
+  const added=document.getElementById('new-added').value||TODAY();
+  data.items.push({id:nextId++,fid:activeFid,name,cat,qty,weight:isNaN(w)?null:w,unit,expiry,added});
+  rememberFryser(name,cat);
+  document.getElementById('new-name').value='';
+  document.getElementById('new-qty').value='1';
+  document.getElementById('new-weight').value='';
+  document.getElementById('new-expiry').value='';
+  document.getElementById('new-added').value=TODAY();
+  document.getElementById('dup-warning').style.display='none';
+  hideSuggestFryser();
+  save();render();
+}
+document.getElementById('new-name').addEventListener('keydown',e=>{if(e.key==='Enter')addItem();});
+
+// ── Historikk / forslag (husk tidligere varer m/kategori) ────
+function rememberFryser(name,cat){
+  data.history=data.history||[];
+  const h=data.history.find(x=>x.name.toLowerCase()===name.toLowerCase());
+  if(h){h.count=(h.count||1)+1;h.last=TODAY();if(cat)h.cat=cat;}
+  else data.history.push({name,cat:cat||'',count:1,last:TODAY()});
+}
+function onNameInput(){checkDuplicate();suggestFryser(document.getElementById('new-name').value);}
+function suggestFryser(val){
+  const q=(val||'').trim().toLowerCase();
+  const box=document.getElementById('name-suggest');if(!box)return;
+  if(q.length<1){box.style.display='none';box.innerHTML='';return;}
+  const rank=n=>n.startsWith(q)?0:(n.includes(' '+q)?1:2);
+  let m=(data.history||[]).filter(h=>rank(h.name.toLowerCase())<2);
+  if(!m.length)m=(data.history||[]).filter(h=>h.name.toLowerCase().includes(q));
+  m=m.sort((a,b)=>{const r=rank(a.name.toLowerCase())-rank(b.name.toLowerCase());return r!==0?r:(b.count||0)-(a.count||0);}).slice(0,8);
+  if(!m.length){box.style.display='none';box.innerHTML='';return;}
+  box.innerHTML=m.map(h=>{
+    const na=h.name.replace(/'/g,'&#39;');const ca=(h.cat||'').replace(/'/g,'&#39;');
+    return '<div class="sug-item" onmousedown="pickFryser(\''+na+'\',\''+ca+'\')"><i class="ti ti-history" style="color:var(--accent)"></i><span>'+esc(h.name)+'</span>'+(h.cat?'<span class="sug-cat">'+esc(h.cat)+'</span>':'')+'</div>';
+  }).join('');
+  box.style.display='block';
+}
+function pickFryser(name,cat){
+  document.getElementById('new-name').value=name;
+  if(cat){const sel=document.getElementById('new-cat');const o=[...sel.options].find(x=>x.value===cat);if(o)sel.value=cat;}
+  hideSuggestFryser();checkDuplicate();document.getElementById('new-name').focus();
+}
+function hideSuggestFryser(){const b=document.getElementById('name-suggest');if(b){b.style.display='none';b.innerHTML='';}}
+
+// ── Render ───────────────────────────────────────────────────
+// render() er delt i tre: faner, filtre og selve lista.
+function render(){
+  const search=document.getElementById('search-input').value.toLowerCase();
+  const freezerItems=data.items.filter(i=>i.fid===activeFid);
+  document.getElementById('total-badge').textContent=data.items.reduce((s,i)=>s+i.qty,0)+' varer totalt';
+  populateCatSelect('new-cat',document.getElementById('new-cat').value);
+  renderFreezerTabs();
+  renderFilters(freezerItems);
+  renderList(freezerItems,search);
+}
+
+// Modul-scope: inline onclick kan ikke sette modulvariabler direkte,
+// derfor egen funksjon (eksponeres på window) i stedet for «activeFid=...».
+function selectFreezer(fid){activeFid=fid;activeFilter='alle';render();}
+function renderFreezerTabs(){
+  document.getElementById('freezer-tabs').innerHTML=data.freezers.map(f=>{
+    const cnt=data.items.filter(i=>i.fid===f.id).reduce((s,i)=>s+i.qty,0);
+    const exp=data.items.filter(i=>i.fid===f.id&&expiryStatus(i.expiry)==='expired').length;
+    return '<button class="ftab'+(activeFid===f.id?' active':'')+'" onclick="selectFreezer('+f.id+')">'
+      +'<i class="ti ti-snowflake" aria-hidden="true"></i>'+esc(f.name)+' ('+cnt+')'
+      +(exp>0?'<span style="background:#fef2f2;color:var(--danger);border-radius:10px;padding:1px 6px;font-size:10px;margin-left:2px">'+exp+' utgått</span>':'')
+      +'<i class="ti ti-edit ftab-icon" role="button" tabindex="0" aria-label="Rediger fryser" onclick="event.stopPropagation();openEditFreezerModal('+f.id+')" style="font-size:11px"></i>'
+      +'</button>';
+  }).join('')+'<button class="ftab-add" onclick="openAddFreezerModal()"><i class="ti ti-plus"></i></button>';
+}
+
+function renderFilters(freezerItems){
+  const expiredCount=freezerItems.filter(i=>expiryStatus(i.expiry)==='expired').length;
+  const warningCount=freezerItems.filter(i=>['danger','warning'].includes(expiryStatus(i.expiry))).length;
+  const oldCount=freezerItems.filter(i=>i.qty>0&&isOld(i)).length;
+  const usedCats=[...new Set(freezerItems.map(i=>i.cat))];
+  let filterHtml='<button class="filter-btn'+(activeFilter==='alle'?' active':'')+'" data-filter="alle">Alle</button>';
+  if(expiredCount>0)filterHtml+='<button class="filter-btn danger'+(activeFilter==='expired'?' active':'')+'" data-filter="expired"><i class="ti ti-alert-circle" aria-hidden="true" style="font-size:11px;vertical-align:-1px"></i> Utgått ('+expiredCount+')</button>';
+  if(warningCount>0)filterHtml+='<button class="filter-btn warn'+(activeFilter==='expiring'?' active':'')+'" data-filter="expiring"><i class="ti ti-clock" aria-hidden="true" style="font-size:11px;vertical-align:-1px"></i> Går snart ut ('+warningCount+')</button>';
+  if(oldCount>0)filterHtml+='<button class="filter-btn old'+(activeFilter==='old'?' active':'')+'" data-filter="old"><i class="ti ti-alarm" aria-hidden="true" style="font-size:11px;vertical-align:-1px"></i> Bruk opp ('+oldCount+')</button>';
+  filterHtml+=data.categories.filter(c=>usedCats.includes(c)).map(c=>{
+    const cnt=freezerItems.filter(i=>i.cat===c).reduce((s,i)=>s+i.qty,0);
+    return '<button class="filter-btn'+(activeFilter===c?' active':'')+'" data-filter="'+esc(c)+'">'+esc(c)+' ('+cnt+')</button>';
+  }).join('');
+  document.getElementById('filter-bar').innerHTML=filterHtml;
+}
+
+function renderList(freezerItems,search){
+  let filtered=freezerItems;
+  if(activeFilter==='expired')filtered=filtered.filter(i=>expiryStatus(i.expiry)==='expired');
+  else if(activeFilter==='expiring')filtered=filtered.filter(i=>['danger','warning'].includes(expiryStatus(i.expiry)));
+  else if(activeFilter==='old')filtered=filtered.filter(i=>i.qty>0&&isOld(i));
+  else if(activeFilter!=='alle')filtered=filtered.filter(i=>i.cat===activeFilter);
+  if(search)filtered=filtered.filter(i=>i.name.toLowerCase().includes(search));
+  if(sortMode==='alpha')filtered=[...filtered].sort((a,b)=>a.name.localeCompare(b.name,'nb'));
+  else if(sortMode==='qty')filtered=[...filtered].sort((a,b)=>b.qty-a.qty);
+  else if(sortMode==='exp')filtered=[...filtered].sort((a,b)=>{
+    if(!a.expiry&&!b.expiry)return 0;
+    if(!a.expiry)return 1;
+    if(!b.expiry)return -1;
+    return new Date(a.expiry)-new Date(b.expiry);
+  });
+
+  const listEl=document.getElementById('item-list');
+  let html='',any=false;
+
+  if(sortMode!=='none'||search||activeFilter==='expired'||activeFilter==='expiring'||activeFilter==='old'){
+    if(!filtered.length)html='<div class="empty-state"><i class="ti ti-search" style="font-size:20px;display:block;margin-bottom:6px"></i>Ingen treff</div>';
+    else{any=true;filtered.forEach(item=>{html+=renderItem(item);});}
+  }else{
+    const catsToShow=activeFilter==='alle'
+      ?[...data.categories].sort((a,b)=>a.localeCompare(b,'nb'))
+      :[activeFilter];
+    catsToShow.forEach(cat=>{
+      const catItems=[...filtered.filter(i=>i.cat===cat)].sort((a,b)=>a.name.localeCompare(b.name,'nb'));
+      if(!catItems.length)return;any=true;
+      const icon=CAT_ICONS[cat]||'ti-box';
+      html+='<div class="cat-header"><i class="ti '+icon+'" aria-hidden="true"></i><span class="cat-label">'+esc(cat)+'</span><span class="cat-count">'+catItems.reduce((s,i)=>s+i.qty,0)+' stk</span></div>';
+      catItems.forEach(item=>{html+=renderItem(item);});
+    });
+    if(!any)html='<div class="empty-state"><i class="ti ti-snowflake" style="font-size:24px;display:block;margin-bottom:6px"></i>Ingen varer her ennå</div>';
+  }
+  listEl.innerHTML=html;
+}
+
+function renderItem(item){
+  const wStr=item.weight!==null?esc(item.weight+' '+item.unit):'';
+  const status=expiryStatus(item.expiry);
+  const expLabel=expiryLabel(item.expiry);
+  const old=isOld(item)&&item.qty>0;
+  let rowClass='item-row'+(item.qty===0?' zero-qty':'');
+  if(status==='expired')rowClass+=' expired';
+  else if(status==='danger'||status==='warning')rowClass+=' expiring';
+  else if(old)rowClass+=' old';
+  let metaHtml='';
+  if(wStr)metaHtml+='<span>'+wStr+'</span>';
+  if(expLabel){
+    const cls=(status==='expired'||status==='danger')?'exp-danger':status==='warning'?'exp-warn':'';
+    metaHtml+='<span class="'+cls+'"><i class="ti ti-calendar" style="font-size:10px;vertical-align:-1px;margin-right:2px"></i>'+esc(expLabel)+'</span>';
+  }
+  if(item.added){
+    const al=ageLabel(item.added);
+    metaHtml+='<span'+(old?' class="age-old"':'')+'>Inn: '+esc(new Date(item.added).toLocaleDateString('nb-NO',{day:'numeric',month:'short'}))+(al?' · '+al:'')+'</span>';
+  }
+  if(old)metaHtml+='<span class="age-old"><i class="ti ti-alarm" style="font-size:10px;vertical-align:-1px;margin-right:2px"></i>Bruk opp</span>';
+  return '<div class="'+rowClass+'">'
+    +'<div class="item-info">'
+      +'<div class="item-name">'+esc(item.name)+'</div>'
+      +(metaHtml?'<div class="item-meta">'+metaHtml+'</div>':'')
+    +'</div>'
+    +'<div class="qty-wrap">'
+      +'<button class="qty-btn" onclick="changeQty('+item.id+',-1)">−</button>'
+      +'<span class="qty-num'+(item.qty===0?' zero':'')+'">'+item.qty+'</span>'
+      +'<button class="qty-btn" onclick="changeQty('+item.id+',1)">+</button>'
+    +'</div>'
+    +(item.qty===0?'<button class="icon-btn cart" onclick="addToShoppingList('+item.id+')" title="Legg på handleliste" aria-label="Legg '+esc(item.name)+' på handleliste"><i class="ti ti-shopping-cart-plus" aria-hidden="true"></i></button>':'')
+    +'<button class="icon-btn" onclick="openEditModal('+item.id+')" title="Rediger" aria-label="Rediger vare"><i class="ti ti-edit" aria-hidden="true"></i></button>'
+    +'<button class="icon-btn danger" onclick="deleteItem('+item.id+')" title="Slett" aria-label="Slett vare"><i class="ti ti-trash" aria-hidden="true"></i></button>'
+  +'</div>';
+}
+
+// ── Fargetema ────────────────────────────────────────────────
+const APP_KEY='fryser';
+const DEFAULT_COLORS={light:'#378ADD',dark:'#378ADD'};
+function hexToRgb(hex){const r=parseInt(hex.slice(1,3),16);const g=parseInt(hex.slice(3,5),16);const b=parseInt(hex.slice(5,7),16);return r+','+g+','+b;}
+function applyAccentColor(mode,hex){
+  const rgb=hexToRgb(hex);
+  let el=document.getElementById('accent-style-'+mode);
+  if(!el){el=document.createElement('style');el.id='accent-style-'+mode;document.head.appendChild(el);}
+  const sel=mode==='dark'?'[data-theme="dark"]':'[data-theme="light"]';
+  el.textContent=sel+`{--accent:${hex};--accent-bg:rgba(${rgb},.12);--accent-border:rgba(${rgb},.4);--accent-text:${hex};}@media(prefers-color-scheme:${mode}){:root:not([data-theme]){--accent:${hex};--accent-bg:rgba(${rgb},.12);--accent-border:rgba(${rgb},.4);--accent-text:${hex};}}`;
+}
+function setAccentColor(mode,hex){localStorage.setItem(APP_KEY+'_color_'+mode,hex);applyAccentColor(mode,hex);updateColorPickers();}
+function resetAccentColor(mode){localStorage.removeItem(APP_KEY+'_color_'+mode);const el=document.getElementById('accent-style-'+mode);if(el)el.textContent='';updateColorPickers();}
+function initAccentColors(){['light','dark'].forEach(mode=>{const saved=localStorage.getItem(APP_KEY+'_color_'+mode);if(saved)applyAccentColor(mode,saved);});updateColorPickers();}
+function updateColorPickers(){['light','dark'].forEach(mode=>{const saved=localStorage.getItem(APP_KEY+'_color_'+mode)||DEFAULT_COLORS[mode];const inp=document.getElementById('color-'+mode);if(inp)inp.value=saved;});}
+initAccentColors();
+function initTheme(){
+  const saved=localStorage.getItem('fryser_theme');
+  const prefersDark=window.matchMedia('(prefers-color-scheme:dark)').matches;
+  const theme=saved||(prefersDark?'dark':'light');
+  setTheme(theme,false);
+}
+function setTheme(theme,save=true){
+  document.documentElement.setAttribute('data-theme',theme);
+  const btn=document.getElementById('theme-btn');
+  if(btn)btn.textContent=theme==='dark'?'☀️':'🌙';
+  if(save)localStorage.setItem('fryser_theme',theme);
+}
+function toggleTheme(){
+  const current=document.documentElement.getAttribute('data-theme')||'light';
+  setTheme(current==='dark'?'light':'dark');
+}
+initTheme();
+
+// ── Delegerte lyttere (unngår brukerdata i inline onclick – XSS-sikkert) ──
+// Filterknapper: verdien ligger i data-filter, leses trygt fra dataset.
+document.getElementById('filter-bar').addEventListener('click',e=>{
+  const b=e.target.closest('[data-filter]');if(!b)return;
+  activeFilter=b.dataset.filter;render();
+});
+// Slett kategori via delegasjon på chip-containeren.
+document.getElementById('cat-chips').addEventListener('click',e=>{
+  const el=e.target.closest('[data-del-cat]');if(el)deleteCategory(el.dataset.delCat);
+});
+// Tastatur (Enter/Space) for klikkbare elementer med role="button" som ikke er ekte <button>.
+document.addEventListener('keydown',e=>{
+  if((e.key==='Enter'||e.key===' ')&&e.target.matches('[role="button"]')&&e.target.tagName!=='BUTTON'){
+    e.preventDefault();e.target.click();
+  }
+});
+// Escape lukker åpen modal.
+document.addEventListener('keydown',e=>{
+  if(e.key!=='Escape')return;
+  const m=document.getElementById('modal');
+  if(m&&m.style.display!=='none')m.style.display='none';
+});
+
+// Modul-scope: funksjoner brukt i on*-attributter må eksponeres på window.
+Object.assign(window,{addCategory,addItem,addToShoppingList,changeQty,closeModal,
+deleteFreezerFromModal,deleteItem,hideSuggestFryser,onNameInput,openAddFreezerModal,
+openEditFreezerModal,openEditModal,pickFryser,render,resetAccentColor,saveModal,
+selectFreezer,setAccentColor,setSort,toggleCatManager,toggleColorManager,toggleTheme});
+
+load();
+</script>
+</body>
+</html>

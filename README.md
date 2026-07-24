@@ -13,9 +13,15 @@ for beslutningsloggen.
 ## Struktur
 
 ```
-index.html        Launcher – app-brettet (viser husstandens aktiverte apper)
+index.html        Dashbord/launcher – status per aktiv app, responsiv (mobil + PC)
 login.html        Innlogging (e-post/passord, opprettes av admin)
+onboarding.html   Veiviser ved første innlogging: navn, voksne, barn, sted, appvalg
 admin.html        Admin: husstander, medlemmer, app-brytere
+handleliste.html  Butikkliste + «Diverse» + statistikk
+middag.html       Ukesplanlegger, idébank, rulett, uke→handleliste
+oppgaver.html     Oppgaver + hus-vedlikehold + gamification
+fryser.html       Fryseroversikt («bruk opp»-logikk)
+plikter.html      Pliktsporing for barn (poeng/belønninger)
 felles/           Delte moduler: firebase-init, auth, storage, seed, ui + stil.css
 database.rules.json  Security rules (limes inn i Firebase Console)
 docs/adr/         Arkitekturbeslutninger (ADR-er)

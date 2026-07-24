@@ -1,0 +1,1219 @@
+<!DOCTYPE html>
+<html lang="no">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+<meta http-equiv="Pragma" content="no-cache">
+<meta http-equiv="Expires" content="0">
+<title>Oppgaver</title>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@2.44.0/tabler-icons.min.css">
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --bg:#f5f5f5;--surface:#fff;--surface2:#f9f9f9;
+  --border:#e0e0e0;--border2:#f0f0f0;
+  --text:#1a1a1a;--text2:#666;--text3:#aaa;--text4:#bbb;
+  --accent:#f97316;--accent-bg:#fff8f5;--accent-border:#fed7aa;--accent-text:#c2410c;
+  --danger:#e53e3e;--green:#16a34a;--orange:#f97316;
+  --prio-high:#ef4444;--prio-high-bg:#fef2f2;--prio-high-border:#fca5a5;
+  --prio-normal:#2563eb;--prio-normal-bg:#eff6ff;--prio-normal-border:#bfdbfe;
+  --prio-low:#94a3b8;--prio-low-bg:#f8fafc;--prio-low-border:#e2e8f0;
+}
+@media(prefers-color-scheme:dark){:root{
+  --bg:#111;--surface:#1c1c1e;--surface2:#2c2c2e;--border:#2c2c2e;--border2:#3a3a3c;
+  --text:#f2f2f7;--text2:#aeaeb2;--text3:#636366;--text4:#48484a;
+  --accent:#f97316;--accent-bg:rgba(249,115,22,.15);--accent-border:rgba(249,115,22,.4);--accent-text:#fb923c;
+  --danger:#f87171;--green:#4ade80;--orange:#f97316;
+  --prio-high:#f87171;--prio-high-bg:rgba(239,68,68,.1);--prio-high-border:rgba(239,68,68,.4);
+  --prio-normal:#60a5fa;--prio-normal-bg:rgba(96,165,250,.1);--prio-normal-border:rgba(96,165,250,.4);
+  --prio-low:#94a3b8;--prio-low-bg:rgba(148,163,184,.08);--prio-low-border:rgba(148,163,184,.3);
+}}
+[data-theme="dark"]{
+  --bg:#111;--surface:#1c1c1e;--surface2:#2c2c2e;--border:#2c2c2e;--border2:#3a3a3c;
+  --text:#f2f2f7;--text2:#aeaeb2;--text3:#636366;--text4:#48484a;
+  --accent:#f97316;--accent-bg:rgba(249,115,22,.15);--accent-border:rgba(249,115,22,.4);--accent-text:#fb923c;
+  --danger:#f87171;--green:#4ade80;--orange:#f97316;
+  --prio-high:#f87171;--prio-high-bg:rgba(239,68,68,.1);--prio-high-border:rgba(239,68,68,.4);
+  --prio-normal:#60a5fa;--prio-normal-bg:rgba(96,165,250,.1);--prio-normal-border:rgba(96,165,250,.4);
+  --prio-low:#94a3b8;--prio-low-bg:rgba(148,163,184,.08);--prio-low-border:rgba(148,163,184,.3);
+}
+[data-theme="light"]{
+  --bg:#f5f5f5;--surface:#fff;--surface2:#f9f9f9;--border:#e0e0e0;--border2:#f0f0f0;
+  --text:#1a1a1a;--text2:#666;--text3:#aaa;--text4:#bbb;
+  --accent:#f97316;--accent-bg:#fff8f5;--accent-border:#fed7aa;--accent-text:#c2410c;
+  --danger:#e53e3e;--green:#16a34a;--orange:#f97316;
+  --prio-high:#ef4444;--prio-high-bg:#fef2f2;--prio-high-border:#fca5a5;
+  --prio-normal:#2563eb;--prio-normal-bg:#eff6ff;--prio-normal-border:#bfdbfe;
+  --prio-low:#94a3b8;--prio-low-bg:#f8fafc;--prio-low-border:#e2e8f0;
+}
+body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;background:var(--bg);color:var(--text);font-size:14px}
+/* Synlig fokusmarkør for tastaturbrukere */
+input:focus-visible,select:focus-visible,button:focus-visible,textarea:focus-visible,[role="button"]:focus-visible{outline:2px solid var(--accent);outline-offset:1px}
+.fw{max-width:480px;margin:0 auto;padding:.6rem .75rem}
+.top-bar{display:flex;align-items:center;justify-content:space-between;margin-bottom:.75rem}
+.app-title{font-size:15px;font-weight:600;display:flex;align-items:center;gap:6px}
+.app-title i{color:var(--orange)}
+.top-right{display:flex;align-items:center;gap:8px}
+.count-badge{font-size:11px;color:var(--text2);background:var(--surface2);border:1px solid var(--border);border-radius:6px;padding:2px 8px}
+.theme-btn{width:28px;height:28px;border-radius:50%;border:1px solid var(--border);background:var(--surface2);cursor:pointer;font-size:14px;display:flex;align-items:center;justify-content:center}
+.tabs{display:flex;gap:4px;margin-bottom:.75rem;background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:4px}
+.tab{flex:1;text-align:center;padding:6px;font-size:12px;font-weight:500;border-radius:7px;cursor:pointer;color:var(--text2);border:none;background:transparent}
+.tab.active{background:var(--accent);color:#fff}
+/* Add card */
+.add-card{background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:10px;margin-bottom:.75rem}
+.add-row{display:flex;gap:6px;align-items:center;margin-bottom:6px}
+.add-input{flex:1;font-size:14px;font-weight:500;padding:8px 10px;border:1px solid var(--border);border-radius:7px;outline:none;background:var(--surface);color:var(--text)}
+.add-input:focus{border-color:var(--accent)}
+.add-btn{width:36px;height:36px;border-radius:50%;border:none;background:var(--accent);color:#fff;cursor:pointer;font-size:18px;display:flex;align-items:center;justify-content:center;flex-shrink:0}
+.add-row2{display:flex;gap:6px;align-items:center;flex-wrap:wrap;margin-bottom:6px}
+.add-select{font-size:12px;padding:6px 8px;border:1px solid var(--border);border-radius:7px;outline:none;background:var(--surface);color:var(--text);flex:1;min-width:80px}
+.add-date{font-size:12px;padding:6px 8px;border:1px solid var(--border);border-radius:7px;outline:none;background:var(--surface);color:var(--text);flex:1}
+/* Prioritet */
+.prio-btns{display:flex;gap:4px;flex-wrap:wrap}
+.prio-btn{font-size:11px;padding:4px 10px;border-radius:20px;border:1px solid var(--border);background:var(--surface2);cursor:pointer;color:var(--text2);white-space:nowrap}
+.prio-btn.high.active{background:var(--prio-high-bg);color:var(--prio-high);border-color:var(--prio-high-border);font-weight:600}
+.prio-btn.normal.active{background:var(--prio-normal-bg);color:var(--prio-normal);border-color:var(--prio-normal-border);font-weight:600}
+.prio-btn.low.active{background:var(--prio-low-bg);color:var(--prio-low);border-color:var(--prio-low-border);font-weight:600}
+/* Repeat toggle */
+.repeat-row{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+.repeat-toggle{font-size:11px;padding:4px 10px;border-radius:20px;border:1px solid var(--border);background:var(--surface2);cursor:pointer;color:var(--text2);display:flex;align-items:center;gap:4px}
+.repeat-toggle.active{background:var(--accent-bg);color:var(--accent-text);border-color:var(--accent-border);font-weight:500}
+.repeat-select{font-size:12px;padding:5px 8px;border:1px solid var(--border);border-radius:7px;outline:none;background:var(--surface);color:var(--text)}
+/* Filter */
+.filter-row{display:flex;gap:4px;margin-bottom:.6rem;flex-wrap:wrap;align-items:center}
+.filter-chip{font-size:11px;padding:4px 10px;border-radius:20px;border:1px solid var(--border);background:var(--surface2);color:var(--text2);cursor:pointer}
+.filter-chip.active{background:var(--accent-bg);color:var(--accent-text);border-color:var(--accent-border);font-weight:500}
+.search-input{flex:1;font-size:12px;padding:5px 9px;border:1px solid var(--border);border-radius:7px;height:28px;outline:none;background:var(--surface);color:var(--text);min-width:80px}
+.search-input:focus{border-color:var(--accent)}
+/* Task rows */
+.task-row{background:var(--surface);border:1px solid var(--border2);border-radius:8px;padding:10px 12px;margin-bottom:6px;display:flex;align-items:flex-start;gap:8px;transition:opacity .2s}
+.task-row.dragging{opacity:.75;background:var(--accent-bg);border-color:var(--accent-border);box-shadow:0 4px 12px rgba(0,0,0,.15)}
+.task-drag{width:22px;height:22px;border:none;background:transparent;color:var(--text4);cursor:grab;display:flex;align-items:center;justify-content:center;font-size:14px;flex-shrink:0;padding:0;touch-action:none;margin-left:-4px}
+.task-drag:active{cursor:grabbing;color:var(--text2)}
+.task-row.done{opacity:.4;background:var(--surface2)}
+.task-row.prio-high{border-left:3px solid var(--prio-high)}
+.task-row.prio-normal{border-left:3px solid var(--prio-normal)}
+.task-row.prio-low{border-left:3px solid var(--prio-low)}
+.task-check{width:22px;height:22px;border-radius:50%;border:2px solid var(--border);background:transparent;cursor:pointer;display:flex;align-items:center;justify-content:center;flex-shrink:0;transition:all .15s;margin-top:1px}
+.task-check:hover{border-color:var(--accent)}
+.task-check.done{background:var(--green);border-color:var(--green);color:#fff}
+.task-body{flex:1;min-width:0;cursor:pointer}
+.task-title{font-size:13px;font-weight:500;color:var(--text);line-height:1.3}
+.task-title.done{text-decoration:line-through;color:var(--text3)}
+.task-meta{display:flex;align-items:center;gap:6px;margin-top:4px;flex-wrap:wrap}
+.task-cat{font-size:10px;color:var(--text3)}
+.task-who{font-size:10px;padding:1px 7px;border-radius:10px;font-weight:500}
+.task-date{font-size:10px;color:var(--text3);display:flex;align-items:center;gap:3px}
+.task-date.overdue{color:var(--prio-high);font-weight:500}
+.task-repeat{font-size:10px;color:var(--accent);display:flex;align-items:center;gap:2px}
+.icon-btn{width:26px;height:26px;border-radius:50%;border:none;background:transparent;color:var(--text4);cursor:pointer;font-size:13px;display:flex;align-items:center;justify-content:center;padding:0}
+.icon-btn:hover{color:var(--text2);background:var(--surface2)}
+.icon-btn.danger:hover{color:#fff;background:var(--danger)}
+/* Section header */
+.section-hdr{font-size:11px;font-weight:600;color:var(--text2);text-transform:uppercase;letter-spacing:.05em;padding:8px 0 4px;border-bottom:1px solid var(--border2);margin-bottom:6px;display:flex;align-items:center;gap:6px}
+.section-hdr span{margin-left:auto;font-weight:400;color:var(--text4)}
+/* Week */
+.week-nav{display:flex;align-items:center;gap:8px;margin-bottom:.75rem;background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:8px 12px}
+.week-label{flex:1;text-align:center;font-size:13px;font-weight:500}
+.week-btn{width:30px;height:30px;border-radius:50%;border:1px solid var(--border);background:var(--surface2);cursor:pointer;font-size:16px;display:flex;align-items:center;justify-content:center}
+.week-btn:hover{border-color:var(--accent)}
+.today-btn{font-size:11px;padding:4px 10px;border-radius:20px;border:1px solid var(--border);background:var(--surface2);cursor:pointer;color:var(--text2)}
+.today-btn:hover{border-color:var(--accent);color:var(--accent-text)}
+.day-card{background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:10px 12px;margin-bottom:8px}
+.day-card.today{border-color:var(--accent);background:var(--accent-bg)}
+.day-header{display:flex;align-items:center;gap:8px;margin-bottom:8px}
+.day-name{font-size:12px;font-weight:600;color:var(--text2);text-transform:uppercase;letter-spacing:.05em;min-width:36px}
+.day-name.today{color:var(--accent)}
+.day-date-lbl{font-size:11px;color:var(--text3)}
+.today-badge{font-size:10px;background:var(--accent-bg);color:var(--accent);border-radius:10px;padding:1px 7px;font-weight:500;border:1px solid var(--accent-border)}
+.day-task{display:flex;align-items:center;gap:8px;padding:6px 8px;background:var(--surface2);border-radius:6px;margin-bottom:4px;font-size:12px;cursor:pointer}
+.day-task.prio-high{border-left:2px solid var(--prio-high)}
+.day-task.prio-normal{border-left:2px solid var(--prio-normal)}
+.day-task.prio-low{border-left:2px solid var(--prio-low)}
+.day-task-name{flex:1;font-weight:500}
+.day-empty{font-size:12px;color:var(--text4);font-style:italic;padding:2px 0}
+/* Arkiv */
+.archive-item{display:flex;align-items:center;gap:10px;padding:8px 12px;background:var(--surface);border:1px solid var(--border2);border-radius:8px;margin-bottom:4px}
+.archive-name{flex:1;font-size:13px;text-decoration:line-through;color:var(--text3)}
+.archive-meta{font-size:11px;color:var(--text4);white-space:nowrap}
+.archive-repeat{font-size:10px;color:var(--accent)}
+/* Stat */
+.stat-section{background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:12px;margin-bottom:10px}
+.stat-title{font-size:11px;font-weight:600;color:var(--text2);text-transform:uppercase;letter-spacing:.05em;margin-bottom:10px;display:flex;align-items:center;gap:6px}
+.stat-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.stat-box{background:var(--surface2);border-radius:8px;padding:10px;text-align:center}
+.stat-num{font-size:22px;font-weight:700;color:var(--text);line-height:1}
+.stat-lbl{font-size:11px;color:var(--text3);margin-top:3px}
+.cat-add-row{display:flex;gap:6px;margin-top:8px}
+.cat-add-row input{flex:1;font-size:12px;padding:5px 8px;border:1px solid var(--border);border-radius:6px;outline:none;background:var(--surface);color:var(--text)}
+.cat-add-row button{font-size:12px;padding:0 10px;border:1px solid var(--border);background:var(--surface2);border-radius:6px;cursor:pointer;color:var(--text)}
+/* Uke/Måned-veksler + månedsrutenett */
+.week-mode{display:flex;gap:4px;background:var(--surface2);border-radius:8px;padding:3px;margin-bottom:8px}
+.wm-btn{flex:1;padding:6px;font-size:12px;font-weight:500;border-radius:6px;border:none;background:transparent;color:var(--text2);cursor:pointer}
+.wm-btn.active{background:var(--accent);color:#fff}
+.month-grid{display:grid;grid-template-columns:repeat(7,1fr);gap:4px}
+.month-dow{font-size:10px;color:var(--text3);text-align:center;font-weight:600;padding-bottom:2px}
+.month-cell{aspect-ratio:1;border:1px solid var(--border2);border-radius:8px;background:var(--surface);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;cursor:pointer;position:relative}
+.month-cell.empty{border:none;background:transparent;cursor:default}
+.month-cell.today{border-color:var(--accent);background:var(--accent-bg)}
+.month-cell .md-num{font-size:12px;color:var(--text2)}
+.month-cell .md-count{font-size:11px;font-weight:700;color:#fff;background:var(--accent);border-radius:10px;min-width:18px;text-align:center;padding:0 5px}
+.month-cell .md-count.overdue{background:var(--prio-high)}
+/* Empty */
+.empty-state{text-align:center;padding:2rem;color:var(--text3);font-size:13px}
+/* Modal */
+.modal-bg{position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,.4);display:flex;align-items:flex-start;justify-content:center;padding-top:40px;z-index:100}
+.modal{background:var(--surface);border-radius:12px;padding:1rem;width:90%;max-width:360px;box-shadow:0 8px 32px rgba(0,0,0,.15);max-height:85vh;overflow-y:auto}
+.modal-title{font-size:15px;font-weight:600;margin-bottom:.75rem;color:var(--text)}
+.modal label{font-size:11px;color:var(--text2);display:block;margin-bottom:2px;margin-top:10px}
+.modal label:first-of-type{margin-top:0}
+.modal input,.modal select,.modal textarea{width:100%;font-size:13px;padding:7px 9px;border:1px solid var(--border);border-radius:7px;outline:none;background:var(--surface);color:var(--text)}
+.modal textarea{resize:none;height:60px;font-family:inherit}
+.modal-prio-btns{display:flex;gap:6px;margin-top:4px}
+.modal-prio-btn{flex:1;padding:7px;font-size:12px;border-radius:7px;border:1px solid var(--border);background:var(--surface2);cursor:pointer;text-align:center;color:var(--text2)}
+.modal-prio-btn.high.active{background:var(--prio-high-bg);color:var(--prio-high);border-color:var(--prio-high-border);font-weight:600}
+.modal-prio-btn.normal.active{background:var(--prio-normal-bg);color:var(--prio-normal);border-color:var(--prio-normal-border);font-weight:600}
+.modal-prio-btn.low.active{background:var(--prio-low-bg);color:var(--prio-low);border-color:var(--prio-low-border);font-weight:600}
+.modal-actions{display:flex;gap:7px;margin-top:1rem}
+.btn-primary{flex:1;padding:9px;font-size:13px;font-weight:600;background:var(--accent);border:none;border-radius:7px;cursor:pointer;color:#fff}
+.btn-ghost{padding:9px 14px;font-size:13px;background:var(--surface2);border:1px solid var(--border);border-radius:7px;cursor:pointer;color:var(--text2)}
+.btn-danger{padding:9px 14px;font-size:13px;background:var(--surface);border:1px solid #fca5a5;border-radius:7px;cursor:pointer;color:var(--danger)}
+.kampanje{background:linear-gradient(135deg,var(--accent-bg),var(--surface));border:1px solid var(--accent-border);border-radius:12px;padding:11px 13px;margin-bottom:.7rem}
+.kampanje-top{display:flex;align-items:center;gap:8px;margin-bottom:8px}
+.kampanje-title{font-size:13px;font-weight:700;color:var(--accent-text)}
+.kampanje-streak{margin-left:auto;font-size:12px;font-weight:700;color:var(--accent-text)}
+.kampanje-bar{height:8px;background:var(--surface2);border-radius:5px;overflow:hidden;margin-bottom:4px}
+.kampanje-bar>div{height:100%;background:var(--accent);border-radius:5px;transition:width .4s}
+.kampanje-goal{font-size:11px;color:var(--text3)}
+.kampanje-people{display:flex;gap:6px;margin-top:8px;flex-wrap:wrap}
+.kp-pill{font-size:11px;font-weight:600;padding:2px 9px;border-radius:20px}
+.kampanje-msg{font-size:11.5px;color:var(--text2);margin-top:8px;font-style:italic}
+.toast{position:fixed;left:50%;top:14px;transform:translateX(-50%) translateY(-24px);background:var(--accent);color:#fff;font-size:14px;font-weight:600;padding:10px 18px;border-radius:22px;box-shadow:0 6px 20px rgba(0,0,0,.25);z-index:200;opacity:0;pointer-events:none;transition:opacity .25s,transform .25s;max-width:88vw;text-align:center}
+.toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
+.status-bar{font-size:11px;color:var(--text3);text-align:right;margin-top:4px;min-height:14px}
+.status-bar.err{color:var(--danger)}
+.status-bar.ok{color:var(--green)}
+</style>
+</head>
+<body>
+<main class="fw">
+  <div class="top-bar">
+    <h1 class="app-title"><a href="index.html" title="Til forsiden" aria-label="Til forsiden" style="text-decoration:none;margin-right:2px">🏠</a><i class="ti ti-checklist" aria-hidden="true"></i>Oppgaver</h1>
+    <div class="top-right">
+      <span class="count-badge" id="count-badge">0 åpne</span>
+      <button class="theme-btn" id="theme-btn" onclick="toggleTheme()" title="Bytt tema" aria-label="Bytt mellom lyst og mørkt tema"></button>
+    </div>
+  </div>
+
+  <div class="tabs">
+    <button class="tab active" id="tab-tasks" onclick="setView('tasks')"><i class="ti ti-list-check"></i> Oppgaver</button>
+    <button class="tab" id="tab-week" onclick="setView('week')"><i class="ti ti-calendar-week"></i> Uke</button>
+    <button class="tab" id="tab-archive" onclick="setView('archive')"><i class="ti ti-archive"></i> Arkiv</button>
+    <button class="tab" id="tab-logg" onclick="setView('logg')"><i class="ti ti-tool"></i> Hus</button>
+    <button class="tab" id="tab-settings" onclick="setView('settings')"><i class="ti ti-settings"></i> Innstillinger</button>
+  </div>
+
+  <!-- Oppgaver -->
+  <div id="view-tasks">
+    <div id="kampanje"></div>
+    <div class="add-card">
+      <div class="add-row">
+        <input type="text" class="add-input" id="new-title" placeholder="Ny oppgave..." aria-label="Ny oppgave" autocomplete="off" />
+        <button class="add-btn" onclick="addTask()" aria-label="Legg til oppgave"><i class="ti ti-plus" aria-hidden="true"></i></button>
+      </div>
+      <div class="add-row2">
+        <select class="add-select" id="new-cat"></select>
+        <select class="add-select" id="new-who"></select>
+        <input type="date" class="add-date" id="new-date" />
+      </div>
+      <div class="add-row2">
+        <div class="prio-btns">
+          <button class="prio-btn high" id="prio-high" onclick="setNewPrio('high')">🔴 Viktig</button>
+          <button class="prio-btn normal active" id="prio-normal" onclick="setNewPrio('normal')">🔵 Normal</button>
+          <button class="prio-btn low" id="prio-low" onclick="setNewPrio('low')">⚪ Ikke haster</button>
+          <button class="repeat-toggle" id="repeat-toggle" onclick="toggleNewRepeat()"><i class="ti ti-refresh" style="font-size:11px"></i> Gjentas</button>
+        </div>
+      </div>
+      <div id="repeat-options-row" style="display:none;margin-top:6px">
+        <select class="repeat-select" id="new-repeat" style="width:100%">
+          <option value="daily">Daglig</option>
+          <option value="weekly">Ukentlig</option>
+          <option value="monthly">Månedlig</option>
+          <option value="14">Annenhver uke</option>
+          <option value="30">Hver 30. dag</option>
+          <option value="custom">Egendefinert...</option>
+        </select>
+        <input type="number" id="new-repeat-custom" placeholder="Antall dager mellom hver gang" min="1" style="display:none;margin-top:6px;width:100%;font-size:12px;padding:6px 8px;border:1px solid var(--border);border-radius:7px;outline:none;background:var(--surface);color:var(--text)" />
+      </div>
+    </div>
+
+    <div class="filter-row">
+      <input type="text" class="search-input" id="search-input" placeholder="Søk..." aria-label="Søk i oppgaver" oninput="render()" />
+      <div id="filter-chips"></div>
+    </div>
+    <div id="task-list"></div>
+  </div>
+
+  <!-- Uke / Måned -->
+  <div id="view-week" style="display:none">
+    <div class="week-mode">
+      <button class="wm-btn active" id="wm-week" onclick="setWeekMode('week')">Uke</button>
+      <button class="wm-btn" id="wm-month" onclick="setWeekMode('month')">Måned</button>
+    </div>
+    <div class="week-nav">
+      <button class="week-btn" onclick="changeWeek(-1)" aria-label="Forrige">‹</button>
+      <span class="week-label" id="week-label"></span>
+      <button class="week-btn" onclick="changeWeek(1)" aria-label="Neste">›</button>
+      <button class="today-btn" onclick="goToNow()">Nå</button>
+    </div>
+    <div id="week-list"></div>
+  </div>
+
+  <!-- Arkiv -->
+  <div id="view-archive" style="display:none">
+    <div id="archive-stats"></div>
+    <div class="filter-row" style="margin-bottom:.6rem">
+      <div id="archive-filter-chips"></div>
+    </div>
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px">
+      <span style="font-size:12px;color:var(--text2)" id="archive-count"></span>
+      <button onclick="clearArchive()" style="font-size:11px;padding:4px 10px;border:1px solid var(--border);border-radius:6px;background:var(--surface2);color:var(--text2);cursor:pointer">Tøm arkiv</button>
+    </div>
+    <div id="archive-list"></div>
+  </div>
+
+  <!-- Vedlikeholdslogg (huset) -->
+  <div id="view-logg" style="display:none">
+    <div class="add-card">
+      <div class="add-row">
+        <input type="text" class="add-input" id="new-maint" placeholder="F.eks. Malte huset, byttet ventilasjonsfilter..." aria-label="Nytt vedlikehold" autocomplete="off" />
+        <button class="add-btn" onclick="addMaint()" aria-label="Legg til vedlikehold"><i class="ti ti-plus" aria-hidden="true"></i></button>
+      </div>
+      <div class="add-row2">
+        <input type="date" class="add-date" id="new-maint-date" title="Når ble det gjort sist?" />
+        <input type="number" class="add-date" id="new-maint-interval" placeholder="Intervall (mnd, valgfritt)" min="1" max="240" />
+      </div>
+    </div>
+    <p style="font-size:11px;color:var(--text3);margin:-2px 0 8px">Logg over ting som er gjort på huset – med valgfritt intervall for når det bør gjøres igjen.</p>
+    <div id="maint-list"></div>
+  </div>
+
+  <!-- Innstillinger -->
+  <div id="view-settings" style="display:none">
+    <div class="stat-section">
+      <div class="stat-title"><i class="ti ti-chart-bar"></i> Statistikk</div>
+      <div class="stat-grid" id="stats-grid"></div>
+    </div>
+    <div class="stat-section">
+      <div class="stat-title"><i class="ti ti-users"></i> Personer</div>
+      <div style="display:flex;align-items:center;gap:8px;margin-bottom:10px">
+        <span style="flex:1;font-size:12px;color:var(--text2)">⭐ Min person (for «Min dag»)</span>
+        <select id="my-name" onchange="setMyName(this.value)" style="font-size:12px;padding:6px 8px;border:1px solid var(--border);border-radius:7px;background:var(--surface);color:var(--text)"></select>
+      </div>
+      <div id="people-list"></div>
+      <div class="cat-add-row">
+        <input type="text" id="new-person" placeholder="Nytt navn..." maxlength="30" />
+        <button onclick="addPerson()">Legg til</button>
+      </div>
+    </div>
+    <div class="stat-section">
+      <div class="stat-title"><i class="ti ti-tag"></i> Kategorier</div>
+      <div id="cat-manage"></div>
+      <div class="cat-add-row">
+        <input type="text" id="new-cat-name" placeholder="Ny kategori..." />
+        <button onclick="addCategory()">Legg til</button>
+      </div>
+    </div>
+    <div class="stat-section">
+      <div class="stat-title"><i class="ti ti-palette"></i> Fargetema</div>
+      <div style="margin-bottom:10px">
+        <div style="font-size:12px;color:var(--text2);margin-bottom:6px">☀️ Lys modus</div>
+        <div style="display:flex;align-items:center;gap:10px">
+          <input type="color" id="color-light" onchange="setAccentColor('light',this.value)" style="width:44px;height:36px;border:1px solid var(--border);border-radius:8px;cursor:pointer;background:none;padding:2px" />
+          <button onclick="resetAccentColor('light')" style="font-size:11px;padding:4px 10px;border:1px solid var(--border);border-radius:6px;background:var(--surface2);color:var(--text2);cursor:pointer">Tilbakestill</button>
+        </div>
+      </div>
+      <div>
+        <div style="font-size:12px;color:var(--text2);margin-bottom:6px">🌙 Mørk modus</div>
+        <div style="display:flex;align-items:center;gap:10px">
+          <input type="color" id="color-dark" onchange="setAccentColor('dark',this.value)" style="width:44px;height:36px;border:1px solid var(--border);border-radius:8px;cursor:pointer;background:none;padding:2px" />
+          <button onclick="resetAccentColor('dark')" style="font-size:11px;padding:4px 10px;border:1px solid var(--border);border-radius:6px;background:var(--surface2);color:var(--text2);cursor:pointer">Tilbakestill</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="status-bar" id="status-bar"></div>
+  <div class="toast" id="toast"></div>
+
+  <!-- Rediger modal -->
+  <div class="modal-bg" id="modal" style="display:none" onclick="if(event.target===this)hideModal()">
+    <div class="modal" role="dialog" aria-modal="true" aria-labelledby="modal-heading" onclick="event.stopPropagation()">
+      <p class="modal-title" id="modal-heading">Rediger oppgave</p>
+      <input type="hidden" id="modal-id" />
+      <label for="modal-title">Tittel</label><input type="text" id="modal-title" />
+      <label for="modal-note">Notat</label><textarea id="modal-note" placeholder="Valgfritt notat..."></textarea>
+      <label>Prioritet</label>
+      <div class="modal-prio-btns">
+        <button class="modal-prio-btn high" id="modal-prio-high" onclick="setModalPrio('high')">🔴 Viktig</button>
+        <button class="modal-prio-btn normal" id="modal-prio-normal" onclick="setModalPrio('normal')">🔵 Normal</button>
+        <button class="modal-prio-btn low" id="modal-prio-low" onclick="setModalPrio('low')">⚪ Ikke haster</button>
+      </div>
+      <label for="modal-cat">Kategori</label><select id="modal-cat"></select>
+      <label for="modal-who">Hvem</label><select id="modal-who"></select>
+      <label for="modal-date">Frist (valgfritt)</label><input type="date" id="modal-date" />
+      <label for="modal-repeat">Gjentas</label>
+      <select id="modal-repeat">
+        <option value="">Nei – engangsoppgave</option>
+        <option value="daily">Daglig</option>
+        <option value="weekly">Ukentlig</option>
+        <option value="monthly">Månedlig</option>
+        <option value="14">Annenhver uke</option>
+        <option value="30">Hver 30. dag</option>
+        <option value="custom">Egendefinert antall dager</option>
+      </select>
+      <div id="modal-repeat-custom-wrap" style="display:none;margin-top:6px">
+        <input type="number" id="modal-repeat-custom" placeholder="Antall dager mellom hver gang" min="1" style="width:100%;font-size:13px;padding:7px 9px;border:1px solid var(--border);border-radius:7px;outline:none;background:var(--surface);color:var(--text)" />
+      </div>
+      <div class="modal-actions">
+        <button class="btn-danger" onclick="deleteFromModal()">Slett</button>
+        <button class="btn-ghost" onclick="hideModal()">Avbryt</button>
+        <button class="btn-primary" onclick="saveModal()">Lagre</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Vedlikehold-modal -->
+  <div class="modal-bg" id="maint-modal" style="display:none" onclick="if(event.target===this)hideMaintModal()">
+    <div class="modal" role="dialog" aria-modal="true" aria-labelledby="maint-heading" onclick="event.stopPropagation()">
+      <p class="modal-title" id="maint-heading">Rediger vedlikehold</p>
+      <input type="hidden" id="maint-id" />
+      <label for="maint-name">Hva</label><input type="text" id="maint-name" />
+      <label>Intervall i måneder (valgfritt)</label>
+      <input type="number" id="maint-interval" min="1" max="240" placeholder="F.eks. 12 = bør gjøres årlig" />
+      <label>Historikk</label>
+      <div id="maint-history" style="max-height:30vh;overflow-y:auto;margin-bottom:6px"></div>
+      <div style="display:flex;gap:6px">
+        <input type="date" id="maint-add-date" style="flex:1;font-size:13px;padding:7px 9px;border:1px solid var(--border);border-radius:7px;outline:none;background:var(--surface);color:var(--text)" />
+        <button onclick="maintAddDate()" style="font-size:12px;padding:0 12px;border:1px solid var(--border);background:var(--surface2);border-radius:7px;cursor:pointer;color:var(--text2)">Legg til dato</button>
+      </div>
+      <div class="modal-actions">
+        <button class="btn-danger" onclick="deleteMaint()">Slett</button>
+        <button class="btn-ghost" onclick="hideMaintModal()">Avbryt</button>
+        <button class="btn-primary" onclick="saveMaintModal()">Lagre</button>
+      </div>
+    </div>
+  </div>
+</main>
+
+<script type="module">
+// ── Hjemmebasen-port ─────────────────────────────────────────
+// Portet fra ha-apper: MQTT/WebSocket byttet med Firebase (felles/storage.js).
+// Datatap-vernet består (dbSet nekter før lesning); sanntidslytter erstatter polling.
+import { requireAuth } from './felles/auth.js';
+import { dbGet, dbSet, dbListen } from './felles/storage.js';
+import { esc, todayStr } from './felles/ui.js';
+const APP='oppgaver';
+let FAMILIE=null;
+
+const DEFAULT_CATS=['Hjem','Hage & Ute','Rengjøring','Handle','Familie','Annet'];
+const CAT_ICONS={'Hjem':'ti-home','Hage & Ute':'ti-plant','Rengjøring':'ti-vacuum','Handle':'ti-shopping-cart','Familie':'ti-heart','Annet':'ti-box'};
+const WHO_COLORS=['#1a56db','#c2185b','#7b1fa2','#2e7d32','#e65100','#0891b2'];
+const DAYS_SHORT=['Man','Tir','Ons','Tor','Fre','Lør','Søn'];
+const REPEAT_LABELS={daily:'Daglig',weekly:'Ukentlig',monthly:'Månedlig','14':'Annenhver uke','30':'Hver 30. dag'};
+
+// Personer hardkodes ikke lenger – de lazy-seedes fra husstandens personliste i load().
+const DEFAULT_DATA={tasks:[],archive:[],categories:[...DEFAULT_CATS],people:[],maintenance:[]};
+let data=JSON.parse(JSON.stringify(DEFAULT_DATA));
+let dataLoaded=false; // sant først når en ekte MQTT-lesning har lyktes – hindrer overskriving
+let currentView='tasks',weekOffset=0,nextId=100;
+let myName=localStorage.getItem('oppgaver_me')||''; // «Min dag»-person (pr. enhet)
+let weekMode='week'; // 'week' | 'month' i Uke-fanen
+let newPrio='normal',modalPrio='normal',newRepeat='',activeFilter='',archiveFilter='';
+
+// ── Dato ─────────────────────────────────────────────────────
+// todayStr kommer fra felles/ui.js (lokal dato, aldri toISOString/UTC).
+function toDateStr(d){return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');}
+function formatDate(str){if(!str)return'';const d=new Date(str+'T12:00:00');return d.toLocaleDateString('nb-NO',{day:'numeric',month:'short'});}
+function isOverdue(str){if(!str)return false;return str<todayStr();}
+function addDays(str,n){const d=new Date(str+'T12:00:00');d.setDate(d.getDate()+n);return toDateStr(d);}
+function addMonths(str){const d=new Date(str+'T12:00:00');d.setMonth(d.getMonth()+1);return toDateStr(d);}
+function nextRepeatDate(task){
+  const base=task.date||todayStr();
+  const r=task.repeat;
+  if(!r)return null;
+  if(r==='daily')return addDays(base,1);
+  if(r==='weekly')return addDays(base,7);
+  if(r==='monthly')return addMonths(base);
+  const n=parseInt(r);
+  if(!isNaN(n))return addDays(base,n);
+  return null;
+}
+function getMondayOfWeek(off){const d=new Date();const day=d.getDay();d.setDate(d.getDate()-day+(day===0?-6:1)+off*7);d.setHours(0,0,0,0);return d;}
+function getWeekDates(off){const mon=getMondayOfWeek(off);return Array.from({length:7},(_,i)=>{const d=new Date(mon);d.setDate(mon.getDate()+i);return d;});}
+function getWeekNumber(d){const date=new Date(d);date.setHours(0,0,0,0);date.setDate(date.getDate()+3-(date.getDay()+6)%7);const w1=new Date(date.getFullYear(),0,4);return 1+Math.round(((date-w1)/86400000-3+(w1.getDay()+6)%7)/7);}
+
+// ── Tema ─────────────────────────────────────────────────────
+const APP_KEY='oppgaver';
+function hexToRgb(hex){const r=parseInt(hex.slice(1,3),16);const g=parseInt(hex.slice(3,5),16);const b=parseInt(hex.slice(5,7),16);return r+','+g+','+b;}
+function applyAccentColor(mode,hex){const rgb=hexToRgb(hex);let el=document.getElementById('accent-style-'+mode);if(!el){el=document.createElement('style');el.id='accent-style-'+mode;document.head.appendChild(el);}const sel=mode==='dark'?'[data-theme="dark"]':'[data-theme="light"]';el.textContent=sel+`{--accent:${hex};--accent-bg:rgba(${rgb},.12);--accent-border:rgba(${rgb},.4);--accent-text:${hex};--orange:${hex};}@media(prefers-color-scheme:${mode}){:root:not([data-theme]){--accent:${hex};--accent-bg:rgba(${rgb},.12);--accent-border:rgba(${rgb},.4);--accent-text:${hex};--orange:${hex};}}`;}
+function setAccentColor(mode,hex){localStorage.setItem(APP_KEY+'_color_'+mode,hex);applyAccentColor(mode,hex);}
+function resetAccentColor(mode){localStorage.removeItem(APP_KEY+'_color_'+mode);const el=document.getElementById('accent-style-'+mode);if(el)el.textContent='';}
+function initAccentColors(){['light','dark'].forEach(mode=>{const s=localStorage.getItem(APP_KEY+'_color_'+mode);if(s)applyAccentColor(mode,s);});}
+initAccentColors();
+function initTheme(){const s=localStorage.getItem(APP_KEY+'_theme');const dark=window.matchMedia('(prefers-color-scheme:dark)').matches;setTheme(s||(dark?'dark':'light'),false);}
+function setTheme(t,save=true){document.documentElement.setAttribute('data-theme',t);const b=document.getElementById('theme-btn');if(b)b.textContent=t==='dark'?'☀️':'🌙';if(save)localStorage.setItem(APP_KEY+'_theme',t);}
+function toggleTheme(){setTheme(document.documentElement.getAttribute('data-theme')==='dark'?'light':'dark');}
+initTheme();
+
+// ── Status ───────────────────────────────────────────────────
+function setStatus(msg,type=''){const s=document.getElementById('status-bar');s.textContent=msg;s.className='status-bar'+(type?' '+type:'');if(type==='ok')setTimeout(()=>{s.textContent='';s.className='status-bar';},2000);}
+
+// ── Lagring (Firebase via felles/storage.js) ─────────────────
+function adoptData(saved){
+  data=saved;
+  if(!data.tasks)data.tasks=[];
+  if(!data.categories?.length)data.categories=[...DEFAULT_CATS];
+  if(!data.people)data.people=[];
+  if(!data.archive)data.archive=[];
+  if(!data.maintenance)data.maintenance=[];
+  // Migrer til manuell rekkefølge: frist først (nærmest øverst), så prioritet/alfabetisk
+  if(data.tasks.some(t=>!t.done&&t.order==null)){
+    const po={high:0,normal:1,low:2};
+    const open=data.tasks.filter(t=>!t.done).sort((a,b)=>{
+      if(a.date&&!b.date)return -1;
+      if(!a.date&&b.date)return 1;
+      if(a.date&&b.date)return a.date.localeCompare(b.date);
+      const pd=(po[a.prio]||1)-(po[b.prio]||1);
+      if(pd!==0)return pd;
+      return a.title.localeCompare(b.title,'nb');
+    });
+    open.forEach((t,i)=>{t.order=i+1;});
+  }
+  const allIds=[...data.tasks.map(t=>t.id),...data.archive.map(t=>t.id)].filter(Boolean);
+  nextId=allIds.length?Math.max(...allIds)+1:100;
+}
+async function load(){
+  setStatus('Laster...');
+  try{
+    if(!FAMILIE){
+      const ctx=await requireAuth();
+      if(!ctx.familieId){setStatus('Ingen husstand – kontakt administrator','err');return;}
+      FAMILIE=ctx.familieId;
+    }
+    // dbGet kaster ved feil og gir null KUN når noden er tom (autoritativt svar,
+    // ingen MQTT-tvetydighet). Tom node = ny husstand → trygt å starte blankt.
+    const saved=await dbGet(FAMILIE,APP);
+    if(saved?.tasks!==undefined)adoptData(saved);
+    // Lazy-seed av personer: mangler lista, hent husstandens voksne –
+    // kun i minnet, lagres først når brukeren selv gjør en endring.
+    if(!data.people||data.people.length===0){
+      const p=await dbGet(FAMILIE,'personer');
+      data.people=[...(p?.voksne||[])];
+    }
+    dataLoaded=true;
+    autoTasksFromMaint(); // generer oppgaver for forfalt hus-vedlikehold
+    setStatus('');
+    startListen();
+  }catch(e){setStatus('Kunne ikke laste – '+(e.message||'prøv igjen'),'err');}
+  render();
+}
+// Lag oppgave automatisk når et hus-vedlikehold blir «på tide igjen».
+// Én oppgave per forfalls-syklus (autoTaskFor = datoen som utløste den),
+// og aldri hvis det allerede finnes en åpen auto-oppgave for samme vedlikehold.
+function autoTasksFromMaint(){
+  if(!data.maintenance)return;
+  let added=0;
+  data.maintenance.forEach(m=>{
+    if(!maintStatus(m).due)return;
+    const last=maintLast(m);
+    if(m.autoTaskFor===last)return;
+    if(data.tasks.some(t=>t.maintId===m.id&&!t.done)){m.autoTaskFor=last;return;}
+    data.tasks.push({id:nextId++,title:m.name,cat:'Hjem',who:'',date:todayStr(),prio:'normal',repeat:'',note:'Automatisk fra hus-vedlikehold – på tide igjen.',done:false,created:todayStr(),order:computeOrderFor(todayStr()),maintId:m.id});
+    m.autoTaskFor=last;added++;
+  });
+  if(added)save();
+}
+function setMyName(v){myName=v;localStorage.setItem('oppgaver_me',v);render();}
+let lastSave=0;
+async function save(){
+  if(!dataLoaded){setStatus('Ikke lagret – data er ikke lastet ennå. Last siden på nytt.','err');return;}
+  setStatus('Lagrer...');
+  try{
+    await dbSet(FAMILIE,APP,data);
+    lastSave=Date.now();
+    setStatus('Lagret ✓','ok');
+  }catch(e){
+    setStatus('Kunne ikke lagre – prøv igjen','err');
+  }
+}
+
+// Hopper over synk hvis du skriver eller har en modal oppe.
+function isEditing(){
+  const inp=document.getElementById('new-title');
+  if(inp&&inp.value.trim())return true;
+  const inp2=document.getElementById('new-maint');
+  if(inp2&&inp2.value.trim())return true;
+  return ['modal','maint-modal'].some(id=>{
+    const e=document.getElementById(id);return e&&e.style.display&&e.style.display!=='none';
+  });
+}
+// Sanntidssynk: lytteren fyrer ved alle endringer (også andres telefoner).
+// Hopper over mens man redigerer og rett etter egen lagring (ekko).
+let stopListen=null;
+function startListen(){
+  if(stopListen)return;
+  stopListen=dbListen(FAMILIE,APP,saved=>{
+    if(!saved||saved.tasks===undefined)return;
+    if(isEditing()||Date.now()-lastSave<5000)return;
+    if(JSON.stringify(saved)===JSON.stringify(data))return;
+    adoptData(saved);
+    dataLoaded=true;
+    render();
+  });
+}
+
+// ── Views ────────────────────────────────────────────────────
+function setView(v){currentView=v;['tasks','week','archive','logg','settings'].forEach(x=>{document.getElementById('view-'+x).style.display=v===x?'block':'none';document.getElementById('tab-'+x).classList.toggle('active',v===x);});render();}
+let monthOffset=0;
+function changeWeek(dir){if(weekMode==='month')monthOffset+=dir;else weekOffset+=dir;renderWeek();}
+// «Nå»-knappen: navngitt funksjon fordi inline-tilordning ikke når modul-variabler.
+function goToNow(){weekOffset=0;monthOffset=0;renderWeek();}
+function setWeekMode(m){weekMode=m;document.getElementById('wm-week').classList.toggle('active',m==='week');document.getElementById('wm-month').classList.toggle('active',m==='month');renderWeek();}
+// Månedskalender: rutenett med antall åpne oppgaver pr. dag; trykk en dag for å legge til.
+function renderMonth(){
+  const base=new Date();base.setDate(1);base.setMonth(base.getMonth()+monthOffset);base.setHours(0,0,0,0);
+  const y=base.getFullYear(),mo=base.getMonth();
+  document.getElementById('week-label').textContent=base.toLocaleDateString('nb-NO',{month:'long',year:'numeric'});
+  const startIdx=(new Date(y,mo,1).getDay()+6)%7; // mandag=0
+  const daysInMonth=new Date(y,mo+1,0).getDate();
+  const todayS=todayStr();
+  const byDate={};
+  data.tasks.filter(t=>!t.done&&t.date).forEach(t=>{(byDate[t.date]=byDate[t.date]||[]).push(t);});
+  let html='<div class="month-grid">';
+  ['Ma','Ti','On','To','Fr','Lø','Sø'].forEach(d=>html+='<div class="month-dow">'+d+'</div>');
+  for(let i=0;i<startIdx;i++)html+='<div class="month-cell empty"></div>';
+  for(let d=1;d<=daysInMonth;d++){
+    const ds=y+'-'+String(mo+1).padStart(2,'0')+'-'+String(d).padStart(2,'0');
+    const cnt=(byDate[ds]||[]).length;
+    const overdue=ds<todayS&&cnt;
+    html+='<div class="month-cell'+(ds===todayS?' today':'')+'" role="button" tabindex="0" data-day="'+ds+'" aria-label="'+d+'. – '+cnt+' oppgaver">'
+      +'<span class="md-num">'+d+'</span>'
+      +(cnt?'<span class="md-count'+(overdue?' overdue':'')+'">'+cnt+'</span>':'')
+      +'</div>';
+  }
+  html+='</div><div class="empty-state" style="padding:1rem 0 0;font-size:12px">Trykk en dag for å legge en oppgave på den datoen.</div>';
+  document.getElementById('week-list').innerHTML=html;
+}
+function monthDayClick(ds){
+  setView('tasks');
+  const dt=document.getElementById('new-date');if(dt)dt.value=ds;
+  const ti=document.getElementById('new-title');if(ti)ti.focus();
+  setStatus('Ny oppgave får frist '+formatDate(ds),'ok');
+}
+
+// ── Prio ─────────────────────────────────────────────────────
+function setNewPrio(p){newPrio=p;['high','normal','low'].forEach(x=>document.getElementById('prio-'+x).classList.toggle('active',x===p));}
+function setModalPrio(p){modalPrio=p;['high','normal','low'].forEach(x=>document.getElementById('modal-prio-'+x).classList.toggle('active',x===p));}
+
+// ── Repeat toggle (legg til) ──────────────────────────────────
+function toggleNewRepeat(){
+  newRepeat=newRepeat?'':'weekly';
+  document.getElementById('repeat-toggle').classList.toggle('active',!!newRepeat);
+  const row=document.getElementById('repeat-options-row');
+  row.style.display=newRepeat?'block':'none';
+  if(newRepeat)document.getElementById('new-repeat').value='weekly';
+}
+document.getElementById('new-repeat').addEventListener('change',function(){
+  newRepeat=this.value;
+  document.getElementById('new-repeat-custom').style.display=this.value==='custom'?'inline-block':'none';
+});
+document.getElementById('modal-repeat').addEventListener('change',function(){
+  document.getElementById('modal-repeat-custom-wrap').style.display=this.value==='custom'?'block':'none';
+});
+
+// ── Selects ──────────────────────────────────────────────────
+function populateCatSelect(id,selected){document.getElementById(id).innerHTML='<option value="">— Kategori —</option>'+[...data.categories].sort((a,b)=>a.localeCompare(b,'nb')).map(c=>'<option value="'+esc(c)+'"'+(c===selected?' selected':'')+'>'+esc(c)+'</option>').join('');}
+function populateWhoSelect(id,selected){document.getElementById(id).innerHTML='<option value="">— Hvem —</option>'+data.people.map(p=>'<option value="'+esc(p)+'"'+(p===selected?' selected':'')+'>'+esc(p)+'</option>').join('');}
+function personColor(name){let hash=0;for(let i=0;i<name.length;i++)hash=(hash+name.charCodeAt(i))%WHO_COLORS.length;return WHO_COLORS[hash];}
+
+// ── Legg til ─────────────────────────────────────────────────
+function addTask(){
+  const title=document.getElementById('new-title').value.trim();
+  if(!title){document.getElementById('new-title').focus();return;}
+  const cat=document.getElementById('new-cat').value;
+  const who=document.getElementById('new-who').value;
+  const date=document.getElementById('new-date').value;
+  let repeat=newRepeat;
+  if(repeat==='custom'){
+    const days=parseInt(document.getElementById('new-repeat-custom').value,10);
+    if(days>0)repeat=String(days);else repeat='';
+  }
+  data.tasks.push({id:nextId++,title,cat,who,date,prio:newPrio,repeat,note:'',done:false,created:todayStr(),order:computeOrderFor(date)});
+  document.getElementById('new-title').value='';
+  document.getElementById('new-date').value='';
+  newRepeat='';
+  document.getElementById('repeat-toggle').classList.remove('active');
+  document.getElementById('repeat-options-row').style.display='none';
+  document.getElementById('new-repeat-custom').style.display='none';
+  setNewPrio('normal');
+  save();render();
+}
+document.getElementById('new-title').addEventListener('keydown',e=>{if(e.key==='Enter')addTask();});
+
+// ── Fullfør oppgave ───────────────────────────────────────────
+function completeTask(id){
+  const task=data.tasks.find(t=>t.id===id);if(!task)return;
+  // Arkiver
+  data.archive.unshift({...task,completedDate:todayStr()});
+  // Gjentakende? Lag ny
+  if(task.repeat){
+    const nextDate=nextRepeatDate(task);
+    data.tasks.push({
+      id:nextId++,title:task.title,cat:task.cat,who:task.who,
+      date:nextDate||'',prio:task.prio,repeat:task.repeat,
+      note:task.note,done:false,created:todayStr(),order:computeOrderFor(nextDate||'')
+    });
+  }
+  data.tasks=data.tasks.filter(t=>t.id!==id);
+  celebrate();
+  save();render();
+}
+
+// ── Kreativ feiring + kampanje (incentiv) ────────────────────
+function pickMsg(arr){return arr[Math.floor(Math.random()*arr.length)];}
+const WEEK_GOAL=15;
+function daysAgoStr(n){const d=new Date();d.setDate(d.getDate()-n);return toDateStr(d);}
+function doneOnDay(ds){return data.archive.filter(t=>t.completedDate===ds).length;}
+function currentStreak(){let i=doneOnDay(todayStr())===0?1:0,s=0;while(doneOnDay(daysAgoStr(i))>0){s++;i++;if(i>400)break;}return s;}
+let toastTimer=null;
+function showToast(msg){const t=document.getElementById('toast');if(!t)return;t.textContent=msg;t.classList.add('show');clearTimeout(toastTimer);toastTimer=setTimeout(()=>t.classList.remove('show'),2600);}
+function celebrate(){
+  const doneToday=doneOnDay(todayStr());
+  const streak=currentStreak();
+  let msg;
+  if(streak>=3&&doneToday===1)msg=pickMsg(['🔥 '+streak+' dager på rad!','🏆 '+streak+' dager på stripe – sterkt!']);
+  else if(doneToday>=5)msg=pickMsg(['🚀 '+doneToday+' gjort i dag – du ruller!','💪 '+doneToday+' i dag. Maskin!']);
+  else if(doneToday>=2)msg=pickMsg(['🔥 '+doneToday+' gjort i dag!','Sånn ja – '+doneToday+' i dag 👏','Én til i boks ✅']);
+  else msg=pickMsg(['Nice! ✅','Deilig å krysse av 🎉','Én ting mindre 💪','Godt jobba! 👏','Sånn ja ✨']);
+  showToast(msg);
+}
+function renderKampanje(){
+  const el=document.getElementById('kampanje');if(!el)return;
+  if(!data.archive||!data.archive.length){el.style.display='none';return;}
+  el.style.display='block';
+  const ws=toDateStr(getWeekDates(0)[0]);
+  const week=data.archive.filter(t=>t.completedDate&&t.completedDate>=ws);
+  const n=week.length, streak=currentStreak(), pct=Math.min(100,Math.round(n/WEEK_GOAL*100));
+  const byWho={};week.forEach(t=>{const w=t.who||'Felles';byWho[w]=(byWho[w]||0)+1;});
+  const people=Object.entries(byWho).sort((a,b)=>b[1]-a[1]);
+  let msg;
+  if(n===0)msg='Ny uke, blanke ark – kryss av den første oppgaven! ✨';
+  else if(n>=WEEK_GOAL)msg='🎉 Ukesmål nådd ('+WEEK_GOAL+')! Alt herfra er bonus.';
+  else msg=pickMsg(['Bra driv – '+(WEEK_GOAL-n)+' igjen til ukesmålet.','Fortsett sånn – '+(WEEK_GOAL-n)+' unna målet.','Nærmer oss – '+(WEEK_GOAL-n)+' igjen til '+WEEK_GOAL+'.']);
+  el.innerHTML='<div class="kampanje-top"><span class="kampanje-title">🏆 Denne uka: '+n+' gjort</span>'
+    +(streak>0?'<span class="kampanje-streak">🔥 '+streak+' dag'+(streak===1?'':'er')+' på rad</span>':'')+'</div>'
+    +'<div class="kampanje-bar"><div style="width:'+pct+'%"></div></div>'
+    +'<div class="kampanje-goal">'+n+' / '+WEEK_GOAL+' – ukesmål</div>'
+    +(people.length?'<div class="kampanje-people">'+people.map(([w,c])=>{const col=personColor(w);return '<span class="kp-pill" style="background:'+col+'22;color:'+col+'">'+esc(w)+' '+c+'</span>';}).join('')+'</div>':'')
+    +'<div class="kampanje-msg">'+esc(msg)+'</div>';
+}
+
+function deleteTask(id){if(!confirm('Slette oppgaven?'))return;data.tasks=data.tasks.filter(t=>t.id!==id);save();render();}
+function clearArchive(){if(!confirm('Tøm hele arkivet?'))return;data.archive=[];save();render();}
+
+// ── Modal ────────────────────────────────────────────────────
+function openModal(id){
+  const task=data.tasks.find(t=>t.id===id);if(!task)return;
+  modalPrio=task.prio||'normal';
+  document.getElementById('modal-id').value=id;
+  document.getElementById('modal-title').value=task.title;
+  document.getElementById('modal-note').value=task.note||'';
+  document.getElementById('modal-date').value=task.date||'';
+  const repeatVal=task.repeat&&!['daily','weekly','monthly','14','30'].includes(task.repeat)?'custom':task.repeat||'';
+  document.getElementById('modal-repeat').value=repeatVal;
+  document.getElementById('modal-repeat-custom-wrap').style.display=repeatVal==='custom'?'block':'none';
+  if(repeatVal==='custom')document.getElementById('modal-repeat-custom').value=task.repeat;
+  populateCatSelect('modal-cat',task.cat);
+  populateWhoSelect('modal-who',task.who);
+  ['high','normal','low'].forEach(x=>document.getElementById('modal-prio-'+x).classList.toggle('active',x===modalPrio));
+  document.getElementById('modal').style.display='flex';
+  setTimeout(()=>document.getElementById('modal-title').focus(),50);
+}
+function hideModal(){document.getElementById('modal').style.display='none';}
+function saveModal(){
+  const id=parseInt(document.getElementById('modal-id').value,10);
+  const task=data.tasks.find(t=>t.id===id);if(!task)return;
+  task.title=document.getElementById('modal-title').value.trim()||task.title;
+  task.note=document.getElementById('modal-note').value.trim();
+  task.prio=modalPrio;
+  task.cat=document.getElementById('modal-cat').value;
+  task.who=document.getElementById('modal-who').value;
+  task.date=document.getElementById('modal-date').value;
+  let repeat=document.getElementById('modal-repeat').value;
+  if(repeat==='custom'){const days=parseInt(document.getElementById('modal-repeat-custom').value,10);repeat=days>0?String(days):'';}
+  task.repeat=repeat;
+  hideModal();save();render();
+}
+function deleteFromModal(){const id=parseInt(document.getElementById('modal-id').value);if(!confirm('Slette oppgaven?'))return;data.tasks=data.tasks.filter(t=>t.id!==id);hideModal();save();render();}
+
+// ── Kategorier & personer ─────────────────────────────────────
+function addCategory(){const inp=document.getElementById('new-cat-name');const name=inp.value.trim();if(!name||data.categories.includes(name))return;data.categories.push(name);data.categories.sort((a,b)=>a.localeCompare(b,'nb'));inp.value='';save();render();}
+function deleteCategory(cat){if(data.tasks.some(t=>t.cat===cat)){alert('"'+cat+'" er i bruk.');return;}data.categories=data.categories.filter(c=>c!==cat);save();render();}
+document.getElementById('new-cat-name').addEventListener('keydown',e=>{if(e.key==='Enter')addCategory();});
+function addPerson(){const inp=document.getElementById('new-person');const name=inp.value.trim();if(!name||data.people.includes(name))return;data.people.push(name);inp.value='';save();render();}
+function deletePerson(name){if(data.people.length<=1){alert('Må ha minst én person.');return;}data.people=data.people.filter(p=>p!==name);save();render();}
+document.getElementById('new-person').addEventListener('keydown',e=>{if(e.key==='Enter')addPerson();});
+
+// ── Render ───────────────────────────────────────────────────
+function render(){
+  const open=data.tasks.filter(t=>!t.done).length;
+  document.getElementById('count-badge').textContent=open+' åpne';
+  populateCatSelect('new-cat',document.getElementById('new-cat').value);
+  populateWhoSelect('new-who',document.getElementById('new-who').value);
+  if(currentView==='tasks')renderTasks();
+  else if(currentView==='week')renderWeek();
+  else if(currentView==='archive')renderArchive();
+  else if(currentView==='logg')renderMaint();
+  else renderSettings();
+}
+
+// ── Vedlikeholdslogg (huset) ─────────────────────────────────
+// data.maintenance = [{id,name,intervalMonths|null,dates:['YYYY-MM-DD',...]}]
+function maintLast(m){return m.dates&&m.dates.length?[...m.dates].sort().slice(-1)[0]:null;}
+function monthsSince(dateStr){if(!dateStr)return null;return (new Date(todayStr())-new Date(dateStr))/(1000*60*60*24*30.44);}
+function maintAgeLabel(dateStr){
+  const ms=monthsSince(dateStr);if(ms===null)return 'aldri registrert';
+  const d=Math.round(ms*30.44);
+  if(d<1)return 'i dag';
+  if(d<60)return d+' dager siden';
+  if(ms<24)return Math.round(ms)+' mnd siden';
+  const y=Math.floor(ms/12),r=Math.round(ms%12);
+  return y+' år'+(r?' '+r+' mnd':'')+' siden';
+}
+function maintStatus(m){
+  const last=maintLast(m);
+  if(!last||!m.intervalMonths)return {col:'var(--text4)',due:false,txt:''};
+  const r=monthsSince(last)/m.intervalMonths;
+  if(r>=1)return {col:'var(--danger)',due:true,txt:'på tide igjen!'};
+  if(r>=0.8)return {col:'#f59e0b',due:false,txt:'snart'};
+  return {col:'var(--green)',due:false,txt:''};
+}
+function addMaint(){
+  const name=document.getElementById('new-maint').value.trim();
+  if(!name){document.getElementById('new-maint').focus();return;}
+  const date=document.getElementById('new-maint-date').value||todayStr();
+  const iv=parseInt(document.getElementById('new-maint-interval').value,10);
+  const id=data.maintenance.reduce((mx,x)=>Math.max(mx,x.id||0),0)+1;
+  data.maintenance.push({id,name,intervalMonths:isNaN(iv)?null:iv,dates:[date]});
+  document.getElementById('new-maint').value='';
+  document.getElementById('new-maint-date').value='';
+  document.getElementById('new-maint-interval').value='';
+  save();render();
+}
+function maintDoneNow(id){
+  const m=data.maintenance.find(x=>x.id===id);if(!m)return;
+  const td=todayStr();
+  if(!m.dates.includes(td))m.dates.push(td);
+  save();render();
+}
+function renderMaint(){
+  const el=document.getElementById('maint-list');
+  if(!data.maintenance||!data.maintenance.length){
+    el.innerHTML='<div class="empty-state"><i class="ti ti-tool" style="font-size:24px;display:block;margin-bottom:6px"></i>Ingenting logget ennå.<br>Start med f.eks. «Malte huset» og datoen det ble gjort.</div>';
+    return;
+  }
+  const fd=ds=>new Date(ds+'T12:00:00').toLocaleDateString('nb-NO',{day:'numeric',month:'short',year:'numeric'});
+  const sorted=[...data.maintenance].sort((a,b)=>{
+    const sa=maintStatus(a),sb=maintStatus(b);
+    if(sa.due!==sb.due)return sa.due?-1:1;
+    return (monthsSince(maintLast(b))||0)-(monthsSince(maintLast(a))||0);
+  });
+  el.innerHTML=sorted.map(m=>{
+    const last=maintLast(m),st=maintStatus(m);
+    return '<div class="task-row" style="cursor:default">'
+      +'<span style="width:9px;height:9px;border-radius:50%;background:'+st.col+';flex-shrink:0"></span>'
+      +'<div style="flex:1;min-width:0;cursor:pointer" onclick="openMaintModal('+m.id+')">'
+        +'<div style="font-size:13px;font-weight:500;color:var(--text)">'+esc(m.name)+'</div>'
+        +'<div style="font-size:11px;color:var(--text3);margin-top:1px">'
+          +(last?'Sist: '+fd(last)+' · '+maintAgeLabel(last):'Aldri registrert')
+          +(m.intervalMonths?' · hver '+m.intervalMonths+'. mnd':'')
+          +(st.txt?' · <span style="color:'+st.col+';font-weight:600">'+st.txt+'</span>':'')
+        +'</div>'
+      +'</div>'
+      +'<button onclick="maintDoneNow('+m.id+')" title="Registrer gjort i dag" style="font-size:11px;font-weight:600;padding:5px 10px;border:1px solid var(--accent-border);border-radius:7px;background:var(--accent-bg);color:var(--accent-text);cursor:pointer;white-space:nowrap;flex-shrink:0">✓ Gjort nå</button>'
+      +'<button class="icon-btn" onclick="openMaintModal('+m.id+')" title="Rediger"><i class="ti ti-edit"></i></button>'
+      +'</div>';
+  }).join('');
+}
+let maintEditId=null;
+function openMaintModal(id){
+  const m=data.maintenance.find(x=>x.id===id);if(!m)return;
+  maintEditId=id;
+  document.getElementById('maint-id').value=id;
+  document.getElementById('maint-name').value=m.name;
+  document.getElementById('maint-interval').value=m.intervalMonths||'';
+  document.getElementById('maint-add-date').value='';
+  renderMaintHistory(m);
+  document.getElementById('maint-modal').style.display='flex';
+}
+function renderMaintHistory(m){
+  const fd=ds=>new Date(ds+'T12:00:00').toLocaleDateString('nb-NO',{day:'numeric',month:'short',year:'numeric'});
+  document.getElementById('maint-history').innerHTML=(m.dates&&m.dates.length)
+    ? [...m.dates].sort().reverse().map(d=>'<div style="display:flex;align-items:center;gap:8px;padding:5px 0;border-bottom:1px solid var(--border2);font-size:13px"><i class="ti ti-check" style="color:var(--green);font-size:13px"></i><span style="flex:1">'+fd(d)+'</span><button onclick="maintDelDate(\''+d+'\')" style="background:none;border:none;color:var(--text4);cursor:pointer;font-size:14px">×</button></div>').join('')
+    : '<div style="font-size:12px;color:var(--text4);font-style:italic">Ingen datoer registrert</div>';
+}
+function maintAddDate(){
+  const m=data.maintenance.find(x=>x.id===maintEditId);if(!m)return;
+  const d=document.getElementById('maint-add-date').value;if(!d)return;
+  if(!m.dates.includes(d))m.dates.push(d);
+  document.getElementById('maint-add-date').value='';
+  renderMaintHistory(m);
+}
+function maintDelDate(d){
+  const m=data.maintenance.find(x=>x.id===maintEditId);if(!m)return;
+  m.dates=m.dates.filter(x=>x!==d);
+  renderMaintHistory(m);
+}
+function saveMaintModal(){
+  const m=data.maintenance.find(x=>x.id===maintEditId);if(!m)return;
+  const name=document.getElementById('maint-name').value.trim();
+  if(name)m.name=name;
+  const iv=parseInt(document.getElementById('maint-interval').value,10);
+  m.intervalMonths=isNaN(iv)?null:iv;
+  hideMaintModal();save();render();
+}
+function deleteMaint(){
+  const m=data.maintenance.find(x=>x.id===maintEditId);if(!m)return;
+  if(!confirm('«'+m.name+'» – slette hele loggen?'))return;
+  data.maintenance=data.maintenance.filter(x=>x.id!==maintEditId);
+  hideMaintModal();save();render();
+}
+function hideMaintModal(){document.getElementById('maint-modal').style.display='none';maintEditId=null;}
+
+function renderTasks(){
+  renderKampanje();
+  // Filter-chips – kategori + prioritet
+  const cats=[...new Set(data.tasks.filter(t=>!t.done&&t.cat).map(t=>t.cat))].sort((a,b)=>a.localeCompare(b,'nb'));
+  const prioChips=[
+    {val:'high',label:'🔴 Viktig'},
+    {val:'normal',label:'🔵 Normal'},
+    {val:'low',label:'⚪ Ikke haster'},
+  ];
+  const people=[...new Set(data.tasks.filter(t=>!t.done&&t.who).map(t=>t.who))].sort((a,b)=>a.localeCompare(b,'nb'));
+  const sep='<span style="width:1px;background:var(--border);margin:0 2px;align-self:stretch;display:inline-block"></span>';
+  document.getElementById('filter-chips').innerHTML=
+    '<span class="filter-chip'+(activeFilter===''?' active':'')+'" role="button" tabindex="0" data-filter="">Alle</span>'
+    +(myName?'<span class="filter-chip'+(activeFilter==='minday'?' active':'')+'" role="button" tabindex="0" data-filter="minday">⭐ Min dag</span>':'')
+    +cats.map(c=>'<span class="filter-chip'+(activeFilter===c?' active':'')+'" role="button" tabindex="0" data-filter="'+esc(c)+'">'+esc(c)+'</span>').join('')
+    +sep
+    +prioChips.map(p=>'<span class="filter-chip'+(activeFilter===p.val?' active':'')+'" role="button" tabindex="0" data-filter="'+p.val+'">'+p.label+'</span>').join('')
+    +(people.length?sep+people.map(p=>{const col=personColor(p);return '<span class="filter-chip'+(activeFilter==='who:'+p?' active':'')+'" role="button" tabindex="0" data-filter="who:'+esc(p)+'" style="'+(activeFilter==='who:'+p?'background:'+col+'22;color:'+col+';border-color:'+col+'44':'')+'">'+esc(p)+'</span>';}).join(''):'');
+
+  const search=(document.getElementById('search-input')?.value||'').toLowerCase();
+  let tasks=data.tasks.filter(t=>!t.done);
+  const prioValues=['high','normal','low'];
+  if(activeFilter==='minday'){const t0=todayStr();tasks=tasks.filter(t=>(!myName||t.who===myName)&&t.date&&t.date<=t0);}
+  else if(activeFilter.startsWith('who:')){const who=activeFilter.slice(4);tasks=tasks.filter(t=>t.who===who);}
+  else if(activeFilter&&prioValues.includes(activeFilter))tasks=tasks.filter(t=>t.prio===activeFilter);
+  else if(activeFilter)tasks=tasks.filter(t=>t.cat===activeFilter);
+  if(search)tasks=tasks.filter(t=>t.title.toLowerCase().includes(search));
+
+  // Manuell rekkefølge (dra og slipp). Standard ved migrering/nye: frist først.
+  tasks.sort((a,b)=>(a.order??1e9)-(b.order??1e9));
+
+  const listEl=document.getElementById('task-list');
+  if(!tasks.length){
+    listEl.innerHTML='<div class="empty-state"><i class="ti ti-checklist" style="font-size:28px;display:block;margin-bottom:8px"></i>'+(search||activeFilter?'Ingen treff':'Ingen oppgaver – legg til en ovenfor')+'</div>';
+    return;
+  }
+
+  listEl.innerHTML=tasks.map(task=>renderTaskRow(task)).join('');
+}
+
+// Ny oppgave plasseres: med frist → blant frist-oppgavene etter dato; uten → nederst
+function computeOrderFor(date){
+  const open=data.tasks.filter(t=>!t.done&&t.order!=null).sort((a,b)=>a.order-b.order);
+  if(!open.length)return 1;
+  if(date){
+    let after=null;
+    open.forEach(t=>{if(t.date&&t.date<=date)after=t;});
+    if(after){
+      const idx=open.indexOf(after),next=open[idx+1];
+      return next?(after.order+next.order)/2:after.order+1;
+    }
+    return open[0].order-1; // tidligst frist → helt øverst
+  }
+  return open[open.length-1].order+1;
+}
+
+// ── Dra og slipp (pekerbasert – virker på både touch og mus) ──
+let dragEl=null,dragTaskId=null;
+function taskDragStart(e,id){
+  e.preventDefault();
+  dragTaskId=id;
+  dragEl=e.target.closest('.task-row');
+  if(!dragEl)return;
+  dragEl.classList.add('dragging');
+  document.addEventListener('pointermove',taskDragMove);
+  document.addEventListener('pointerup',taskDragEnd);
+}
+function taskDragMove(e){
+  if(!dragEl)return;
+  const list=document.getElementById('task-list');
+  const rows=[...list.querySelectorAll('.task-row:not(.dragging)')];
+  const after=rows.find(r=>{const rc=r.getBoundingClientRect();return e.clientY<rc.top+rc.height/2;});
+  if(after)list.insertBefore(dragEl,after);else list.appendChild(dragEl);
+}
+function taskDragEnd(){
+  document.removeEventListener('pointermove',taskDragMove);
+  document.removeEventListener('pointerup',taskDragEnd);
+  if(!dragEl)return;
+  dragEl.classList.remove('dragging');
+  const list=document.getElementById('task-list');
+  const ids=[...list.querySelectorAll('.task-row')].map(r=>parseInt(r.dataset.id,10));
+  const idx=ids.indexOf(dragTaskId);
+  const t=data.tasks.find(x=>x.id===dragTaskId);
+  if(t&&idx>=0){
+    const prev=idx>0?data.tasks.find(x=>x.id===ids[idx-1]):null;
+    const next=idx<ids.length-1?data.tasks.find(x=>x.id===ids[idx+1]):null;
+    if(prev&&next)t.order=((prev.order??0)+(next.order??0))/2;
+    else if(prev)t.order=(prev.order??0)+1;
+    else if(next)t.order=(next.order??2)-1;
+    save();
+  }
+  dragEl=null;dragTaskId=null;
+  render();
+}
+
+function renderTaskRow(task){
+  const whoColor=task.who?personColor(task.who):'';
+  const overdue=isOverdue(task.date)&&!task.done;
+  const repeatLabel=task.repeat?(REPEAT_LABELS[task.repeat]||'Hver '+task.repeat+'. dag'):'';
+  return '<div class="task-row prio-'+task.prio+'" data-id="'+task.id+'">'
+    +'<button class="task-drag" onpointerdown="taskDragStart(event,'+task.id+')" title="Dra for å flytte"><i class="ti ti-grip-vertical"></i></button>'
+    +'<button class="task-check" onclick="completeTask('+task.id+')" title="Fullfør"><i class="ti ti-check" style="font-size:11px;opacity:0"></i></button>'
+    +'<div class="task-body" onclick="openModal('+task.id+')">'
+    +'<div class="task-title">'+esc(task.title)+'</div>'
+    +'<div class="task-meta">'
+    +(task.cat?'<span class="task-cat"><i class="ti '+(CAT_ICONS[task.cat]||'ti-box')+'" style="font-size:10px;vertical-align:-1px;margin-right:2px"></i>'+esc(task.cat)+'</span>':'')
+    +(task.who?'<span class="task-who" style="background:'+whoColor+'22;color:'+whoColor+'">'+esc(task.who)+'</span>':'')
+    +(task.date?'<span class="task-date'+(overdue?' overdue':'')+'"><i class="ti ti-calendar" style="font-size:10px"></i>'+formatDate(task.date)+(overdue?' ⚠️':'')+'</span>':'')
+    +(repeatLabel?'<span class="task-repeat"><i class="ti ti-refresh" style="font-size:10px"></i>'+repeatLabel+'</span>':'')
+    +(task.note?'<span style="font-size:10px;color:var(--text4)"><i class="ti ti-note" style="font-size:10px;vertical-align:-1px"></i></span>':'')
+    +'</div></div>'
+    +'<button class="icon-btn danger" onclick="deleteTask('+task.id+')" title="Slett"><i class="ti ti-trash"></i></button>'
+    +'</div>';
+}
+
+function renderWeek(){
+  if(weekMode==='month'){renderMonth();return;}
+  const dates=getWeekDates(weekOffset);
+  const todayS=todayStr();
+  const mon=dates[0];const sun=dates[6];
+  document.getElementById('week-label').textContent='Uke '+getWeekNumber(mon)+' · '+mon.toLocaleDateString('nb-NO',{day:'numeric',month:'short'})+' – '+sun.toLocaleDateString('nb-NO',{day:'numeric',month:'short'});
+
+  let html='';
+  dates.forEach((d,i)=>{
+    const ds=toDateStr(d);
+    const isToday=ds===todayS;
+    const dow=d.getDay()===0?6:d.getDay()-1;
+    const dayTasks=data.tasks.filter(t=>t.date===ds&&!t.done);
+    const overdueToday=data.tasks.filter(t=>t.date<ds&&t.date&&!t.done&&isToday);
+    html+='<div class="day-card'+(isToday?' today':'')+'">';
+    html+='<div class="day-header"><span class="day-name'+(isToday?' today':'')+'">'+DAYS_SHORT[dow]+'</span><span class="day-date-lbl">'+d.toLocaleDateString('nb-NO',{day:'numeric',month:'short'})+'</span>'+(isToday?'<span class="today-badge">I dag</span>':'')+'</div>';
+    if(overdueToday.length){
+      html+='<div style="font-size:11px;color:var(--prio-high);margin-bottom:6px;display:flex;align-items:center;gap:4px"><i class="ti ti-alert-triangle" style="font-size:11px"></i>'+overdueToday.length+' forfalt</div>';
+    }
+    if(dayTasks.length){
+      dayTasks.forEach(t=>{
+        const whoColor=t.who?personColor(t.who):'';
+        html+='<div class="day-task prio-'+t.prio+'" onclick="openModal('+t.id+')">'
+          +'<span class="day-task-name">'+esc(t.title)+'</span>'
+          +(t.who?'<span style="font-size:10px;padding:1px 6px;border-radius:10px;background:'+whoColor+'22;color:'+whoColor+'">'+esc(t.who)+'</span>':'')
+          +(t.repeat?'<i class="ti ti-refresh" style="font-size:10px;color:var(--accent)"></i>':'')
+          +'</div>';
+      });
+    }else{
+      html+='<div class="day-empty">Ingenting planlagt</div>';
+    }
+    html+='</div>';
+  });
+
+  // Uplanlagte
+  const unplanned=data.tasks.filter(t=>!t.date&&!t.done);
+  if(unplanned.length){
+    html+='<div class="section-hdr" style="margin-top:8px"><i class="ti ti-circle-dashed"></i> Ikke planlagt <span>'+unplanned.length+'</span></div>';
+    html+=unplanned.map(t=>'<div class="task-row prio-'+t.prio+'" style="margin-bottom:4px">'
+      +'<div class="task-body" onclick="openModal('+t.id+')"><div class="task-title">'+esc(t.title)+'</div></div>'
+      +'</div>').join('');
+  }
+
+  document.getElementById('week-list').innerHTML=html;
+}
+
+function renderArchive(){
+  const arc=data.archive;
+  if(!arc.length){
+    document.getElementById('archive-stats').innerHTML='';
+    document.getElementById('archive-filter-chips').innerHTML='';
+    document.getElementById('archive-count').textContent='';
+    document.getElementById('archive-list').innerHTML='<div class="empty-state"><i class="ti ti-archive" style="font-size:28px;display:block;margin-bottom:8px"></i>Ingen fullførte oppgaver ennå</div>';
+    return;
+  }
+
+  // ── Statistikk ───────────────────────────────────────────
+  const total=arc.length;
+  // Per person
+  const perWho={};
+  arc.forEach(t=>{const w=t.who||'Ukjent';perWho[w]=(perWho[w]||0)+1;});
+  const whoSorted=Object.entries(perWho).sort((a,b)=>b[1]-a[1]);
+  const topWho=whoSorted[0];
+  // Per kategori
+  const perCat={};
+  arc.forEach(t=>{const c=t.cat||'Annet';perCat[c]=(perCat[c]||0)+1;});
+  const catSorted=Object.entries(perCat).sort((a,b)=>b[1]-a[1]);
+  // Gjentakende
+  const recurring=arc.filter(t=>t.repeat).length;
+
+  let statsHtml='<div class="stat-section" style="margin-bottom:.75rem">';
+  statsHtml+='<div class="stat-title"><i class="ti ti-chart-bar"></i> Oversikt</div>';
+  statsHtml+='<div class="stat-grid" style="margin-bottom:10px">';
+  statsHtml+='<div class="stat-box"><div class="stat-num">'+total+'</div><div class="stat-lbl">Fullført totalt</div></div>';
+  statsHtml+='<div class="stat-box"><div class="stat-num" style="color:var(--accent)">'+recurring+'</div><div class="stat-lbl">Gjentakende</div></div>';
+  statsHtml+='</div>';
+
+  // Hvem-stolper
+  statsHtml+='<div style="margin-bottom:10px">';
+  statsHtml+='<div style="font-size:11px;font-weight:600;color:var(--text2);margin-bottom:6px;text-transform:uppercase;letter-spacing:.05em">Hvem gjør mest</div>';
+  whoSorted.forEach(([who,count])=>{
+    const pct=Math.round(count/total*100);
+    const barPct=Math.round(count/(whoSorted[0][1])*100);
+    const color=personColor(who);
+    statsHtml+='<div style="margin-bottom:8px">';
+    statsHtml+='<div style="display:flex;align-items:center;gap:8px;margin-bottom:3px">';
+    statsHtml+='<span style="font-size:12px;font-weight:500;background:'+color+'22;color:'+color+';padding:1px 8px;border-radius:10px">'+esc(who)+'</span>';
+    statsHtml+='<span style="flex:1"></span>';
+    statsHtml+='<span style="font-size:12px;font-weight:600;color:var(--text)">'+count+'</span>';
+    statsHtml+='<span style="font-size:11px;color:var(--text3);min-width:28px;text-align:right">'+pct+'%</span>';
+    statsHtml+='</div>';
+    statsHtml+='<div style="height:5px;background:var(--surface2);border-radius:3px;overflow:hidden">';
+    statsHtml+='<div style="height:100%;width:'+barPct+'%;background:'+color+';border-radius:3px;transition:width .3s"></div>';
+    statsHtml+='</div></div>';
+  });
+  statsHtml+='</div>';
+
+  // Kategori-stolper
+  statsHtml+='<div>';
+  statsHtml+='<div style="font-size:11px;font-weight:600;color:var(--text2);margin-bottom:6px;text-transform:uppercase;letter-spacing:.05em">Per kategori</div>';
+  catSorted.forEach(([cat,count])=>{
+    const pct=Math.round(count/total*100);
+    const barPct=Math.round(count/(catSorted[0][1])*100);
+    statsHtml+='<div style="margin-bottom:8px">';
+    statsHtml+='<div style="display:flex;align-items:center;gap:8px;margin-bottom:3px">';
+    statsHtml+='<i class="ti '+(CAT_ICONS[cat]||'ti-box')+'" style="font-size:12px;color:var(--text3);width:14px"></i>';
+    statsHtml+='<span style="flex:1;font-size:12px;font-weight:500;color:var(--text)">'+esc(cat)+'</span>';
+    statsHtml+='<span style="font-size:12px;font-weight:600;color:var(--text)">'+count+'</span>';
+    statsHtml+='<span style="font-size:11px;color:var(--text3);min-width:28px;text-align:right">'+pct+'%</span>';
+    statsHtml+='</div>';
+    statsHtml+='<div style="height:5px;background:var(--surface2);border-radius:3px;overflow:hidden">';
+    statsHtml+='<div style="height:100%;width:'+barPct+'%;background:var(--orange);border-radius:3px;transition:width .3s"></div>';
+    statsHtml+='</div></div>';
+  });
+  statsHtml+='</div>';
+  statsHtml+='</div>';
+  document.getElementById('archive-stats').innerHTML=statsHtml;
+
+  // ── Filter-chips ─────────────────────────────────────────
+  const cats=[...new Set(arc.filter(t=>t.cat).map(t=>t.cat))].sort((a,b)=>a.localeCompare(b,'nb'));
+  const people=[...new Set(arc.filter(t=>t.who).map(t=>t.who))].sort();
+  let chips='<span class="filter-chip'+(archiveFilter===''?' active':'')+'" role="button" tabindex="0" data-archive-filter="">Alle</span>';
+  chips+=cats.map(c=>'<span class="filter-chip'+(archiveFilter===c?' active':'')+'" role="button" tabindex="0" data-archive-filter="'+esc(c)+'">'+esc(c)+'</span>').join('');
+  chips+='<span style="width:1px;background:var(--border);margin:0 2px;align-self:stretch;display:inline-block"></span>';
+  chips+=people.map(p=>{const color=personColor(p);return'<span class="filter-chip'+(archiveFilter===p?' active':'')+'" role="button" tabindex="0" data-archive-filter="'+esc(p)+'" style="'+(archiveFilter===p?'background:'+color+'22;color:'+color+';border-color:'+color+'44':'')+'">'+esc(p)+'</span>';}).join('');
+  document.getElementById('archive-filter-chips').innerHTML=chips;
+
+  // ── Liste ────────────────────────────────────────────────
+  let filtered=arc;
+  if(archiveFilter){
+    filtered=arc.filter(t=>t.cat===archiveFilter||t.who===archiveFilter);
+  }
+  document.getElementById('archive-count').textContent=filtered.length+' av '+total+' oppgaver';
+  document.getElementById('archive-list').innerHTML=filtered.slice(0,50).map(t=>{
+    const whoColor=t.who?personColor(t.who):'';
+    return '<div class="archive-item">'
+      +'<i class="ti ti-check" style="color:var(--green);font-size:14px;flex-shrink:0"></i>'
+      +'<div style="flex:1;min-width:0">'
+      +'<div class="archive-name">'+esc(t.title)+'</div>'
+      +'<div style="display:flex;gap:6px;margin-top:3px;flex-wrap:wrap">'
+      +(t.cat?'<span style="font-size:10px;color:var(--text3)"><i class="ti '+(CAT_ICONS[t.cat]||'ti-box')+'" style="font-size:10px;vertical-align:-1px;margin-right:2px"></i>'+esc(t.cat)+'</span>':'')
+      +(t.who?'<span style="font-size:10px;padding:1px 6px;border-radius:10px;background:'+whoColor+'22;color:'+whoColor+'">'+esc(t.who)+'</span>':'')
+      +(t.repeat?'<span style="font-size:10px;color:var(--accent)"><i class="ti ti-refresh" style="font-size:10px"></i></span>':'')
+      +'</div></div>'
+      +'<span class="archive-meta">'+formatDate(t.completedDate)+'</span>'
+      +'</div>';
+  }).join('');
+}
+
+function renderSettings(){
+  // Statistikk
+  const total=data.tasks.length;
+  const done=data.archive.length;
+  const overdue=data.tasks.filter(t=>isOverdue(t.date)&&!t.done).length;
+  const recurring=data.tasks.filter(t=>t.repeat&&!t.done).length;
+  document.getElementById('stats-grid').innerHTML=
+    '<div class="stat-box"><div class="stat-num">'+total+'</div><div class="stat-lbl">Åpne oppgaver</div></div>'
+    +'<div class="stat-box"><div class="stat-num">'+done+'</div><div class="stat-lbl">Fullført totalt</div></div>'
+    +'<div class="stat-box"><div class="stat-num" style="color:var(--prio-high)">'+overdue+'</div><div class="stat-lbl">Forfalt</div></div>'
+    +'<div class="stat-box"><div class="stat-num" style="color:var(--accent)">'+recurring+'</div><div class="stat-lbl">Gjentakende</div></div>';
+
+  // Kategorier
+  document.getElementById('cat-manage').innerHTML=[...data.categories].sort((a,b)=>a.localeCompare(b,'nb')).map(c=>
+    '<div style="display:flex;align-items:center;gap:8px;padding:6px 0;border-bottom:1px solid var(--border2)">'
+    +'<i class="ti '+(CAT_ICONS[c]||'ti-box')+'" style="font-size:13px;color:var(--text3)"></i>'
+    +'<span style="flex:1;font-size:13px">'+esc(c)+'</span>'
+    +'<button data-del-cat="'+esc(c)+'" aria-label="Slett kategori" style="background:none;border:none;color:var(--text4);cursor:pointer;font-size:13px" onmouseover="this.style.color=\'var(--danger)\'" onmouseout="this.style.color=\'var(--text4)\'"><i class="ti ti-trash" aria-hidden="true"></i></button>'
+    +'</div>'
+  ).join('');
+
+  // Min person-velger
+  const mySel=document.getElementById('my-name');
+  if(mySel)mySel.innerHTML='<option value="">— ingen —</option>'+data.people.map(p=>'<option value="'+esc(p)+'"'+(p===myName?' selected':'')+'>'+esc(p)+'</option>').join('');
+  // Personer
+  document.getElementById('people-list').innerHTML=data.people.map(p=>{
+    const color=personColor(p);
+    return '<div style="display:flex;align-items:center;gap:8px;padding:7px 0;border-bottom:1px solid var(--border2)">'
+      +'<span style="flex:1;font-size:13px;font-weight:500;background:'+color+'22;color:'+color+';padding:3px 10px;border-radius:20px;display:inline-block">'+esc(p)+'</span>'
+      +'<button data-del-person="'+esc(p)+'" aria-label="Slett person" style="background:none;border:none;color:var(--text4);cursor:pointer;font-size:13px;padding:4px" onmouseover="this.style.color=\'var(--danger)\'" onmouseout="this.style.color=\'var(--text4)\'"><i class="ti ti-trash" aria-hidden="true"></i></button>'
+      +'</div>';
+  }).join('');
+}
+
+// ── Delegerte lyttere (unngår brukerdata i inline onclick – XSS-sikkert) ──
+document.getElementById('filter-chips').addEventListener('click',e=>{const b=e.target.closest('[data-filter]');if(b){activeFilter=b.dataset.filter;render();}});
+document.getElementById('archive-filter-chips').addEventListener('click',e=>{const b=e.target.closest('[data-archive-filter]');if(b){archiveFilter=b.dataset.archiveFilter;renderArchive();}});
+document.getElementById('cat-manage').addEventListener('click',e=>{const b=e.target.closest('[data-del-cat]');if(b)deleteCategory(b.dataset.delCat);});
+document.getElementById('people-list').addEventListener('click',e=>{const b=e.target.closest('[data-del-person]');if(b)deletePerson(b.dataset.delPerson);});
+document.getElementById('week-list').addEventListener('click',e=>{const c=e.target.closest('[data-day]');if(c)monthDayClick(c.dataset.day);});
+// Tastatur (Enter/Space) for klikkbare elementer med role="button" som ikke er ekte <button>.
+document.addEventListener('keydown',e=>{
+  if((e.key==='Enter'||e.key===' ')&&e.target.matches('[role="button"]')&&e.target.tagName!=='BUTTON'){e.preventDefault();e.target.click();}
+});
+// Escape lukker åpen modal.
+document.addEventListener('keydown',e=>{
+  if(e.key!=='Escape')return;
+  ['modal','maint-modal'].forEach(id=>{const m=document.getElementById(id);if(m&&m.style.display!=='none')m.style.display='none';});
+});
+
+// Modul-scope: funksjoner brukt i on*-attributter må eksponeres på window.
+Object.assign(window,{addCategory,addMaint,addPerson,addTask,changeWeek,clearArchive,
+completeTask,deleteFromModal,deleteMaint,deleteTask,goToNow,hideMaintModal,hideModal,
+maintAddDate,maintDelDate,maintDoneNow,openMaintModal,openModal,render,
+resetAccentColor,saveMaintModal,saveModal,setAccentColor,setModalPrio,setMyName,
+setNewPrio,setView,setWeekMode,taskDragStart,toggleNewRepeat,toggleTheme});
+
+load();
+</script>
+</body>
+</html>

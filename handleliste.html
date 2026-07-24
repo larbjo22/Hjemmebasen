@@ -1,0 +1,1307 @@
+<!DOCTYPE html>
+<html lang="no">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+<meta http-equiv="Pragma" content="no-cache">
+<meta http-equiv="Expires" content="0">
+<title>Handleliste</title>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@2.44.0/tabler-icons.min.css">
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --bg:#f5f5f5;--surface:#fff;--surface2:#f9f9f9;
+  --border:#e0e0e0;--border2:#f0f0f0;
+  --text:#1a1a1a;--text2:#666;--text3:#aaa;--text4:#bbb;
+  --green:#16a34a;--green-bg:#f0fdf4;--green-border:#bbf7d0;
+  --accent:#f97316;--accent-bg:#fff8f5;--accent-border:#fed7aa;--accent-text:#c2410c;
+  --danger:#e53e3e;--orange:#f97316;
+}
+@media(prefers-color-scheme:dark){:root{
+  --bg:#111;--surface:#1c1c1e;--surface2:#2c2c2e;
+  --border:#2c2c2e;--border2:#3a3a3c;
+  --text:#f2f2f7;--text2:#aeaeb2;--text3:#636366;--text4:#48484a;
+  --green:#4ade80;--green-bg:rgba(34,197,94,.08);--green-border:rgba(34,197,94,.3);
+  --accent:#f97316;--accent-bg:rgba(249,115,22,.15);--accent-border:rgba(249,115,22,.4);--accent-text:#fb923c;
+  --danger:#f87171;--orange:#f97316;
+}}
+[data-theme="dark"]{
+  --bg:#111;--surface:#1c1c1e;--surface2:#2c2c2e;
+  --border:#2c2c2e;--border2:#3a3a3c;
+  --text:#f2f2f7;--text2:#aeaeb2;--text3:#636366;--text4:#48484a;
+  --green:#4ade80;--green-bg:rgba(34,197,94,.08);--green-border:rgba(34,197,94,.3);
+  --accent:#f97316;--accent-bg:rgba(249,115,22,.15);--accent-border:rgba(249,115,22,.4);--accent-text:#fb923c;
+  --danger:#f87171;--orange:#f97316;
+}
+[data-theme="light"]{
+  --bg:#f5f5f5;--surface:#fff;--surface2:#f9f9f9;
+  --border:#e0e0e0;--border2:#f0f0f0;
+  --text:#1a1a1a;--text2:#666;--text3:#aaa;--text4:#bbb;
+  --green:#16a34a;--green-bg:#f0fdf4;--green-border:#bbf7d0;
+  --accent:#f97316;--accent-bg:#fff8f5;--accent-border:#fed7aa;--accent-text:#c2410c;
+  --danger:#e53e3e;--orange:#f97316;
+}
+body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;background:var(--bg);color:var(--text);font-size:14px}
+/* Synlig fokusmarkør for tastaturbrukere */
+input:focus-visible,select:focus-visible,button:focus-visible,[role="button"]:focus-visible{outline:2px solid var(--accent);outline-offset:1px}
+.fw{max-width:480px;margin:0 auto;padding:.6rem .75rem}
+.top-bar{display:flex;align-items:center;justify-content:space-between;margin-bottom:.75rem}
+.app-title{font-size:15px;font-weight:600;display:flex;align-items:center;gap:6px}
+.app-title i{color:var(--orange)}
+.top-right{display:flex;align-items:center;gap:8px}
+.count-badge{font-size:11px;color:var(--text2);background:var(--surface2);border:1px solid var(--border);border-radius:6px;padding:2px 8px}
+.theme-btn{width:28px;height:28px;border-radius:50%;border:1px solid var(--border);background:var(--surface2);cursor:pointer;font-size:14px;display:flex;align-items:center;justify-content:center;color:var(--text2)}
+.tabs{display:flex;gap:4px;margin-bottom:.75rem;background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:4px}
+.tab{flex:1;text-align:center;padding:6px;font-size:12px;font-weight:500;border-radius:7px;cursor:pointer;color:var(--text2);border:none;background:transparent}
+.tab.active{background:var(--accent);color:#fff}
+.quick-add{background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:10px;margin-bottom:.75rem;position:relative}
+.quick-add-row{display:flex;gap:6px;align-items:center;margin-bottom:6px}
+.quick-add-row2{display:flex;gap:6px;align-items:center}
+.quick-input{flex:1;font-size:14px;font-weight:500;padding:8px 10px;border:1px solid var(--border);border-radius:7px;outline:none;background:var(--surface);color:var(--text)}
+.quick-input:focus{border-color:var(--accent)}
+.qty-inline{width:52px;font-size:13px;padding:8px 6px;border:1px solid var(--border);border-radius:7px;outline:none;background:var(--surface);color:var(--text);text-align:center}
+.cat-select{flex:1;font-size:12px;padding:8px 6px;border:1px solid var(--border);border-radius:7px;outline:none;background:var(--surface);color:var(--text)}
+.add-icon-btn{width:36px;height:36px;border-radius:50%;border:none;background:var(--accent);color:#fff;cursor:pointer;font-size:18px;display:flex;align-items:center;justify-content:center;flex-shrink:0}
+.sug-box{position:absolute;left:10px;right:10px;top:100%;margin-top:-6px;background:var(--surface);border:1px solid var(--border);border-radius:0 0 10px 10px;box-shadow:0 6px 16px rgba(0,0,0,.12);z-index:50;overflow:hidden;max-height:280px;overflow-y:auto}
+.sug-item{display:flex;align-items:center;gap:10px;padding:9px 12px;cursor:pointer;border-bottom:1px solid var(--border2)}
+.sug-item:last-child{border-bottom:none}
+.sug-item:hover{background:var(--accent-bg)}
+.sug-icon{width:28px;text-align:center;color:var(--accent);font-size:18px;flex-shrink:0}
+.sug-info{flex:1;min-width:0}
+.sug-name{font-size:13px;font-weight:500;color:var(--text);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.sug-meta{font-size:11px;color:var(--text3);margin-top:1px}
+.sug-count{font-size:12px;font-weight:700;color:var(--accent);flex-shrink:0}
+.dupe-banner{display:flex;align-items:center;gap:8px;background:var(--accent-bg);border:1px solid var(--accent-border);color:var(--accent-text);border-radius:8px;padding:8px 10px;margin-bottom:.5rem;font-size:12.5px;cursor:pointer}
+.dupe-banner i{font-size:15px}
+.dupe-banner .db-act{margin-left:auto;font-weight:700;white-space:nowrap}
+.merge-sec-title{font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.04em;color:var(--text3);margin:2px 0 8px}
+.merge-empty{font-size:13px;color:var(--text4);font-style:italic;padding:4px 0 10px}
+.merge-hint{font-size:11px;color:var(--text3);margin:-4px 0 8px}
+.merge-group{border:1px solid var(--border);border-radius:9px;padding:9px 10px;margin-bottom:8px}
+.merge-variants{font-size:13px;color:var(--text);margin-bottom:7px;line-height:1.5}
+.merge-cnt{font-size:11px;color:var(--text3);font-weight:600}
+.merge-actions{display:flex;align-items:center;gap:6px}
+.merge-keep{font-size:12px;color:var(--text2)}
+.merge-select{flex:1;min-width:0;font-size:12px;padding:6px;border:1px solid var(--border);border-radius:7px;background:var(--surface);color:var(--text)}
+.merge-btn{font-size:12px;font-weight:600;padding:6px 12px;border:1px solid var(--accent-border);border-radius:7px;background:var(--accent-bg);color:var(--accent-text);cursor:pointer;white-space:nowrap}
+.merge-manual-row{display:flex;align-items:center;gap:8px;padding:6px 2px;border-bottom:1px solid var(--border2);font-size:13px;cursor:pointer}
+.merge-manual-row:last-of-type{border-bottom:none}
+.merge-manual-foot{display:flex;gap:6px;margin-top:8px}
+.merge-manual-foot input{flex:1;min-width:0;font-size:13px;padding:8px;border:1px solid var(--border);border-radius:7px;background:var(--surface);color:var(--text)}
+.complete-btn{width:100%;padding:10px;font-size:13px;font-weight:600;background:var(--accent);border:none;border-radius:8px;cursor:pointer;color:#fff;display:flex;align-items:center;justify-content:center;gap:6px;margin-bottom:.75rem}
+.complete-btn.hidden{display:none}
+.toolbar{display:flex;gap:6px;margin-bottom:.6rem;align-items:center}
+.toolbar input{flex:1;font-size:12px;padding:5px 9px;border:1px solid var(--border);border-radius:7px;height:30px;outline:none;background:var(--surface);color:var(--text)}
+.toolbar input:focus{border-color:var(--accent)}
+.sort-btn{font-size:11px;padding:4px 9px;border:1px solid var(--border);border-radius:7px;background:var(--surface);color:var(--text2);cursor:pointer;height:30px}
+.sort-btn.active{background:var(--accent-bg);color:var(--accent-text);border-color:var(--accent-border)}
+.cat-section{margin-bottom:.5rem}
+.cat-header{display:flex;align-items:center;gap:6px;padding:6px 0 4px;border-bottom:1px solid var(--border2)}
+.cat-icon{font-size:13px;color:var(--text3)}
+.cat-label{font-size:11px;font-weight:600;color:var(--text2);text-transform:uppercase;letter-spacing:.05em}
+.cat-count{font-size:11px;color:var(--text4);margin-left:auto}
+.item-row{display:flex;align-items:center;gap:8px;padding:8px 10px;background:var(--surface);border:1px solid var(--border2);border-radius:8px;margin-bottom:4px;transition:opacity .2s}
+.item-row.checked{opacity:.45;background:var(--surface2)}
+.item-check{width:22px;height:22px;border-radius:50%;border:2px solid var(--border);background:transparent;cursor:pointer;display:flex;align-items:center;justify-content:center;flex-shrink:0;transition:all .15s}
+.item-check:hover{border-color:var(--accent)}
+.item-check.done{background:var(--accent);border-color:var(--accent);color:#fff}
+.item-name{flex:1;font-size:13px;color:var(--text)}
+.item-name.checked{text-decoration:line-through;color:var(--text3)}
+.item-qty-badge{font-size:11px;font-weight:600;background:var(--accent-bg);color:var(--accent-text);border:1px solid var(--accent-border);border-radius:12px;padding:2px 8px;flex-shrink:0}
+.item-actions{display:flex;gap:2px;flex-shrink:0}
+.icon-btn{width:26px;height:26px;border-radius:50%;border:none;background:transparent;color:var(--text4);cursor:pointer;font-size:13px;display:flex;align-items:center;justify-content:center;padding:0}
+.icon-btn:hover{color:var(--text2);background:var(--surface2)}
+.icon-btn.danger:hover{color:#fff;background:var(--danger)}
+.checked-section{margin-top:.5rem}
+.checked-header{font-size:11px;color:var(--text3);display:flex;align-items:center;gap:6px;margin-bottom:6px;cursor:pointer}
+.empty-state{text-align:center;padding:2rem;color:var(--text3);font-size:13px}
+.template-section{background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:10px;margin-bottom:.75rem}
+.template-title{font-size:12px;font-weight:500;color:var(--text2);margin-bottom:8px;display:flex;align-items:center;gap:6px}
+.template-chips{display:flex;flex-wrap:wrap;gap:5px;margin-bottom:8px}
+.template-chip{font-size:12px;padding:4px 10px;border-radius:20px;border:1px solid var(--border);background:var(--surface2);color:var(--text2);cursor:pointer;display:flex;align-items:center;gap:4px}
+.template-chip:hover{border-color:var(--accent);color:var(--accent-text)}
+.template-chip.on-list{border-color:var(--accent-border);background:var(--accent-bg);color:var(--accent-text)}
+.template-add-row{display:flex;gap:6px}
+.template-add-row input{flex:1;font-size:12px;padding:5px 8px;border:1px solid var(--border);border-radius:6px;outline:none;background:var(--surface);color:var(--text)}
+.template-add-row button{font-size:12px;padding:0 10px;border:1px solid var(--border);background:var(--surface2);border-radius:6px;cursor:pointer;color:var(--text)}
+.stat-section{background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:12px;margin-bottom:10px}
+.stat-title{font-size:11px;font-weight:600;color:var(--text2);text-transform:uppercase;letter-spacing:.05em;margin-bottom:10px;display:flex;align-items:center;gap:6px}
+.stat-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.stat-box{background:var(--surface2);border-radius:8px;padding:10px;text-align:center}
+.stat-num{font-size:22px;font-weight:700;color:var(--text);line-height:1}
+.stat-lbl{font-size:11px;color:var(--text3);margin-top:3px}
+.hist-list{background:var(--surface);border:1px solid var(--border);border-radius:10px;overflow:hidden}
+.hist-item{display:flex;align-items:center;gap:10px;padding:9px 12px;border-bottom:1px solid var(--border2)}
+.hist-item:last-child{border-bottom:none}
+.hist-name{flex:1;font-size:13px;font-weight:500}
+.hist-count{font-size:11px;background:var(--accent-bg);color:var(--accent-text);border-radius:10px;padding:1px 7px;font-weight:500;flex-shrink:0}
+.hist-meta{font-size:11px;color:var(--text3)}
+.modal-bg{position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,.4);display:flex;align-items:flex-start;justify-content:center;padding-top:40px;z-index:100}
+.modal{background:var(--surface);border-radius:12px;padding:1rem;width:90%;max-width:360px;box-shadow:0 8px 32px rgba(0,0,0,.15)}
+.modal-title{font-size:15px;font-weight:600;margin-bottom:.75rem;color:var(--text)}
+.modal label{font-size:11px;color:var(--text2);display:block;margin-bottom:2px;margin-top:10px}
+.modal label:first-of-type{margin-top:0}
+.modal input,.modal select{width:100%;font-size:13px;padding:7px 9px;border:1px solid var(--border);border-radius:7px;outline:none;background:var(--surface);color:var(--text)}
+.modal-actions{display:flex;gap:7px;margin-top:1rem}
+.btn-primary{flex:1;padding:9px;font-size:13px;font-weight:600;background:var(--accent);border:none;border-radius:7px;cursor:pointer;color:#fff}
+.btn-ghost{padding:9px 14px;font-size:13px;background:var(--surface2);border:1px solid var(--border);border-radius:7px;cursor:pointer;color:var(--text2)}
+.btn-danger{padding:9px 14px;font-size:13px;background:var(--surface);border:1px solid #fca5a5;border-radius:7px;cursor:pointer;color:var(--danger)}
+.status-bar{font-size:11px;color:var(--text3);text-align:right;margin-top:4px;min-height:14px}
+.status-bar.err{color:var(--danger)}
+.status-bar.ok{color:var(--green)}
+</style>
+</head>
+<body>
+<main class="fw">
+  <div class="top-bar">
+    <h1 class="app-title"><a href="index.html" title="Til forsiden" aria-label="Til forsiden" style="text-decoration:none;margin-right:2px">🏠</a><i class="ti ti-shopping-cart" aria-hidden="true"></i>Handleliste</h1>
+    <div class="top-right">
+      <span class="count-badge" id="count-badge">0 varer</span>
+      <button class="theme-btn" id="theme-btn" onclick="toggleTheme()" title="Bytt tema" aria-label="Bytt mellom lyst og mørkt tema"></button>
+    </div>
+  </div>
+  <div class="tabs">
+    <button class="tab active" id="tab-list" onclick="setView('list')"><i class="ti ti-list-check"></i> Butikken</button>
+    <button class="tab" id="tab-other" onclick="setView('other')"><i class="ti ti-shopping-bag"></i> Diverse</button>
+    <button class="tab" id="tab-history" onclick="setView('history')"><i class="ti ti-chart-bar"></i> Statistikk</button>
+    <button class="tab" id="tab-settings" onclick="setView('settings')"><i class="ti ti-settings"></i> Innstillinger</button>
+  </div>
+
+  <div id="view-list">
+    <div class="quick-add">
+      <div class="quick-add-row">
+        <input type="text" class="quick-input" id="new-item" placeholder="Legg til vare..." aria-label="Legg til vare" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" name="ny-vare-sok" inputmode="text"
+          oninput="suggestInput(this.value)" onblur="setTimeout(hideSuggest,200)" />
+        <input type="number" class="qty-inline" id="new-qty" value="1" min="1" aria-label="Antall" />
+        <button class="add-icon-btn" onclick="addItem()" aria-label="Legg til vare"><i class="ti ti-plus" aria-hidden="true"></i></button>
+      </div>
+      <div class="quick-add-row2">
+        <select class="cat-select" id="new-cat"></select>
+      </div>
+      <div class="sug-box" id="item-suggest" style="display:none"></div>
+    </div>
+    <div class="template-section">
+      <div class="template-title"><i class="ti ti-bookmark"></i> Faste varer – trykk for å legge til</div>
+      <div class="template-chips" id="template-chips"></div>
+    </div>
+    <div class="template-section" id="often-section" style="display:none">
+      <div class="template-title"><i class="ti ti-repeat"></i> Kjøpes ofte – mangler nå</div>
+      <div class="template-chips" id="often-chips"></div>
+    </div>
+    <button class="complete-btn hidden" id="complete-btn" onclick="completeShop()">
+      <i class="ti ti-shopping-cart-check"></i> Fullfør handletur
+    </button>
+    <div id="dupe-banner"></div>
+    <div class="toolbar">
+      <input type="text" id="search-input" placeholder="Søk i listen..." aria-label="Søk i listen" oninput="render()" />
+      <button class="sort-btn" id="sort-alpha" onclick="toggleSort()" aria-label="Sorter alfabetisk"><i class="ti ti-sort-az" aria-hidden="true"></i></button>
+    </div>
+    <div id="item-list"></div>
+  </div>
+
+  <div id="view-other" style="display:none">
+    <div class="quick-add">
+      <div class="quick-add-row">
+        <input type="text" class="quick-input" id="new-other" placeholder="Legg til ting..." autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" name="ny-ting-sok" inputmode="text"
+          oninput="suggestOther(this.value)" onkeydown="if(event.key==='Enter')addOther()" onblur="setTimeout(hideOtherSuggest,200)" aria-label="Legg til ting" />
+        <button class="add-icon-btn" onclick="addOther()" aria-label="Legg til ting"><i class="ti ti-plus" aria-hidden="true"></i></button>
+      </div>
+      <div class="quick-add-row2">
+        <select class="cat-select" id="new-other-place"></select>
+        <button class="sort-btn" onclick="openOtherDetaljer()" title="Legg til med detaljer"><i class="ti ti-adjustments-alt"></i> Detaljer</button>
+      </div>
+      <div class="sug-box" id="other-suggest" style="display:none"></div>
+    </div>
+    <button class="complete-btn hidden" id="other-clear-btn" onclick="clearCheckedOther()">
+      <i class="ti ti-trash"></i> Fjern fullførte
+    </button>
+    <div class="toolbar">
+      <input type="text" id="other-search" placeholder="Søk i diverse..." aria-label="Søk i diverse" oninput="renderOther()" />
+    </div>
+    <div id="other-list"></div>
+  </div>
+
+  <div id="view-history" style="display:none">
+    <div id="history-content"></div>
+  </div>
+
+  <div id="view-settings" style="display:none">
+    <div class="stat-section">
+      <div class="stat-title"><i class="ti ti-arrows-join"></i> Rydd opp</div>
+      <p style="font-size:12px;color:var(--text3);margin-bottom:10px">Slå sammen varer og historikk-oppføringer som egentlig er det samme.</p>
+      <button onclick="openMergeModal()" style="width:100%;padding:10px;font-size:13px;font-weight:600;border:1px solid var(--accent-border);border-radius:8px;background:var(--accent-bg);color:var(--accent-text);cursor:pointer;display:flex;align-items:center;justify-content:center;gap:6px"><i class="ti ti-arrows-join"></i> Slå sammen duplikater</button>
+    </div>
+    <div class="stat-section">
+      <div class="stat-title"><i class="ti ti-tag"></i> Kategorier</div>
+      <div id="cat-chips"></div>
+      <div class="template-add-row" style="margin-top:8px">
+        <input type="text" id="new-cat-name" placeholder="Ny kategori..." />
+        <button onclick="addCategory()">Legg til</button>
+      </div>
+    </div>
+    <div class="stat-section">
+      <div class="stat-title"><i class="ti ti-map-pin"></i> Steder (Diverse)</div>
+      <div id="place-chips"></div>
+      <div class="template-add-row" style="margin-top:8px">
+        <input type="text" id="new-place-name" placeholder="Nytt sted..." />
+        <button onclick="addPlace()">Legg til</button>
+      </div>
+    </div>
+    <div class="stat-section">
+      <div class="stat-title"><i class="ti ti-bookmark"></i> Faste varer</div>
+      <p style="font-size:12px;color:var(--text3);margin-bottom:10px">Snarveier øverst i listen.</p>
+      <div id="template-manage"></div>
+      <div class="template-add-row" style="margin-top:8px">
+        <input type="text" id="new-template-item" placeholder="Ny fast vare..." />
+        <select id="new-template-cat" style="font-size:12px;padding:5px 6px;border:1px solid var(--border);border-radius:6px;background:var(--surface);color:var(--text)"></select>
+        <button onclick="addTemplateItem()">Legg til</button>
+      </div>
+    </div>
+    <div class="stat-section">
+      <div class="stat-title"><i class="ti ti-palette"></i> Fargetema</div>
+      <div style="margin-bottom:12px">
+        <div style="font-size:12px;color:var(--text2);margin-bottom:6px">☀️ Lys modus</div>
+        <div style="display:flex;align-items:center;gap:10px">
+          <input type="color" id="color-light" onchange="setAccentColor('light',this.value)" style="width:44px;height:36px;border:1px solid var(--border);border-radius:8px;cursor:pointer;background:none;padding:2px" />
+          <span style="font-size:12px;color:var(--text3)" id="color-light-val"></span>
+          <button onclick="resetAccentColor('light')" style="font-size:11px;padding:4px 10px;border:1px solid var(--border);border-radius:6px;background:var(--surface2);color:var(--text2);cursor:pointer">Tilbakestill</button>
+        </div>
+      </div>
+      <div>
+        <div style="font-size:12px;color:var(--text2);margin-bottom:6px">🌙 Mørk modus</div>
+        <div style="display:flex;align-items:center;gap:10px">
+          <input type="color" id="color-dark" onchange="setAccentColor('dark',this.value)" style="width:44px;height:36px;border:1px solid var(--border);border-radius:8px;cursor:pointer;background:none;padding:2px" />
+          <span style="font-size:12px;color:var(--text3)" id="color-dark-val"></span>
+          <button onclick="resetAccentColor('dark')" style="font-size:11px;padding:4px 10px;border:1px solid var(--border);border-radius:6px;background:var(--surface2);color:var(--text2);cursor:pointer">Tilbakestill</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="status-bar" id="status-bar"></div>
+
+  <div class="modal-bg" id="modal" style="display:none" onclick="if(event.target===this)hideModal()">
+    <div class="modal" role="dialog" aria-modal="true" aria-labelledby="modal-edit-title" onclick="event.stopPropagation()">
+      <h2 class="modal-title" id="modal-edit-title">Rediger vare</h2>
+      <input type="hidden" id="modal-id" />
+      <label for="modal-name">Navn</label><input type="text" id="modal-name" />
+      <label for="modal-qty">Antall</label><input type="number" id="modal-qty" min="1" />
+      <label for="modal-cat">Kategori</label><select id="modal-cat"></select>
+      <div class="modal-actions">
+        <button class="btn-danger" onclick="deleteFromModal()">Slett</button>
+        <button class="btn-ghost" onclick="hideModal()">Avbryt</button>
+        <button class="btn-primary" onclick="saveModal()">Lagre</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="modal-bg" id="other-modal" style="display:none" onclick="if(event.target===this)hideOtherModal()">
+    <div class="modal" role="dialog" aria-modal="true" aria-labelledby="other-modal-title" onclick="event.stopPropagation()">
+      <h2 class="modal-title" id="other-modal-title">Ny ting</h2>
+      <input type="hidden" id="other-modal-id" />
+      <label for="other-modal-name">Navn</label><input type="text" id="other-modal-name" list="other-name-list" autocomplete="off" oninput="otherNameLookup()" />
+      <datalist id="other-name-list"></datalist>
+      <label for="other-modal-place">Sted</label><select id="other-modal-place"></select>
+      <label for="other-modal-qty">Antall</label><input type="number" id="other-modal-qty" min="1" />
+      <label for="other-modal-note">Notat / detalj</label><input type="text" id="other-modal-note" placeholder="størrelse, farge, merke, tittel..." />
+      <label for="other-modal-url">Lenke (URL)</label><input type="text" id="other-modal-url" placeholder="https://..." inputmode="url" autocapitalize="off" autocorrect="off" spellcheck="false" />
+      <label style="display:flex;align-items:center;gap:8px;margin-top:12px"><input type="checkbox" id="other-modal-prio" style="width:auto" /> Prioritet (viktig)</label>
+      <p id="other-modal-added" style="font-size:11px;color:var(--text3);margin-top:8px"></p>
+      <div class="modal-actions">
+        <button class="btn-danger" id="other-modal-del" onclick="deleteFromOtherModal()">Slett</button>
+        <button class="btn-ghost" id="other-modal-savenew" onclick="saveOtherModalAndNew()">Lagre og ny</button>
+        <button class="btn-primary" onclick="saveOtherModal()">Lagre</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="modal-bg" id="hist-modal" style="display:none" onclick="if(event.target===this)hideHistModal()">
+    <div class="modal" role="dialog" aria-modal="true" aria-labelledby="hist-modal-title" onclick="event.stopPropagation()">
+      <h2 class="modal-title" id="hist-modal-title">Endre kategori i historikk</h2>
+      <input type="hidden" id="hist-modal-name" />
+      <label for="hist-modal-display">Vare</label><input type="text" id="hist-modal-display" disabled style="opacity:.6" />
+      <label for="hist-modal-cat">Kategori</label><select id="hist-modal-cat"></select>
+      <div class="modal-actions">
+        <button class="btn-ghost" onclick="hideHistModal()">Avbryt</button>
+        <button class="btn-primary" onclick="saveHistModal()">Lagre</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="modal-bg" id="merge-modal" style="display:none" onclick="if(event.target===this)hideMergeModal()">
+    <div class="modal" role="dialog" aria-modal="true" aria-labelledby="merge-modal-title" onclick="event.stopPropagation()">
+      <h2 class="modal-title" id="merge-modal-title">Slå sammen duplikater</h2>
+      <div id="merge-body" style="max-height:64vh;overflow-y:auto;margin:4px 0"></div>
+      <div class="modal-actions"><button class="btn-ghost" onclick="hideMergeModal()">Lukk</button></div>
+    </div>
+  </div>
+
+  <div class="modal-bg" id="cat-modal" style="display:none" onclick="if(event.target===this)hideCatModal()">
+    <div class="modal" role="dialog" aria-modal="true" aria-labelledby="cat-modal-title" onclick="event.stopPropagation()">
+      <h2 class="modal-title" id="cat-modal-title">Kategori</h2>
+      <p style="font-size:12px;color:var(--text3);margin-bottom:8px" id="cat-modal-sub"></p>
+      <div id="cat-modal-body" style="max-height:58vh;overflow-y:auto"></div>
+      <div class="modal-actions"><button class="btn-ghost" onclick="hideCatModal()">Lukk</button></div>
+    </div>
+  </div>
+</main>
+
+<script type="module">
+// ── Hjemmebasen-port ─────────────────────────────────────────
+// Portet fra ha-apper: MQTT/WebSocket byttet med Firebase (felles/storage.js).
+// Datatap-vernet består (dbSet nekter før lesning); sanntidslytter erstatter polling.
+import { requireAuth } from './felles/auth.js';
+import { dbGet, dbSet, dbListen } from './felles/storage.js';
+import { esc, todayStr } from './felles/ui.js';
+const APP='handleliste';
+let FAMILIE=null;
+const DEFAULT_CATS=['Frukt & Grønt','Kjøtt & Fisk','Meieri & Egg','Brød & Bakevarer','Tørrvarer','Frysevarer','Drikke','Rengjøring','Personlig pleie','Annet'];
+const CAT_ICONS={'Frukt & Grønt':'ti-apple','Kjøtt & Fisk':'ti-meat','Meieri & Egg':'ti-egg','Brød & Bakevarer':'ti-bread','Tørrvarer':'ti-package','Frysevarer':'ti-snowflake','Drikke':'ti-bottle','Rengjøring':'ti-spray','Personlig pleie':'ti-droplet','Annet':'ti-box'};
+const DEFAULT_PLACES=['Bokhandel','Byggevare/Maling','Apotek','Nettbutikk','Klær','Annet'];
+const PLACE_ICONS={'Bokhandel':'ti-book','Byggevare/Maling':'ti-paint','Apotek':'ti-first-aid-kit','Nettbutikk':'ti-shopping-cart','Klær':'ti-shirt','Annet':'ti-package'};
+const DEFAULT_DATA={items:[],history:[],categories:[...DEFAULT_CATS],templates:[
+  {id:1,name:'Melk',cat:'Meieri & Egg'},{id:2,name:'Egg',cat:'Meieri & Egg'},
+  {id:3,name:'Smør',cat:'Meieri & Egg'},{id:4,name:'Brød',cat:'Brød & Bakevarer'},
+  {id:5,name:'Appelsinjuice',cat:'Drikke'},
+],other:[],otherPlaces:[...DEFAULT_PLACES],otherHistory:[]};
+
+let data=JSON.parse(JSON.stringify(DEFAULT_DATA));
+let dataLoaded=false; // sant først når en ekte MQTT-lesning har lyktes – hindrer overskriving
+let currentView='list',showChecked=true,nextId=100,sortAlpha=false;
+
+// ── Fargetema ────────────────────────────────────────────────
+const APP_KEY='handleliste';
+const DEFAULT_COLORS={light:'#f97316',dark:'#f97316'};
+function hexToRgb(hex){const r=parseInt(hex.slice(1,3),16);const g=parseInt(hex.slice(3,5),16);const b=parseInt(hex.slice(5,7),16);return r+','+g+','+b;}
+function applyAccentColor(mode,hex){
+  const rgb=hexToRgb(hex);
+  let el=document.getElementById('accent-style-'+mode);
+  if(!el){el=document.createElement('style');el.id='accent-style-'+mode;document.head.appendChild(el);}
+  const sel=mode==='dark'?'[data-theme="dark"]':'[data-theme="light"]';
+  el.textContent=sel+`{--accent:${hex};--accent-bg:rgba(${rgb},.12);--accent-border:rgba(${rgb},.4);--accent-text:${hex};--orange:${hex};}@media(prefers-color-scheme:${mode}){:root:not([data-theme]){--accent:${hex};--accent-bg:rgba(${rgb},.12);--accent-border:rgba(${rgb},.4);--accent-text:${hex};--orange:${hex};}}`;
+}
+function setAccentColor(mode,hex){localStorage.setItem(APP_KEY+'_color_'+mode,hex);applyAccentColor(mode,hex);updateColorPickers();}
+function resetAccentColor(mode){localStorage.removeItem(APP_KEY+'_color_'+mode);const el=document.getElementById('accent-style-'+mode);if(el)el.textContent='';updateColorPickers();}
+function initAccentColors(){['light','dark'].forEach(mode=>{const s=localStorage.getItem(APP_KEY+'_color_'+mode);if(s)applyAccentColor(mode,s);});updateColorPickers();}
+function updateColorPickers(){['light','dark'].forEach(mode=>{const s=localStorage.getItem(APP_KEY+'_color_'+mode)||DEFAULT_COLORS[mode];const i=document.getElementById('color-'+mode);const v=document.getElementById('color-'+mode+'-val');if(i)i.value=s;if(v)v.textContent=s;});}
+initAccentColors();
+function initTheme(){const s=localStorage.getItem(APP_KEY+'_theme');const dark=window.matchMedia('(prefers-color-scheme:dark)').matches;setTheme(s||(dark?'dark':'light'),false);}
+function setTheme(t,save=true){document.documentElement.setAttribute('data-theme',t);const b=document.getElementById('theme-btn');if(b)b.textContent=t==='dark'?'☀️':'🌙';if(save)localStorage.setItem(APP_KEY+'_theme',t);}
+function toggleTheme(){setTheme(document.documentElement.getAttribute('data-theme')==='dark'?'light':'dark');}
+initTheme();
+
+// ── Forslag fra tidligere handlede varer (data.history) ──────
+function suggestInput(val){
+  const q=(val||'').trim().toLowerCase();
+  const box=document.getElementById('item-suggest');
+  if(q.length<1){hideSuggest();return;}
+  // Ordgrense-match: navnet (eller et ord i navnet) må STARTE med søket –
+  // så «egg» treffer «Egg», men ikke «Påleggsmør»/«Kjøttpålegg».
+  const rank=n=>n.startsWith(q)?0:(n.includes(' '+q)?1:2);
+  const hist=data.history||[];
+  let matches=hist.filter(h=>rank(h.name.toLowerCase())<2);
+  if(!matches.length)matches=hist.filter(h=>h.name.toLowerCase().includes(q)); // reserve: delstreng
+  matches=matches.sort((a,b)=>{const r=rank(a.name.toLowerCase())-rank(b.name.toLowerCase());return r!==0?r:b.count-a.count;}).slice(0,8);
+  if(!matches.length){hideSuggest();return;}
+  box.innerHTML=matches.map(h=>{
+    return '<div class="sug-item" data-sug-name="'+esc(h.name)+'" data-sug-cat="'+esc(h.cat||'')+'">'
+      +'<i class="ti ti-history sug-icon" aria-hidden="true"></i>'
+      +'<div class="sug-info"><div class="sug-name">'+esc(h.name)+'</div>'
+      +'<div class="sug-meta">'+(h.cat?esc(h.cat)+' · ':'')+'handlet '+h.count+'×</div></div>'
+      +'<span class="sug-count">'+h.count+'×</span>'
+      +'</div>';
+  }).join('');
+  box.style.display='block';
+}
+function suggestSelect(name,cat){
+  document.getElementById('new-item').value=name;
+  if(cat){const sel=document.getElementById('new-cat');const opt=[...sel.options].find(o=>o.value===cat);if(opt)sel.value=cat;}
+  hideSuggest();
+  document.getElementById('new-item').focus();
+}
+function hideSuggest(){const b=document.getElementById('item-suggest');if(b){b.style.display='none';b.innerHTML='';}}
+
+// ── Status ───────────────────────────────────────────────────
+function setStatus(msg,type=''){
+  const s=document.getElementById('status-bar');
+  s.textContent=msg;s.className='status-bar'+(type?' '+type:'');
+  if(type==='ok')setTimeout(()=>{s.textContent='';s.className='status-bar';},2000);
+}
+
+// ── Lagring (Firebase via felles/storage.js) ─────────────────
+function adoptData(saved){
+  data=saved;
+  if(!data.items)data.items=[];
+  if(!data.categories?.length)data.categories=[...DEFAULT_CATS];
+  if(!data.templates)data.templates=[...DEFAULT_DATA.templates];
+  if(!data.history)data.history=[];
+  if(!data.other)data.other=[];
+  if(!data.otherPlaces?.length)data.otherPlaces=[...DEFAULT_PLACES];
+  if(!data.otherHistory)data.otherHistory=[];
+  nextId=Math.max(100,...data.items.map(i=>i.id),...data.templates.map(t=>t.id),...data.other.map(o=>o.id))+1;
+}
+async function load(){
+  setStatus('Laster...');
+  try{
+    if(!FAMILIE){
+      const ctx=await requireAuth();
+      if(!ctx.familieId){setStatus('Ingen husstand – kontakt administrator','err');return;}
+      FAMILIE=ctx.familieId;
+    }
+    // dbGet kaster ved feil og gir null KUN når noden er tom (autoritativt svar,
+    // ingen MQTT-tvetydighet). Tom node = ny husstand → trygt å starte blankt.
+    const saved=await dbGet(FAMILIE,APP);
+    if(saved?.items!==undefined)adoptData(saved);
+    dataLoaded=true;
+    setStatus('');
+    startListen();
+  }catch(e){setStatus('Kunne ikke laste – '+(e.message||'prøv igjen'),'err');}
+  render();
+}
+
+let lastSave=0;
+async function save(){
+  if(!dataLoaded){setStatus('Ikke lagret – data er ikke lastet ennå. Last siden på nytt.','err');return;}
+  setStatus('Lagrer...');
+  try{
+    await dbSet(FAMILIE,APP,data);
+    lastSave=Date.now();
+    setStatus('Lagret ✓','ok');
+  }catch(e){
+    setStatus('Kunne ikke lagre – prøv igjen','err');
+  }
+}
+
+// Stille re-henting: oppdaterer lista når appen åpnes igjen / mens den står åpen.
+// Hopper over hvis du skriver eller har en modal oppe, og rett etter en lagring.
+function isEditing(){
+  const inp=document.getElementById('new-item');
+  if(inp&&inp.value.trim())return true;
+  const inp2=document.getElementById('new-other');
+  if(inp2&&inp2.value.trim())return true;
+  return ['modal','other-modal','hist-modal','cat-modal','merge-modal'].some(id=>{
+    const e=document.getElementById(id);return e&&e.style.display&&e.style.display!=='none';
+  });
+}
+// Sanntidssynk: lytteren fyrer ved alle endringer (også andres telefoner).
+// Hopper over mens man redigerer og rett etter egen lagring (ekko).
+let stopListen=null;
+function startListen(){
+  if(stopListen)return;
+  stopListen=dbListen(FAMILIE,APP,saved=>{
+    if(!saved||saved.items===undefined)return;
+    if(isEditing()||Date.now()-lastSave<5000)return;
+    if(JSON.stringify(saved)===JSON.stringify(data))return;
+    adoptData(saved);
+    dataLoaded=true;
+    render();
+  });
+}
+
+// ── Views ────────────────────────────────────────────────────
+function setView(v){
+  currentView=v;
+  ['list','other','history','settings'].forEach(x=>{
+    document.getElementById('view-'+x).style.display=v===x?'block':'none';
+    document.getElementById('tab-'+x).classList.toggle('active',v===x);
+  });
+  render();
+}
+
+// ── Kategorier ───────────────────────────────────────────────
+function populateCatSelect(id,selected){
+  const sorted=[...data.categories].sort((a,b)=>a.localeCompare(b,'nb'));
+  const el=document.getElementById(id);
+  el.innerHTML='<option value="">— Ingen kategori —</option>'+
+    sorted.map(c=>'<option value="'+esc(c)+'"'+(c===selected?' selected':'')+'>'+esc(c)+'</option>').join('');
+}
+function toggleSort(){sortAlpha=!sortAlpha;document.getElementById('sort-alpha').classList.toggle('active',sortAlpha);render();}
+function addCategory(){
+  const inp=document.getElementById('new-cat-name');
+  const name=inp.value.trim();
+  if(!name||data.categories.includes(name))return;
+  data.categories.push(name);data.categories.sort((a,b)=>a.localeCompare(b,'nb'));inp.value='';
+  save();render();
+}
+function deleteCategory(cat){
+  if(data.items.some(i=>i.cat===cat)){alert('"'+cat+'" er i bruk.');return;}
+  data.categories=data.categories.filter(c=>c!==cat);save();render();
+}
+document.getElementById('new-cat-name').addEventListener('keydown',e=>{if(e.key==='Enter')addCategory();});
+
+// ── Kategori-rekkefølge (speiler butikkens layout) ───────────
+// data.catOrder holder ønsket rekkefølge; synkes med data.categories.
+function ensureCatOrder(){
+  if(!Array.isArray(data.catOrder))data.catOrder=[...data.categories];
+  data.categories.forEach(c=>{if(!data.catOrder.includes(c))data.catOrder.push(c);});
+  data.catOrder=data.catOrder.filter(c=>data.categories.includes(c));
+}
+function catRank(c){const i=(data.catOrder||[]).indexOf(c);return i<0?999:i;}
+function moveCat(cat,dir){
+  ensureCatOrder();
+  const arr=data.catOrder,i=arr.indexOf(cat),j=i+dir;
+  if(i<0||j<0||j>=arr.length)return;
+  [arr[i],arr[j]]=[arr[j],arr[i]];
+  save();render();
+}
+
+// ── Faste varer ──────────────────────────────────────────────
+function addTemplateItem(){
+  const inp=document.getElementById('new-template-item');
+  const name=inp.value.trim();
+  const cat=document.getElementById('new-template-cat').value;
+  if(!name)return;
+  data.templates.push({id:nextId++,name,cat});inp.value='';save();render();
+}
+function deleteTemplate(id){data.templates=data.templates.filter(t=>t.id!==id);save();render();}
+// Legg til en vare fra historikken («Kjøpes ofte»-chips) med lagret kategori.
+function addFromHistory(name){
+  const h=(data.history||[]).find(x=>x.name.toLowerCase()===name.toLowerCase());
+  const existing=data.items.find(i=>i.name.toLowerCase()===name.toLowerCase()&&!i.checked);
+  if(existing){existing.qty++;}
+  else data.items.push({id:nextId++,name:h?h.name:name,cat:h?(h.cat||''):'',qty:1,checked:false,added:todayStr()});
+  save();render();
+}
+function addFromTemplate(id){
+  const t=data.templates.find(t=>t.id===id);if(!t)return;
+  const existing=data.items.find(i=>i.name.toLowerCase()===t.name.toLowerCase()&&!i.checked);
+  if(existing){existing.qty++;save();render();return;}
+  data.items.push({id:nextId++,name:t.name,cat:t.cat,qty:1,checked:false,added:todayStr()});
+  save();render();
+}
+document.getElementById('new-template-item').addEventListener('keydown',e=>{if(e.key==='Enter')addTemplateItem();});
+
+// ── Varer ────────────────────────────────────────────────────
+function addItem(){
+  const name=document.getElementById('new-item').value.trim();
+  if(!name){document.getElementById('new-item').focus();return;}
+  const qty=Math.max(1,parseInt(document.getElementById('new-qty').value,10)||1);
+  const cat=document.getElementById('new-cat').value;
+  const existing=data.items.find(i=>i.name.toLowerCase()===name.toLowerCase()&&!i.checked);
+  if(existing){
+    existing.qty+=qty;
+    document.getElementById('new-item').value='';
+    document.getElementById('new-qty').value='1';
+    document.getElementById('new-cat').value='';
+    save();render();return;
+  }
+  data.items.push({id:nextId++,name,cat,qty,checked:false,added:todayStr()});
+  document.getElementById('new-item').value='';
+  document.getElementById('new-qty').value='1';
+  document.getElementById('new-cat').value='';
+  save();render();
+}
+document.getElementById('new-item').addEventListener('keydown',e=>{if(e.key==='Enter')addItem();});
+function toggleCheck(id){const item=data.items.find(i=>i.id===id);if(!item)return;item.checked=!item.checked;save();render();}
+function deleteItem(id){data.items=data.items.filter(i=>i.id!==id);save();render();}
+function completeShop(){
+  const checked=data.items.filter(i=>i.checked);
+  if(!checked.length){alert('Ingen varer er haket av ennå.');return;}
+  if(!confirm('Fullfør handletur og tøm hakkede varer?'))return;
+  const now=todayStr();
+  checked.forEach(item=>{
+    const existing=data.history.find(h=>h.name.toLowerCase()===item.name.toLowerCase());
+    if(existing){existing.count++;existing.last=now;}
+    else data.history.push({name:item.name,cat:item.cat,count:1,last:now});
+  });
+  data.items=data.items.filter(i=>!i.checked);
+  save();render();
+}
+
+// ── Modal ────────────────────────────────────────────────────
+function openEditModal(id){
+  const item=data.items.find(i=>i.id===id);if(!item)return;
+  document.getElementById('modal-id').value=id;
+  document.getElementById('modal-name').value=item.name;
+  document.getElementById('modal-qty').value=item.qty;
+  populateCatSelect('modal-cat',item.cat);
+  document.getElementById('modal').style.display='flex';
+  setTimeout(()=>document.getElementById('modal-name').focus(),50);
+}
+function hideModal(){document.getElementById('modal').style.display='none';}
+function saveModal(){
+  const id=parseInt(document.getElementById('modal-id').value,10);
+  const item=data.items.find(i=>i.id===id);if(!item)return;
+  item.name=document.getElementById('modal-name').value.trim()||item.name;
+  item.qty=Math.max(1,parseInt(document.getElementById('modal-qty').value)||1);
+  item.cat=document.getElementById('modal-cat').value;
+  hideModal();save();render();
+}
+function deleteFromModal(){
+  const id=parseInt(document.getElementById('modal-id').value,10);
+  if(!confirm('Slette varen?'))return;
+  data.items=data.items.filter(i=>i.id!==id);
+  hideModal();save();render();
+}
+function openHistEdit(name){
+  const h=data.history.find(h=>h.name===name);if(!h)return;
+  document.getElementById('hist-modal-name').value=name;
+  document.getElementById('hist-modal-display').value=name;
+  populateCatSelect('hist-modal-cat',h.cat||'');
+  document.getElementById('hist-modal').style.display='flex';
+}
+function hideHistModal(){document.getElementById('hist-modal').style.display='none';}
+
+// ── Drill-down: varer pr. kategori (f.eks. «Annet») ──
+function openCatItems(cat){
+  const items=data.history.filter(h=>(h.cat||'Annet')===cat).sort((a,b)=>b.count-a.count);
+  document.getElementById('cat-modal-title').innerHTML='<i class="ti '+(CAT_ICONS[cat]||'ti-box')+'" style="font-size:15px"></i> '+esc(cat);
+  document.getElementById('cat-modal-sub').textContent=items.length+' '+(items.length===1?'vare':'varer')+' · trykk for å endre kategori';
+  const body=document.getElementById('cat-modal-body');
+  body.innerHTML=items.length?items.map(h=>'<div class="hist-item" style="cursor:pointer" role="button" tabindex="0" data-cat-item="'+esc(h.name)+'">'
+    +'<span class="hist-name">'+esc(h.name)+'</span>'
+    +'<span class="hist-count">'+h.count+'×</span>'
+    +'<span class="hist-meta">'+new Date(h.last).toLocaleDateString('nb-NO',{day:'numeric',month:'short'})+'</span>'
+    +'<i class="ti ti-edit" style="color:var(--text4);font-size:14px"></i></div>').join(''):'<div class="empty-state">Ingen varer</div>';
+  document.getElementById('cat-modal').style.display='flex';
+}
+function hideCatModal(){document.getElementById('cat-modal').style.display='none';}
+function catItemEdit(name){hideCatModal();openHistEdit(name);}
+
+// ── Slå sammen duplikater ────────────────────────────────────
+// Normalisering: små bokstaver, mellomrom, tegnsetting + enkel entall/flertall
+// (stemmer siste ord konservativt). Brukes kun til å GRUPPERE – du bekrefter.
+function stemWord(w){const s=w.replace(/(ene|er|et|en|e|a)$/,'');return s.length>=3?s:w;}
+function normKey(s){
+  let k=(s||'').toLowerCase().trim().replace(/[.,!?;:]+$/,'').replace(/\s+/g,' ');
+  if(!k)return '';
+  const parts=k.split(' ');
+  parts[parts.length-1]=stemWord(parts[parts.length-1]);
+  return parts.join(' ');
+}
+function dupeGroups(arr){
+  const m={};
+  arr.forEach(x=>{const k=normKey(x.name);if(!k)return;(m[k]=m[k]||[]).push(x);});
+  return Object.values(m).filter(a=>a.length>1);
+}
+let mergeState={list:[],hist:[],other:[],otherhist:[]};
+function openMergeModal(){renderMergeModal();document.getElementById('merge-modal').style.display='flex';}
+function hideMergeModal(){document.getElementById('merge-modal').style.display='none';}
+function renderMergeModal(){
+  mergeState.list=dupeGroups(data.items);
+  mergeState.hist=dupeGroups(data.history||[]);
+  mergeState.other=dupeGroups(data.other||[]);
+  mergeState.otherhist=dupeGroups(data.otherHistory||[]);
+  let html='<div class="merge-sec-title">Foreslåtte duplikater</div>';
+  const total=mergeState.list.length+mergeState.hist.length+mergeState.other.length+mergeState.otherhist.length;
+  if(!total)html+='<div class="merge-empty">Ingen åpenbare duplikater funnet 🎉</div>';
+  else{
+    mergeState.list.forEach((g,i)=>html+=mergeGroupHtml('list',i,g,'qty','i lista'));
+    mergeState.hist.forEach((g,i)=>html+=mergeGroupHtml('hist',i,g,'count','i historikk'));
+    mergeState.other.forEach((g,i)=>html+=mergeGroupHtml('other',i,g,'qty','i diverse'));
+    mergeState.otherhist.forEach((g,i)=>html+=mergeGroupHtml('otherhist',i,g,'count','i diverse-historikk'));
+  }
+  html+='<div class="merge-sec-title" style="margin-top:14px">Slå sammen manuelt (lista)</div>';
+  html+='<p class="merge-hint">Huk av 2+ varer og slå dem sammen til én.</p>';
+  html+=manualMergeHtml();
+  document.getElementById('merge-body').innerHTML=html;
+}
+function mergeGroupHtml(kind,i,grp,cntKey,tag){
+  const sorted=[...grp].sort((a,b)=>(b[cntKey]||0)-(a[cntKey]||0));
+  const variants=sorted.map(x=>esc(x.name)+' <span class="merge-cnt">'+(cntKey==='count'?x.count+'×':'×'+(x.qty||1))+'</span>').join('  +  ');
+  const opts=sorted.map((x,j)=>'<option value="'+j+'">'+esc(x.name)+'</option>').join('');
+  return '<div class="merge-group"><div class="merge-variants">'+variants+' <span class="merge-cnt">· '+tag+'</span></div>'
+    +'<div class="merge-actions"><span class="merge-keep">Behold:</span>'
+    +'<select id="mgsel-'+kind+'-'+i+'" class="merge-select">'+opts+'</select>'
+    +'<button class="merge-btn" onclick="doMerge(\''+kind+'\','+i+')">Slå sammen</button></div></div>';
+}
+function doMerge(kind,i){
+  const arrMap={list:mergeState.list,hist:mergeState.hist,other:mergeState.other,otherhist:mergeState.otherhist};
+  const grp=[...arrMap[kind][i]];
+  const cntKey=(kind==='hist'||kind==='otherhist')?'count':'qty';
+  grp.sort((a,b)=>(b[cntKey]||0)-(a[cntKey]||0));
+  const sel=parseInt(document.getElementById('mgsel-'+kind+'-'+i).value,10)||0;
+  const name=grp[sel].name;
+  if(kind==='list')mergeListItems(grp.map(x=>x.id),name);
+  else if(kind==='hist')mergeHistory(grp.map(x=>x.name),name);
+  else if(kind==='other')mergeOtherItems(grp.map(x=>x.id),name);
+  else mergeOtherHistory(grp.map(x=>x.name),name);
+  renderMergeModal();render();
+}
+function manualMergeHtml(){
+  if(!data.items.length)return '<div class="merge-empty">Lista er tom.</div>';
+  return data.items.map(it=>'<label class="merge-manual-row"><input type="checkbox" class="mman" value="'+it.id+'" onchange="manualPreview()"><span>'+esc(it.name)+' <span class="merge-cnt">×'+(it.qty||1)+'</span></span></label>').join('')
+    +'<div class="merge-manual-foot"><input type="text" id="merge-manual-name" placeholder="Navn på sammenslått vare" autocomplete="off"><button class="merge-btn" onclick="doManualMerge()">Slå sammen valgte</button></div>';
+}
+function manualPreview(){
+  const checked=[...document.querySelectorAll('.mman:checked')];
+  const inp=document.getElementById('merge-manual-name');
+  if(inp&&!inp.value&&checked.length){const it=data.items.find(i=>i.id===parseInt(checked[0].value,10));if(it)inp.value=it.name;}
+}
+function doManualMerge(){
+  const ids=[...document.querySelectorAll('.mman:checked')].map(c=>parseInt(c.value,10));
+  if(ids.length<2){alert('Velg minst to varer.');return;}
+  let name=(document.getElementById('merge-manual-name').value||'').trim();
+  if(!name){const it=data.items.find(i=>i.id===ids[0]);name=it?it.name:'';}
+  if(!name)return;
+  mergeListItems(ids,name);
+  renderMergeModal();render();
+}
+function mergeListItems(ids,name){
+  const items=data.items.filter(i=>ids.includes(i.id));
+  if(items.length<2)return;
+  const qty=items.reduce((s,i)=>s+(i.qty||1),0);
+  const anyUnchecked=items.some(i=>!i.checked);
+  const cat=items.map(i=>i.cat).find(c=>c)||'';
+  const added=items.map(i=>i.added).filter(Boolean).sort()[0]||todayStr();
+  data.items=data.items.filter(i=>!ids.includes(i.id));
+  data.items.push({id:nextId++,name,cat,qty,checked:!anyUnchecked,added});
+  save();
+}
+function mergeHistory(names,name){
+  const set=new Set(names);
+  const entries=(data.history||[]).filter(h=>set.has(h.name));
+  if(entries.length<2)return;
+  const count=entries.reduce((s,h)=>s+(h.count||0),0);
+  const last=entries.map(h=>h.last).filter(Boolean).sort().slice(-1)[0]||todayStr();
+  const cat=[...entries].sort((a,b)=>(b.count||0)-(a.count||0))[0].cat||'';
+  data.history=data.history.filter(h=>!set.has(h.name));
+  data.history.push({name,cat,count,last});
+  save();
+}
+function mergeOtherItems(ids,name){
+  const items=(data.other||[]).filter(i=>ids.includes(i.id));
+  if(items.length<2)return;
+  const qty=items.reduce((s,i)=>s+(i.qty||1),0);
+  const anyUnchecked=items.some(i=>!i.checked);
+  const place=items.map(i=>i.place).find(p=>p)||'';
+  const note=items.map(i=>i.note).find(n=>n)||'';
+  const url=items.map(i=>i.url).find(u=>u)||'';
+  const prio=items.some(i=>i.prio);
+  const added=items.map(i=>i.added).filter(Boolean).sort()[0]||todayStr();
+  data.other=(data.other||[]).filter(i=>!ids.includes(i.id));
+  data.other.push({id:nextId++,name,place,qty,note,url,prio,checked:!anyUnchecked,added});
+  save();
+}
+function mergeOtherHistory(names,name){
+  const set=new Set(names);
+  const entries=(data.otherHistory||[]).filter(h=>set.has(h.name));
+  if(entries.length<2)return;
+  const count=entries.reduce((s,h)=>s+(h.count||0),0);
+  const last=entries.map(h=>h.last).filter(Boolean).sort().slice(-1)[0]||todayStr();
+  const place=[...entries].sort((a,b)=>(b.count||0)-(a.count||0))[0].place||'';
+  data.otherHistory=(data.otherHistory||[]).filter(h=>!set.has(h.name));
+  data.otherHistory.push({name,place,count,last});
+  save();
+}
+function updateDupeBanner(){
+  const el=document.getElementById('dupe-banner');if(!el)return;
+  const n=dupeGroups(data.items).length;
+  el.innerHTML=n?'<i class="ti ti-arrows-join"></i> Fant '+n+' mulig'+(n===1?'':'e')+' duplikat'+(n===1?'':'er')+' i lista<span class="db-act">Slå sammen ›</span>':'';
+  el.className=n?'dupe-banner':'';
+  el.onclick=n?openMergeModal:null;
+}
+function saveHistModal(){
+  const name=document.getElementById('hist-modal-name').value;
+  const cat=document.getElementById('hist-modal-cat').value;
+  const h=data.history.find(h=>h.name===name);
+  if(h)h.cat=cat;
+  hideHistModal();save();render();
+}
+
+// ── Diverse: steder ──────────────────────────────────────────
+function populatePlaceSelect(id,selected){
+  const sorted=[...(data.otherPlaces||[])].sort((a,b)=>a.localeCompare(b,'nb'));
+  const el=document.getElementById(id);if(!el)return;
+  el.innerHTML='<option value="">— Uten sted —</option>'+
+    sorted.map(p=>'<option value="'+esc(p)+'"'+(p===selected?' selected':'')+'>'+esc(p)+'</option>').join('');
+}
+function addPlace(){
+  const inp=document.getElementById('new-place-name');const name=inp.value.trim();
+  if(!name||(data.otherPlaces||[]).includes(name))return;
+  data.otherPlaces=[...(data.otherPlaces||[]),name].sort((a,b)=>a.localeCompare(b,'nb'));
+  inp.value='';save();render();
+}
+function deletePlace(p){
+  if((data.other||[]).some(i=>i.place===p)){alert('"'+p+'" er i bruk.');return;}
+  data.otherPlaces=(data.otherPlaces||[]).filter(x=>x!==p);save();render();
+}
+document.getElementById('new-place-name').addEventListener('keydown',e=>{if(e.key==='Enter')addPlace();});
+
+// ── Diverse: varer ───────────────────────────────────────────
+function otherSafeUrl(u){u=(u||'').trim();return /^https?:\/\//i.test(u)?u:'';}
+function rememberOther(name,place){
+  data.otherHistory=data.otherHistory||[];
+  const h=data.otherHistory.find(x=>x.name.toLowerCase()===name.toLowerCase());
+  if(h){h.count=(h.count||1)+1;h.last=todayStr();if(place)h.place=place;}
+  else data.otherHistory.push({name,place:place||'',count:1,last:todayStr()});
+}
+// Datalist med tidligere ting + oppslag som husker stedet
+function populateOtherNameList(){
+  const dl=document.getElementById('other-name-list');if(!dl)return;
+  dl.innerHTML=[...(data.otherHistory||[])].sort((a,b)=>(b.count||0)-(a.count||0))
+    .map(h=>'<option value="'+esc(h.name)+'">'+esc(h.place||'')+'</option>').join('');
+}
+function otherNameLookup(){
+  const name=document.getElementById('other-modal-name').value.trim();
+  const placeSel=document.getElementById('other-modal-place');
+  if(!name||!placeSel||placeSel.value)return;
+  const h=(data.otherHistory||[]).find(x=>x.name.toLowerCase()===name.toLowerCase());
+  if(h&&h.place){const opt=[...placeSel.options].find(o=>o.value===h.place);if(opt)placeSel.value=h.place;}
+}
+// Hurtig-innlegging (som «Butikken») med forslag som husker sted
+function suggestOther(val){
+  const q=(val||'').trim().toLowerCase();
+  const box=document.getElementById('other-suggest');
+  if(q.length<1){hideOtherSuggest();return;}
+  const rank=n=>n.startsWith(q)?0:(n.includes(' '+q)?1:2);
+  const hist=data.otherHistory||[];
+  let matches=hist.filter(h=>rank(h.name.toLowerCase())<2);
+  if(!matches.length)matches=hist.filter(h=>h.name.toLowerCase().includes(q));
+  matches=matches.sort((a,b)=>{const r=rank(a.name.toLowerCase())-rank(b.name.toLowerCase());return r!==0?r:(b.count||0)-(a.count||0);}).slice(0,8);
+  if(!matches.length){hideOtherSuggest();return;}
+  box.innerHTML=matches.map(h=>{
+    return '<div class="sug-item" data-osug-name="'+esc(h.name)+'" data-osug-place="'+esc(h.place||'')+'">'
+      +'<i class="ti ti-history sug-icon" aria-hidden="true"></i>'
+      +'<div class="sug-info"><div class="sug-name">'+esc(h.name)+'</div>'
+      +'<div class="sug-meta">'+(h.place?esc(h.place)+' · ':'')+'lagt til '+(h.count||1)+'×</div></div>'
+      +'<span class="sug-count">'+(h.count||1)+'×</span></div>';
+  }).join('');
+  box.style.display='block';
+}
+function otherSuggestSelect(name,place){
+  document.getElementById('new-other').value=name;
+  if(place){const sel=document.getElementById('new-other-place');const opt=[...sel.options].find(o=>o.value===place);if(opt)sel.value=place;}
+  hideOtherSuggest();addOther();
+}
+function hideOtherSuggest(){const b=document.getElementById('other-suggest');if(b){b.style.display='none';b.innerHTML='';}}
+function addOther(){
+  const inpEl=document.getElementById('new-other');
+  const name=inpEl.value.trim();
+  if(!name){inpEl.focus();return;}
+  let place=document.getElementById('new-other-place').value;
+  if(!place){const h=(data.otherHistory||[]).find(x=>x.name.toLowerCase()===name.toLowerCase());if(h&&h.place)place=h.place;}
+  data.other=data.other||[];
+  const existing=data.other.find(i=>i.name.toLowerCase()===name.toLowerCase()&&!i.checked);
+  if(existing){existing.qty=(existing.qty||1)+1;}
+  else data.other.push({id:nextId++,name,place,qty:1,note:'',url:'',prio:false,checked:false,added:todayStr()});
+  rememberOther(name,place);
+  inpEl.value='';document.getElementById('new-other-place').value='';
+  hideOtherSuggest();save();render();
+}
+// «Detaljer»: åpne skjemaet forhåndsutfylt med det som står i hurtig-linja
+function openOtherDetaljer(){
+  const name=document.getElementById('new-other').value.trim();
+  const place=document.getElementById('new-other-place').value;
+  openOtherModal();
+  if(name)document.getElementById('other-modal-name').value=name;
+  if(place)populatePlaceSelect('other-modal-place',place);
+  else otherNameLookup();
+  document.getElementById('new-other').value='';
+  document.getElementById('new-other-place').value='';
+  hideOtherSuggest();
+}
+function toggleOther(id){const it=(data.other||[]).find(i=>i.id===id);if(!it)return;it.checked=!it.checked;save();render();}
+function deleteOther(id){data.other=(data.other||[]).filter(i=>i.id!==id);save();render();}
+function clearCheckedOther(){
+  const checked=(data.other||[]).filter(i=>i.checked);
+  if(!checked.length)return;
+  if(!confirm('Fjerne '+checked.length+' fullførte?'))return;
+  data.other=(data.other||[]).filter(i=>!i.checked);save();render();
+}
+function openOtherModal(id){
+  const isNew=id===undefined||id===null;
+  populateOtherNameList();
+  document.getElementById('other-modal-title').textContent=isNew?'Ny ting':'Rediger ting';
+  document.getElementById('other-modal-del').style.display=isNew?'none':'';
+  document.getElementById('other-modal-savenew').style.display=isNew?'':'none';
+  document.getElementById('other-modal-added').textContent='';
+  if(isNew){
+    document.getElementById('other-modal-id').value='';
+    document.getElementById('other-modal-name').value='';
+    document.getElementById('other-modal-qty').value=1;
+    populatePlaceSelect('other-modal-place','');
+    document.getElementById('other-modal-note').value='';
+    document.getElementById('other-modal-url').value='';
+    document.getElementById('other-modal-prio').checked=false;
+  }else{
+    const it=(data.other||[]).find(i=>i.id===id);if(!it)return;
+    document.getElementById('other-modal-id').value=id;
+    document.getElementById('other-modal-name').value=it.name;
+    document.getElementById('other-modal-qty').value=it.qty||1;
+    populatePlaceSelect('other-modal-place',it.place||'');
+    document.getElementById('other-modal-note').value=it.note||'';
+    document.getElementById('other-modal-url').value=it.url||'';
+    document.getElementById('other-modal-prio').checked=!!it.prio;
+    document.getElementById('other-modal-added').textContent=it.added?('Lagt til '+new Date(it.added).toLocaleDateString('nb-NO',{day:'numeric',month:'short',year:'numeric'})):'';
+  }
+  document.getElementById('other-modal').style.display='flex';
+  setTimeout(()=>document.getElementById('other-modal-name').focus(),50);
+}
+function hideOtherModal(){document.getElementById('other-modal').style.display='none';}
+function saveOtherModal(keepOpen){
+  const idRaw=document.getElementById('other-modal-id').value;
+  const name=document.getElementById('other-modal-name').value.trim();
+  if(!name){document.getElementById('other-modal-name').focus();return false;}
+  const qty=Math.max(1,parseInt(document.getElementById('other-modal-qty').value,10)||1);
+  const place=document.getElementById('other-modal-place').value;
+  const note=document.getElementById('other-modal-note').value.trim();
+  const url=document.getElementById('other-modal-url').value.trim();
+  const prio=document.getElementById('other-modal-prio').checked;
+  if(idRaw){
+    const it=(data.other||[]).find(i=>i.id===parseInt(idRaw,10));if(!it)return false;
+    it.name=name;it.qty=qty;it.place=place;it.note=note;it.url=url;it.prio=prio;
+  }else{
+    data.other=data.other||[];
+    data.other.push({id:nextId++,name,place,qty,note,url,prio,checked:false,added:todayStr()});
+  }
+  rememberOther(name,place);
+  save();
+  if(keepOpen){
+    // Behold valgt sted, nullstill resten for rask masseregistrering.
+    document.getElementById('other-modal-id').value='';
+    document.getElementById('other-modal-title').textContent='Ny ting';
+    document.getElementById('other-modal-del').style.display='none';
+    document.getElementById('other-modal-added').textContent='';
+    document.getElementById('other-modal-name').value='';
+    document.getElementById('other-modal-qty').value=1;
+    document.getElementById('other-modal-note').value='';
+    document.getElementById('other-modal-url').value='';
+    document.getElementById('other-modal-prio').checked=false;
+    populateOtherNameList();render();
+    setTimeout(()=>document.getElementById('other-modal-name').focus(),30);
+  }else{
+    hideOtherModal();render();
+  }
+  return true;
+}
+function saveOtherModalAndNew(){saveOtherModal(true);}
+function deleteFromOtherModal(){
+  const id=parseInt(document.getElementById('other-modal-id').value,10);
+  if(!confirm('Slette varen?'))return;
+  data.other=(data.other||[]).filter(i=>i.id!==id);
+  hideOtherModal();save();render();
+}
+
+// ── Diverse: render ──────────────────────────────────────────
+function renderOther(){
+  const list=data.other||[];
+  const allUnchecked=list.filter(i=>!i.checked);
+  const allChecked=list.filter(i=>i.checked);
+  const q=(document.getElementById('other-search')?.value||'').toLowerCase();
+  const match=i=>!q||i.name.toLowerCase().includes(q)||(i.note||'').toLowerCase().includes(q);
+  const unchecked=allUnchecked.filter(match);
+  const checked=allChecked.filter(match);
+  document.getElementById('count-badge').textContent=allUnchecked.length+' ting';
+  populatePlaceSelect('new-other-place',document.getElementById('new-other-place')?.value||'');
+  const clearBtn=document.getElementById('other-clear-btn');
+  if(clearBtn){
+    clearBtn.className='complete-btn'+(allChecked.length?'':' hidden');
+    if(allChecked.length)clearBtn.innerHTML='<i class="ti ti-trash"></i> Fjern fullførte ('+allChecked.length+')';
+  }
+  const el=document.getElementById('other-list');
+  if(!allUnchecked.length&&!allChecked.length){
+    el.innerHTML='<div class="empty-state"><i class="ti ti-shopping-bag" style="font-size:28px;display:block;margin-bottom:8px"></i>Ingen ting her ennå</div>';
+    return;
+  }
+  if(q&&!unchecked.length&&!checked.length){
+    el.innerHTML='<div class="empty-state"><i class="ti ti-search" style="font-size:24px;display:block;margin-bottom:8px"></i>Ingen treff</div>';
+    return;
+  }
+  const sortItems=arr=>[...arr].sort((a,b)=>((b.prio?1:0)-(a.prio?1:0))||a.name.localeCompare(b.name,'nb'));
+  let html='';
+  const places=[...(data.otherPlaces||[])].sort((a,b)=>a.localeCompare(b,'nb')).filter(p=>unchecked.some(i=>i.place===p));
+  places.forEach(p=>{
+    const items=sortItems(unchecked.filter(i=>i.place===p));
+    if(!items.length)return;
+    html+='<div class="cat-section"><div class="cat-header"><i class="ti '+(PLACE_ICONS[p]||'ti-shopping-bag')+' cat-icon"></i><span class="cat-label">'+esc(p)+'</span><span class="cat-count">'+items.length+'</span></div>';
+    items.forEach(it=>{html+=renderOtherItem(it);});
+    html+='</div>';
+  });
+  const noPlace=sortItems(unchecked.filter(i=>!i.place||!(data.otherPlaces||[]).includes(i.place)));
+  if(noPlace.length){
+    html+='<div class="cat-section"><div class="cat-header"><i class="ti ti-shopping-bag cat-icon"></i><span class="cat-label">Uten sted</span><span class="cat-count">'+noPlace.length+'</span></div>';
+    noPlace.forEach(it=>{html+=renderOtherItem(it);});
+    html+='</div>';
+  }
+  if(checked.length){
+    html+='<div class="checked-section"><div class="checked-header" onclick="showChecked=!showChecked;render()"><i class="ti ti-'+(showChecked?'chevron-down':'chevron-right')+'"></i>Fullført ('+checked.length+')</div>';
+    if(showChecked)checked.forEach(it=>{html+=renderOtherItem(it);});
+    html+='</div>';
+  }
+  el.innerHTML=html;
+}
+function renderOtherItem(it){
+  const url=otherSafeUrl(it.url);
+  return '<div class="item-row'+(it.checked?' checked':'')+'">'
+    +'<button class="item-check'+(it.checked?' done':'')+'" onclick="toggleOther('+it.id+')">'
+    +(it.checked?'<i class="ti ti-check" style="font-size:12px"></i>':'')+'</button>'
+    +'<div style="flex:1;min-width:0">'
+    +'<div style="display:flex;align-items:center;gap:6px">'
+    +(it.prio&&!it.checked?'<i class="ti ti-flag-filled" style="color:var(--danger);font-size:12px;flex-shrink:0"></i>':'')
+    +'<span class="item-name'+(it.checked?' checked':'')+'">'+esc(it.name)+'</span>'
+    +(it.qty>1?'<span class="item-qty-badge">×'+it.qty+'</span>':'')
+    +'</div>'
+    +(it.note?'<div style="font-size:11.5px;color:var(--text3);margin-top:2px">'+esc(it.note)+'</div>':'')
+    +'</div>'
+    +(url?'<a href="'+esc(url)+'" target="_blank" rel="noopener" class="icon-btn" onclick="event.stopPropagation()" title="Åpne lenke"><i class="ti ti-external-link"></i></a>':'')
+    +'<div class="item-actions">'
+    +'<button class="icon-btn" onclick="openOtherModal('+it.id+')" title="Rediger"><i class="ti ti-edit"></i></button>'
+    +'<button class="icon-btn danger" onclick="deleteOther('+it.id+')" title="Slett"><i class="ti ti-trash"></i></button>'
+    +'</div></div>';
+}
+
+// ── Render ───────────────────────────────────────────────────
+function render(){
+  ensureCatOrder();
+  const unchecked=data.items.filter(i=>!i.checked);
+  const checked=data.items.filter(i=>i.checked);
+  document.getElementById('count-badge').textContent=unchecked.length+' varer';
+  populateCatSelect('new-cat',document.getElementById('new-cat').value);
+  if(currentView==='list')renderList(unchecked,checked);
+  else if(currentView==='other')renderOther();
+  else if(currentView==='history')renderHistory();
+  else renderSettings();
+}
+
+function renderList(unchecked,checked){
+  updateDupeBanner();
+  const search=(document.getElementById('search-input')?.value||'').toLowerCase();
+  let filtered=search?unchecked.filter(i=>i.name.toLowerCase().includes(search)):unchecked;
+
+  const completeBtn=document.getElementById('complete-btn');
+  completeBtn.className='complete-btn'+(checked.length?'':' hidden');
+  if(checked.length)completeBtn.innerHTML='<i class="ti ti-shopping-cart-check"></i> Fullfør handletur ('+checked.length+' handlet)';
+
+  // Faste varer
+  document.getElementById('template-chips').innerHTML=
+    [...data.templates].sort((a,b)=>a.name.localeCompare(b.name,'nb')).map(t=>{
+      const onList=data.items.some(i=>i.name.toLowerCase()===t.name.toLowerCase()&&!i.checked);
+      return '<span class="template-chip'+(onList?' on-list':'')+'" onclick="addFromTemplate('+t.id+')">'
+        +'<i class="ti '+(CAT_ICONS[t.cat]||'ti-box')+'" style="font-size:11px"></i>'
+        +esc(t.name)+(onList?'<i class="ti ti-check" style="font-size:10px;margin-left:2px"></i>':'')
+        +'</span>';
+    }).join('');
+
+  // «Kjøpes ofte, mangler nå» – varer fra historikken som ikke er på lista nå
+  const onNow=new Set(data.items.filter(i=>!i.checked).map(i=>i.name.toLowerCase()));
+  const often=[...(data.history||[])].sort((a,b)=>b.count-a.count).filter(h=>!onNow.has(h.name.toLowerCase())).slice(0,8);
+  document.getElementById('often-chips').innerHTML=often.map(h=>
+    '<span class="template-chip" role="button" tabindex="0" data-hist-add="'+esc(h.name)+'">'
+    +'<i class="ti '+(CAT_ICONS[h.cat]||'ti-box')+'" style="font-size:11px" aria-hidden="true"></i>'
+    +esc(h.name)+' <span style="color:var(--text4);font-size:10px">'+h.count+'×</span></span>').join('');
+  document.getElementById('often-section').style.display=often.length?'':'none';
+
+  const listEl=document.getElementById('item-list');
+  if(!filtered.length&&!checked.length&&!search){
+    listEl.innerHTML='<div class="empty-state"><i class="ti ti-shopping-cart" style="font-size:28px;display:block;margin-bottom:8px"></i>Listen er tom</div>';
+    return;
+  }
+  if(!filtered.length&&search){
+    listEl.innerHTML='<div class="empty-state"><i class="ti ti-search" style="font-size:24px;display:block;margin-bottom:8px"></i>Ingen treff</div>';
+    return;
+  }
+
+  let html='';
+  if(search){
+    const sorted=sortAlpha?[...filtered].sort((a,b)=>a.name.localeCompare(b.name,'nb')):filtered;
+    sorted.forEach(item=>{html+=renderItem(item);});
+  }else{
+    const usedCats=[...data.categories].filter(c=>filtered.some(i=>i.cat===c)).sort((a,b)=>catRank(a)-catRank(b)||a.localeCompare(b,'nb'));
+    usedCats.forEach(cat=>{
+      let catItems=filtered.filter(i=>i.cat===cat);
+      if(sortAlpha)catItems=[...catItems].sort((a,b)=>a.name.localeCompare(b.name,'nb'));
+      if(!catItems.length)return;
+      html+='<div class="cat-section"><div class="cat-header"><i class="ti '+(CAT_ICONS[cat]||'ti-box')+' cat-icon"></i><span class="cat-label">'+esc(cat)+'</span><span class="cat-count">'+catItems.length+'</span></div>';
+      catItems.forEach(item=>{html+=renderItem(item);});
+      html+='</div>';
+    });
+    let noCat=filtered.filter(i=>!i.cat||!data.categories.includes(i.cat));
+    if(sortAlpha)noCat=[...noCat].sort((a,b)=>a.name.localeCompare(b.name,'nb'));
+    if(noCat.length){
+      html+='<div class="cat-section"><div class="cat-header"><i class="ti ti-box cat-icon"></i><span class="cat-label">Uten kategori</span><span class="cat-count">'+noCat.length+'</span></div>';
+      noCat.forEach(item=>{html+=renderItem(item);});
+      html+='</div>';
+    }
+  }
+  if(checked.length){
+    html+='<div class="checked-section"><div class="checked-header" onclick="showChecked=!showChecked;render()"><i class="ti ti-'+(showChecked?'chevron-down':'chevron-right')+'"></i>Handlet ('+checked.length+')</div>';
+    if(showChecked)checked.forEach(item=>{html+=renderItem(item);});
+    html+='</div>';
+  }
+  listEl.innerHTML=html;
+}
+
+function renderItem(item){
+  return '<div class="item-row'+(item.checked?' checked':'')+'">'
+    +'<button class="item-check'+(item.checked?' done':'')+'" onclick="toggleCheck('+item.id+')">'
+    +(item.checked?'<i class="ti ti-check" style="font-size:12px"></i>':'')
+    +'</button>'
+    +'<span class="item-name'+(item.checked?' checked':'')+'">'+esc(item.name)+'</span>'
+    +(item.qty>1?'<span class="item-qty-badge">×'+item.qty+'</span>':'')
+    +'<div class="item-actions">'
+    +'<button class="icon-btn" onclick="openEditModal('+item.id+')" title="Rediger"><i class="ti ti-edit"></i></button>'
+    +'<button class="icon-btn danger" onclick="deleteItem('+item.id+')" title="Slett"><i class="ti ti-trash"></i></button>'
+    +'</div></div>';
+}
+
+function renderHistory(){
+  const el=document.getElementById('history-content');
+  const oh=data.otherHistory||[];
+  if(!data.history.length&&!oh.length){
+    el.innerHTML='<div class="empty-state"><i class="ti ti-chart-bar" style="font-size:28px;display:block;margin-bottom:8px"></i>Ingen historikk ennå</div>';
+    return;
+  }
+  let html='';
+  if(data.history.length){
+  const sorted=[...data.history].sort((a,b)=>b.count-a.count);
+  const total=data.history.reduce((s,h)=>s+h.count,0);
+  const catTotals={};
+  data.history.forEach(h=>{const c=h.cat||'Annet';catTotals[c]=(catTotals[c]||0)+h.count;});
+  const catSorted=Object.entries(catTotals).sort((a,b)=>b[1]-a[1]);
+  html='<div class="stat-section"><div class="stat-title"><i class="ti ti-chart-pie"></i> Oversikt</div>'
+    +'<div class="stat-grid">'
+    +'<div class="stat-box"><div class="stat-num">'+total+'</div><div class="stat-lbl">Totalt handlet</div></div>'
+    +'<div class="stat-box"><div class="stat-num">'+sorted.length+'</div><div class="stat-lbl">Unike varer</div></div>'
+    +'</div></div>';
+  html+='<div class="stat-section"><div class="stat-title"><i class="ti ti-tag"></i> Per kategori</div>';
+  catSorted.forEach(([cat,count])=>{
+    const pct=Math.round(count/total*100);
+    const barPct=Math.round(count/catTotals[catSorted[0][0]]*100);
+    html+='<div style="margin-bottom:10px;cursor:pointer" role="button" tabindex="0" data-cat-items="'+esc(cat)+'">'
+      +'<div style="display:flex;align-items:center;gap:8px;margin-bottom:4px">'
+      +'<i class="ti '+(CAT_ICONS[cat]||'ti-box')+'" style="font-size:12px;color:var(--text3);width:16px"></i>'
+      +'<span style="flex:1;font-size:13px;font-weight:500">'+esc(cat)+'</span>'
+      +'<span style="font-size:12px;font-weight:600">'+count+'×</span>'
+      +'<span style="font-size:11px;color:var(--text3);min-width:32px;text-align:right">'+pct+'%</span>'
+      +'<i class="ti ti-chevron-right" style="font-size:13px;color:var(--text4)"></i>'
+      +'</div>'
+      +'<div style="height:6px;background:var(--surface2);border-radius:3px;overflow:hidden">'
+      +'<div style="height:100%;width:'+barPct+'%;background:var(--orange);border-radius:3px"></div>'
+      +'</div></div>';
+  });
+  html+='</div>';
+  html+='<div class="stat-section"><div class="stat-title"><i class="ti ti-trophy"></i> Kjøpes oftest</div><div class="hist-list">';
+  sorted.slice(0,15).forEach((h,i)=>{
+    html+='<div class="hist-item">'
+      +'<span style="font-size:12px;color:var(--text3);min-width:18px;font-weight:600">'+(i+1)+'.</span>'
+      +'<i class="ti '+(CAT_ICONS[h.cat]||'ti-box')+'" style="font-size:12px;color:var(--text3)"></i>'
+      +'<span class="hist-name">'+esc(h.name)+'</span>'
+      +'<span class="hist-count">'+h.count+'×</span>'
+      +'<span class="hist-meta">'+new Date(h.last).toLocaleDateString('nb-NO',{day:'numeric',month:'short'})+'</span>'
+      +'<button class="icon-btn" data-hist-edit="'+esc(h.name)+'" title="Endre kategori" aria-label="Endre kategori"><i class="ti ti-edit" aria-hidden="true"></i></button>'
+      +'</div>';
+  });
+  html+='</div></div>';
+  }
+  html+=renderOtherStats();
+  el.innerHTML=html;
+}
+function renderOtherStats(){
+  const oh=data.otherHistory||[];
+  if(!oh.length)return '';
+  const sorted=[...oh].sort((a,b)=>(b.count||0)-(a.count||0));
+  const total=oh.reduce((s,h)=>s+(h.count||0),0);
+  const placeTotals={};
+  oh.forEach(h=>{const p=h.place||'Uten sted';placeTotals[p]=(placeTotals[p]||0)+(h.count||0);});
+  const placeSorted=Object.entries(placeTotals).sort((a,b)=>b[1]-a[1]);
+  let html='<div class="stat-section"><div class="stat-title"><i class="ti ti-shopping-bag"></i> Diverse – oversikt</div>'
+    +'<div class="stat-grid">'
+    +'<div class="stat-box"><div class="stat-num">'+total+'</div><div class="stat-lbl">Ganger lagt til</div></div>'
+    +'<div class="stat-box"><div class="stat-num">'+sorted.length+'</div><div class="stat-lbl">Unike ting</div></div>'
+    +'</div></div>';
+  if(placeSorted.length){
+    const top=placeTotals[placeSorted[0][0]]||1;
+    html+='<div class="stat-section"><div class="stat-title"><i class="ti ti-map-pin"></i> Per sted</div>';
+    placeSorted.forEach(([p,count])=>{
+      const pct=total?Math.round(count/total*100):0;
+      const barPct=Math.round(count/top*100);
+      html+='<div style="margin-bottom:10px">'
+        +'<div style="display:flex;align-items:center;gap:8px;margin-bottom:4px">'
+        +'<i class="ti '+(PLACE_ICONS[p]||'ti-shopping-bag')+'" style="font-size:12px;color:var(--text3);width:16px"></i>'
+        +'<span style="flex:1;font-size:13px;font-weight:500">'+esc(p)+'</span>'
+        +'<span style="font-size:12px;font-weight:600">'+count+'×</span>'
+        +'<span style="font-size:11px;color:var(--text3);min-width:32px;text-align:right">'+pct+'%</span>'
+        +'</div>'
+        +'<div style="height:6px;background:var(--surface2);border-radius:3px;overflow:hidden">'
+        +'<div style="height:100%;width:'+barPct+'%;background:var(--orange);border-radius:3px"></div>'
+        +'</div></div>';
+    });
+    html+='</div>';
+  }
+  html+='<div class="stat-section"><div class="stat-title"><i class="ti ti-trophy"></i> Oftest lagt til</div><div class="hist-list">';
+  sorted.slice(0,15).forEach((h,i)=>{
+    html+='<div class="hist-item">'
+      +'<span style="font-size:12px;color:var(--text3);min-width:18px;font-weight:600">'+(i+1)+'.</span>'
+      +'<i class="ti '+(PLACE_ICONS[h.place]||'ti-shopping-bag')+'" style="font-size:12px;color:var(--text3)"></i>'
+      +'<span class="hist-name">'+esc(h.name)+'</span>'
+      +'<span class="hist-count">'+(h.count||1)+'×</span>'
+      +(h.last?'<span class="hist-meta">'+new Date(h.last).toLocaleDateString('nb-NO',{day:'numeric',month:'short'})+'</span>':'')
+      +'</div>';
+  });
+  html+='</div></div>';
+  return html;
+}
+
+function renderSettings(){
+  updateColorPickers();
+  document.getElementById('place-chips').innerHTML=
+    [...(data.otherPlaces||[])].sort((a,b)=>a.localeCompare(b,'nb')).map(p=>
+      '<div style="display:flex;align-items:center;gap:8px;padding:6px 0;border-bottom:1px solid var(--border2)">'
+      +'<i class="ti '+(PLACE_ICONS[p]||'ti-shopping-bag')+'" style="font-size:13px;color:var(--text3)"></i>'
+      +'<span style="flex:1;font-size:13px">'+esc(p)+'</span>'
+      +'<button data-del-place="'+esc(p)+'" aria-label="Slett sted" style="background:none;border:none;color:var(--text4);cursor:pointer;font-size:13px" onmouseover="this.style.color=\'var(--danger)\'" onmouseout="this.style.color=\'var(--text4)\'"><i class="ti ti-trash" aria-hidden="true"></i></button>'
+      +'</div>'
+    ).join('');
+  ensureCatOrder();
+  document.getElementById('cat-chips').innerHTML=
+    '<p style="font-size:11px;color:var(--text3);margin:-2px 0 8px">Rekkefølgen bestemmer gruppene i lista – sett dem i den rekkefølgen du går gjennom butikken.</p>'
+    +data.catOrder.map((c,idx)=>
+      '<div style="display:flex;align-items:center;gap:6px;padding:6px 0;border-bottom:1px solid var(--border2)">'
+      +'<i class="ti '+(CAT_ICONS[c]||'ti-box')+'" style="font-size:13px;color:var(--text3)"></i>'
+      +'<span style="flex:1;font-size:13px">'+esc(c)+'</span>'
+      +'<button data-move-cat="'+esc(c)+'" data-move-dir="-1" aria-label="Flytt opp" '+(idx===0?'disabled':'')+' style="background:none;border:none;color:var(--text3);cursor:pointer;font-size:14px;padding:2px;'+(idx===0?'opacity:.3':'')+'"><i class="ti ti-chevron-up" aria-hidden="true"></i></button>'
+      +'<button data-move-cat="'+esc(c)+'" data-move-dir="1" aria-label="Flytt ned" '+(idx===data.catOrder.length-1?'disabled':'')+' style="background:none;border:none;color:var(--text3);cursor:pointer;font-size:14px;padding:2px;'+(idx===data.catOrder.length-1?'opacity:.3':'')+'"><i class="ti ti-chevron-down" aria-hidden="true"></i></button>'
+      +'<button data-del-cat="'+esc(c)+'" aria-label="Slett kategori" style="background:none;border:none;color:var(--text4);cursor:pointer;font-size:13px;padding:2px" onmouseover="this.style.color=\'var(--danger)\'" onmouseout="this.style.color=\'var(--text4)\'"><i class="ti ti-trash" aria-hidden="true"></i></button>'
+      +'</div>'
+    ).join('');
+  populateCatSelect('new-template-cat','');
+  document.getElementById('template-manage').innerHTML=
+    data.templates.map(t=>
+      '<div style="display:flex;align-items:center;gap:8px;padding:6px 0;border-bottom:1px solid var(--border2)">'
+      +'<i class="ti '+(CAT_ICONS[t.cat]||'ti-box')+'" style="font-size:13px;color:var(--text3)"></i>'
+      +'<span style="flex:1;font-size:13px">'+esc(t.name)+'</span>'
+      +'<span style="font-size:11px;color:var(--text3)">'+esc(t.cat)+'</span>'
+      +'<button onclick="deleteTemplate('+t.id+')" style="background:none;border:none;color:var(--text4);cursor:pointer;font-size:13px;margin-left:6px" onmouseover="this.style.color=\'var(--danger)\'" onmouseout="this.style.color=\'var(--text4)\'"><i class="ti ti-trash"></i></button>'
+      +'</div>'
+    ).join('');
+}
+
+// ── Delegerte lyttere (unngår brukerdata i inline onclick – XSS-sikkert) ──
+document.getElementById('item-suggest').addEventListener('mousedown',e=>{const it=e.target.closest('[data-sug-name]');if(it)suggestSelect(it.dataset.sugName,it.dataset.sugCat);});
+document.getElementById('other-suggest').addEventListener('mousedown',e=>{const it=e.target.closest('[data-osug-name]');if(it)otherSuggestSelect(it.dataset.osugName,it.dataset.osugPlace);});
+document.getElementById('cat-modal-body').addEventListener('click',e=>{const it=e.target.closest('[data-cat-item]');if(it)catItemEdit(it.dataset.catItem);});
+document.getElementById('place-chips').addEventListener('click',e=>{const b=e.target.closest('[data-del-place]');if(b)deletePlace(b.dataset.delPlace);});
+document.getElementById('cat-chips').addEventListener('click',e=>{
+  const mv=e.target.closest('[data-move-cat]');if(mv){moveCat(mv.dataset.moveCat,parseInt(mv.dataset.moveDir,10));return;}
+  const del=e.target.closest('[data-del-cat]');if(del)deleteCategory(del.dataset.delCat);
+});
+document.getElementById('often-chips').addEventListener('click',e=>{const c=e.target.closest('[data-hist-add]');if(c)addFromHistory(c.dataset.histAdd);});
+document.getElementById('history-content').addEventListener('click',e=>{
+  const edit=e.target.closest('[data-hist-edit]');if(edit){openHistEdit(edit.dataset.histEdit);return;}
+  const catRow=e.target.closest('[data-cat-items]');if(catRow)openCatItems(catRow.dataset.catItems);
+});
+// Tastatur (Enter/Space) for klikkbare elementer med role="button" som ikke er ekte <button>.
+document.addEventListener('keydown',e=>{
+  if((e.key==='Enter'||e.key===' ')&&e.target.matches('[role="button"]')&&e.target.tagName!=='BUTTON'){e.preventDefault();e.target.click();}
+});
+// Escape lukker åpen modal.
+document.addEventListener('keydown',e=>{
+  if(e.key!=='Escape')return;
+  ['modal','other-modal','hist-modal','merge-modal','cat-modal'].forEach(id=>{const m=document.getElementById(id);if(m&&m.style.display!=='none')m.style.display='none';});
+});
+
+// Modul-scope: funksjoner brukt i on*-attributter må eksponeres på window.
+Object.assign(window,{addCategory,addFromTemplate,addItem,addOther,addPlace,
+addTemplateItem,clearCheckedOther,completeShop,deleteFromModal,deleteFromOtherModal,
+deleteItem,deleteOther,deleteTemplate,doManualMerge,doMerge,hideCatModal,hideHistModal,
+hideMergeModal,hideModal,hideOtherModal,hideOtherSuggest,hideSuggest,manualPreview,
+openEditModal,openMergeModal,openOtherDetaljer,openOtherModal,otherNameLookup,render,
+renderOther,resetAccentColor,saveHistModal,saveModal,saveOtherModal,saveOtherModalAndNew,
+setAccentColor,setView,suggestInput,suggestOther,toggleCheck,toggleOther,toggleSort,toggleTheme});
+
+load();
+</script>
+</body>
+</html>
