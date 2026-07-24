@@ -27,6 +27,15 @@ export async function dbSet(familieId, appNavn, data) {
   await set(ref(db, sti(familieId, appNavn)), data);
 }
 
+// Skriv én undernøkkel i app-noden (f.eks. sovn/<barnId>) – kirurgisk
+// skriving som ikke rører søsken-nøkler. Samme datatap-vern som dbSet.
+export async function dbSetSub(familieId, appNavn, subKey, data) {
+  if (!lest.has(familieId + '/' + appNavn)) {
+    throw new Error('Datatap-vern: «' + appNavn + '» er ikke lest ennå – nekter å skrive.');
+  }
+  await set(ref(db, sti(familieId, appNavn) + '/' + subKey), data);
+}
+
 // Sanntidslytter. Første verdi markerer noden som lest (som dbGet).
 // Returnerer en stopp-funksjon.
 export function dbListen(familieId, appNavn, callback) {

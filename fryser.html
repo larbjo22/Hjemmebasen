@@ -2,7 +2,7 @@
 <html lang="no">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
 <link rel="manifest" href="manifest.webmanifest">
 <meta name="theme-color" content="#f97316">
 <link rel="apple-touch-icon" href="ikoner/apple-touch-icon.png">
@@ -159,7 +159,7 @@ input:focus-visible,select:focus-visible,button:focus-visible,[role="button"]:fo
 <body>
 <main class="fw" id="app">
   <div class="top-bar">
-    <h1 class="app-title"><a href="index.html" title="Til forsiden" aria-label="Til forsiden" style="text-decoration:none;margin-right:2px">🏠</a><i class="ti ti-snowflake" aria-hidden="true"></i>Fryseroversikt</h1>
+    <h1 class="app-title"><i class="ti ti-snowflake" aria-hidden="true"></i>Fryseroversikt</h1>
     <div style="display:flex;align-items:center;gap:8px">
       <span class="total-badge" id="total-badge">laster...</span>
       <button id="theme-btn" onclick="toggleTheme()" title="Bytt tema" aria-label="Bytt mellom lyst og mørkt tema" style="width:28px;height:28px;border-radius:50%;border:1px solid var(--border);background:var(--surface2);cursor:pointer;font-size:14px;display:flex;align-items:center;justify-content:center;color:var(--text2)"></button>
@@ -343,8 +343,8 @@ function adoptData(saved){
   data=saved;
   if(!data.freezers?.length)data.freezers=JSON.parse(JSON.stringify(DEFAULT_DATA.freezers));
   if(!data.categories?.length)data.categories=[...DEFAULT_CATS];
-  if(!data.history)data.history=[];
-  if(!data.items)data.items=[];
+  if(!Array.isArray(data.history))data.history=[];
+  if(!Array.isArray(data.items))data.items=[];
   nextId=data.items.length?Math.max(...data.items.map(i=>i.id))+1:200;
   if(!data.freezers.some(f=>f.id===activeFid))activeFid=data.freezers[0]?.id||1;
 }
@@ -361,7 +361,7 @@ async function load(){
     // ingen MQTT-tvetydighet). Tom node = ny husstand → trygt å starte blankt
     // med standard frysere/kategorier (DEFAULT_DATA har tom varelisten).
     const saved=await dbGet(FAMILIE,APP);
-    if(saved&&saved.freezers)adoptData(saved);
+    if(saved)adoptData(saved);
     dataLoaded=true;
     setStatus('');
     startListen();
@@ -379,13 +379,13 @@ function seedHistory(){
   data.history=[];const seen={};
   (data.items||[]).forEach(it=>{const k=(it.name||'').toLowerCase();if(k&&!seen[k]){seen[k]=1;data.history.push({name:it.name,cat:it.cat||'',count:1,last:it.added||TODAY()});}});
 }
-let lastSave=0;
+let sistSkrevet='';
 async function save(){
   if(!dataLoaded){setStatus('Ikke lagret – data er ikke lastet ennå. Last siden på nytt.','err');return;}
   setStatus('Lagrer...');
   try{
+    sistSkrevet=JSON.stringify(data); // ekko-sjekk i lytteren
     await dbSet(FAMILIE,APP,data);
-    lastSave=Date.now();
     setStatus('Lagret ✓','ok');
   }catch(e){
     setStatus('Kunne ikke lagre – prøv igjen','err');
@@ -397,7 +397,7 @@ function isEditing(){
   const inp=document.getElementById('new-name');
   if(inp&&inp.value.trim())return true;
   const ae=document.activeElement;
-  if(ae&&/^(INPUT|TEXTAREA|SELECT)$/.test(ae.tagName))return true;
+  if(ae&&/^(INPUT|TEXTAREA|SELECT)$/.test(ae.tagName)&&(ae.value||'').trim())return true;
   const m=document.getElementById('modal');
   return !!(m&&m.style.display&&m.style.display!=='none');
 }
@@ -407,8 +407,9 @@ let stopListen=null;
 function startListen(){
   if(stopListen)return;
   stopListen=dbListen(FAMILIE,APP,saved=>{
-    if(!saved||!saved.freezers)return;
-    if(isEditing()||Date.now()-lastSave<5000)return;
+    if(!saved)return;
+    if(JSON.stringify(saved)===sistSkrevet)return; // ekko fra egen lagring
+    if(isEditing())return;
     if(JSON.stringify(saved)===JSON.stringify(data))return;
     adoptData(saved);
     dataLoaded=true;
@@ -517,9 +518,10 @@ async function addToShoppingList(id){
   try{
     let list=await dbGet(FAMILIE,SHOP_APP);
     // Tom node (null) er et autoritativt svar: handlelista er aldri brukt ennå.
-    // Da starter vi en minimal liste – handleliste-appen fyller inn resten selv.
-    if(!list)list={items:[]};
-    if(!Array.isArray(list.items)){setStatus('Fant ikke handlelista – prøv igjen','err');return;}
+    // Da starter vi blankt. Firebase lagrer ikke tomme arrays, så `items` kan
+    // mangle på en ellers gyldig node – reparer KUN items, resten bevares.
+    if(!list)list={};
+    if(!Array.isArray(list.items))list.items=[];
     const existing=list.items.find(i=>i.name.toLowerCase()===item.name.toLowerCase()&&!i.checked);
     if(existing){
       existing.qty=(existing.qty||1)+1;
@@ -576,9 +578,10 @@ function suggestFryser(val){
   if(!m.length)m=(data.history||[]).filter(h=>h.name.toLowerCase().includes(q));
   m=m.sort((a,b)=>{const r=rank(a.name.toLowerCase())-rank(b.name.toLowerCase());return r!==0?r:(b.count||0)-(a.count||0);}).slice(0,8);
   if(!m.length){box.style.display='none';box.innerHTML='';return;}
+  // Data-attributter + delegert lytter (som handleliste) – ingen inline JS,
+  // så fnutter i varenavn kan ikke bryte ut av attributtet (XSS).
   box.innerHTML=m.map(h=>{
-    const na=h.name.replace(/'/g,'&#39;');const ca=(h.cat||'').replace(/'/g,'&#39;');
-    return '<div class="sug-item" onmousedown="pickFryser(\''+na+'\',\''+ca+'\')"><i class="ti ti-history" style="color:var(--accent)"></i><span>'+esc(h.name)+'</span>'+(h.cat?'<span class="sug-cat">'+esc(h.cat)+'</span>':'')+'</div>';
+    return '<div class="sug-item" data-sug-navn="'+esc(h.name)+'" data-sug-cat="'+esc(h.cat||'')+'"><i class="ti ti-history" style="color:var(--accent)"></i><span>'+esc(h.name)+'</span>'+(h.cat?'<span class="sug-cat">'+esc(h.cat)+'</span>':'')+'</div>';
   }).join('');
   box.style.display='block';
 }
@@ -588,6 +591,7 @@ function pickFryser(name,cat){
   hideSuggestFryser();checkDuplicate();document.getElementById('new-name').focus();
 }
 function hideSuggestFryser(){const b=document.getElementById('name-suggest');if(b){b.style.display='none';b.innerHTML='';}}
+document.getElementById('name-suggest').addEventListener('mousedown',e=>{const it=e.target.closest('[data-sug-navn]');if(it)pickFryser(it.dataset.sugNavn,it.dataset.sugCat);});
 
 // ── Render ───────────────────────────────────────────────────
 // render() er delt i tre: faner, filtre og selve lista.
@@ -723,7 +727,7 @@ function initAccentColors(){['light','dark'].forEach(mode=>{const saved=localSto
 function updateColorPickers(){['light','dark'].forEach(mode=>{const saved=localStorage.getItem(APP_KEY+'_color_'+mode)||DEFAULT_COLORS[mode];const inp=document.getElementById('color-'+mode);if(inp)inp.value=saved;});}
 initAccentColors();
 function initTheme(){
-  const saved=localStorage.getItem('fryser_theme');
+  const saved=localStorage.getItem('hjemmebasen_theme');
   const prefersDark=window.matchMedia('(prefers-color-scheme:dark)').matches;
   const theme=saved||(prefersDark?'dark':'light');
   setTheme(theme,false);
@@ -732,7 +736,7 @@ function setTheme(theme,save=true){
   document.documentElement.setAttribute('data-theme',theme);
   const btn=document.getElementById('theme-btn');
   if(btn)btn.textContent=theme==='dark'?'☀️':'🌙';
-  if(save)localStorage.setItem('fryser_theme',theme);
+  if(save)localStorage.setItem('hjemmebasen_theme',theme);
 }
 function toggleTheme(){
   const current=document.documentElement.getAttribute('data-theme')||'light';
@@ -766,7 +770,7 @@ document.addEventListener('keydown',e=>{
 // Modul-scope: funksjoner brukt i on*-attributter må eksponeres på window.
 Object.assign(window,{addCategory,addItem,addToShoppingList,changeQty,closeModal,
 deleteFreezerFromModal,deleteItem,hideSuggestFryser,onNameInput,openAddFreezerModal,
-openEditFreezerModal,openEditModal,pickFryser,render,resetAccentColor,saveModal,
+openEditFreezerModal,openEditModal,render,resetAccentColor,saveModal,
 selectFreezer,setAccentColor,setSort,toggleCatManager,toggleColorManager,toggleTheme});
 
 load();

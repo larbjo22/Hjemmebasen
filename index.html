@@ -2,7 +2,7 @@
 <html lang="no">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
 <link rel="manifest" href="manifest.webmanifest">
 <meta name="theme-color" content="#f97316">
 <link rel="apple-touch-icon" href="ikoner/apple-touch-icon.png">
@@ -283,7 +283,7 @@ function appStatus(app, fam) {
       const sortert = [...aapne].sort((a, b) => (a.date || '9999') < (b.date || '9999') ? -1 : 1);
       return {
         txt: aapne.length + ' åpne' + (forfalt ? ' · ' + forfalt + ' på overtid' : ''), varsel: forfalt > 0,
-        linjer: sortert.slice(0, 3).map(t => ({ id: t.id, tekst: t.title, handling: 'opg-check', overtid: !!(t.date && t.date < todayStr()) })),
+        linjer: sortert.slice(0, 3).map(t => ({ id: t.id, tekst: t.title, handling: t.repeat ? null : 'opg-check', overtid: !!(t.date && t.date < todayStr()) })),
         flere: Math.max(0, aapne.length - 3),
       };
     }
@@ -372,16 +372,28 @@ document.getElementById('app-grid').addEventListener('click', async e => {
         i.id === parseInt(btn.dataset.id) ? { ...i, checked: true } : i);
       await set(ref(db, 'familier/' + familieId + '/handleliste/items'), items);
     } else if (btn.dataset.handling === 'opg-check') {
-      const tasks = (sisteFam.oppgaver?.tasks || []).map(t =>
-        t.id === parseInt(btn.dataset.id) ? { ...t, done: true, doneDate: todayStr() } : t);
-      await set(ref(db, 'familier/' + familieId + '/oppgaver/tasks'), tasks);
+      // Samme semantikk som oppgave-appens completeTask: arkiver + fjern.
+      // (Bare ikke-gjentakende oppgaver får avhuking her – se appStatus.)
+      const id = parseInt(btn.dataset.id);
+      const alle = sisteFam.oppgaver?.tasks || [];
+      const ferdig = alle.find(t => t.id === id);
+      if (ferdig) {
+        const tasks = alle.filter(t => t.id !== id);
+        const archive = [...(sisteFam.oppgaver?.archive || []), { ...ferdig, done: true, completedDate: todayStr() }];
+        await set(ref(db, 'familier/' + familieId + '/oppgaver/tasks'), tasks);
+        await set(ref(db, 'familier/' + familieId + '/oppgaver/archive'), archive);
+      }
     }
   } catch (err) { btn.textContent = '○'; btn.disabled = false; }
 });
 
-// Nedtellinger og «våken i X» holder seg ferske
+// Nedtellinger, «våken i X» og datobaserte fliser holder seg ferske
+// (også over midnatt – review-funn).
 setInterval(() => {
-  if (sisteFam) { tegnVarsler(sisteFam, sisteFam.meta || {}); }
+  if (sisteFam) {
+    tegnVarsler(sisteFam, sisteFam.meta || {});
+    tegnDashbord(sisteFam, sisteFam.meta || {});
+  }
 }, 60000);
 </script>
 </body>

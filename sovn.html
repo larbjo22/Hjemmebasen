@@ -2,7 +2,7 @@
 <html lang="no">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
 <link rel="manifest" href="manifest.webmanifest">
 <meta name="theme-color" content="#f97316">
 <link rel="apple-touch-icon" href="ikoner/apple-touch-icon.png">
@@ -259,7 +259,7 @@ body.embed .info-row{padding:10px 14px}
 <body>
 <main class="fw" id="app">
   <div class="top-bar">
-    <h1 class="app-title"><a href="index.html" title="Til forsiden" aria-label="Til forsiden" style="text-decoration:none;margin-right:2px">🏠</a>😴 Søvn</h1>
+    <h1 class="app-title">😴 Søvn</h1>
     <div class="top-right">
       <button class="theme-btn" id="theme-btn" onclick="toggleTheme()" title="Bytt tema" aria-label="Bytt mellom lyst og mørkt tema"></button>
     </div>
@@ -467,7 +467,7 @@ body.embed .info-row{padding:10px 14px}
 // Ny i porten: flere barn – app-noden 'sovn' er ett objekt med én blob per barn,
 // og `data` peker alltid på bloben til det aktive barnet (alle[aktivBarn.id]).
 import { requireAuth } from './felles/auth.js';
-import { dbGet, dbSet, dbListen } from './felles/storage.js';
+import { dbGet, dbSet, dbSetSub, dbListen } from './felles/storage.js';
 import { esc } from './felles/ui.js';
 import { monterNav } from './felles/nav.js';
 
@@ -584,7 +584,7 @@ function updateColorPickers(){
 initAccentColors();
 
 function initTheme(){
-  const saved=localStorage.getItem(APP_KEY+'_theme');
+  const saved=localStorage.getItem('hjemmebasen_theme');
   const prefersDark=window.matchMedia('(prefers-color-scheme:dark)').matches;
   setTheme(saved||(prefersDark?'dark':'light'),false);
 }
@@ -592,7 +592,7 @@ function setTheme(theme,save=true){
   document.documentElement.setAttribute('data-theme',theme);
   const btn=document.getElementById('theme-btn');
   if(btn)btn.textContent=theme==='dark'?'☀️':'🌙';
-  if(save)localStorage.setItem(APP_KEY+'_theme',theme);
+  if(save)localStorage.setItem('hjemmebasen_theme',theme);
 }
 function toggleTheme(){setTheme(document.documentElement.getAttribute('data-theme')==='dark'?'light':'dark');}
 initTheme();
@@ -618,6 +618,7 @@ function normalizeData(d,barn){
 // ── Lagring (Firebase via felles/storage.js) ─────────────────
 let dataLoaded=false; // sant først når en ekte lesning har lyktes – hindrer overskriving
 let lastSave=0;
+let sistSkrevet=''; // JSON av vår egen siste skriving (ekko-vern)
 
 // Pek `data` på det valgte barnets blob (opprett default-blob hvis den mangler).
 // Samme objektreferanse som i `alle`, så all eksisterende mutasjon virker uendret.
@@ -669,7 +670,14 @@ async function load(){
 async function save(){
   if(!dataLoaded){setStatus('Ikke lagret – data er ikke lastet ennå. Last siden på nytt.','err');return false;}
   try{
-    await dbSet(FAMILIE,APP,alle);
+    // Skriver KUN aktivt barns node – to foreldre kan registrere for hvert
+    // sitt barn samtidig uten å viske ut hverandres økter (review H3).
+    if(aktivBarn&&data){
+      sistSkrevet=JSON.stringify(data);
+      await dbSetSub(FAMILIE,APP,aktivBarn.id,data);
+    }else{
+      await dbSet(FAMILIE,APP,alle);
+    }
     lastSave=Date.now();
     setStatus('Lagret ✓','ok');
     return true;
@@ -689,10 +697,13 @@ let stopListen=null;
 function startListen(){
   if(stopListen)return;
   stopListen=dbListen(FAMILIE,APP,saved=>{
-    if(modalOpen())return;                 // ikke overskriv mens noen redigerer
-    if(Date.now()-lastSave<5000)return;    // ekko av egen lagring
     const incoming=saved||{};
     if(JSON.stringify(incoming)===JSON.stringify(alle))return; // uendret
+    // Ekko av egen skriving: vårt barns node matcher det vi nettopp skrev,
+    // men andres endringer (andre barn) skal alltid slippe gjennom.
+    if(aktivBarn&&sistSkrevet&&JSON.stringify(incoming[aktivBarn.id]||null)===sistSkrevet
+       &&JSON.stringify({...incoming,[aktivBarn.id]:null})===JSON.stringify({...alle,[aktivBarn.id]:null}))return;
+    if(modalOpen())return;                 // ikke overskriv mens noen redigerer
     alle=incoming;
     dataLoaded=true;
     if(aktivBarn)velgBarnIntern(aktivBarn); // repek data=alle[aktivBarn.id]

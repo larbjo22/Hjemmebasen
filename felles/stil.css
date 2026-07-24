@@ -36,6 +36,8 @@ body {
   font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
   background: var(--bg); color: var(--text); font-size: 14px;
 }
+/* iPhone-notch i standalone-modus: sider uten app-meny trenger egen luft */
+body:not(:has(.app-nav)) { padding-top: env(safe-area-inset-top); }
 input:focus-visible, button:focus-visible { outline: 2px solid var(--accent); outline-offset: 1px; }
 
 .fw { max-width: 480px; margin: 0 auto; padding: .6rem .75rem; }

@@ -2,7 +2,7 @@
 <html lang="no">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
 <link rel="manifest" href="manifest.webmanifest">
 <meta name="theme-color" content="#f97316">
 <link rel="apple-touch-icon" href="ikoner/apple-touch-icon.png">
@@ -205,7 +205,7 @@ input:focus-visible,select:focus-visible,button:focus-visible,textarea:focus-vis
 <body>
 <main class="fw">
   <div class="top-bar">
-    <h1 class="app-title"><a href="index.html" title="Til forsiden" aria-label="Til forsiden" style="text-decoration:none;margin-right:2px">🏠</a><i class="ti ti-checklist" aria-hidden="true"></i>Oppgaver</h1>
+    <h1 class="app-title"><i class="ti ti-checklist" aria-hidden="true"></i>Oppgaver</h1>
     <div class="top-right">
       <span class="count-badge" id="count-badge">0 åpne</span>
       <button class="theme-btn" id="theme-btn" onclick="toggleTheme()" title="Bytt tema" aria-label="Bytt mellom lyst og mørkt tema"></button>
@@ -469,8 +469,8 @@ function setAccentColor(mode,hex){localStorage.setItem(APP_KEY+'_color_'+mode,he
 function resetAccentColor(mode){localStorage.removeItem(APP_KEY+'_color_'+mode);const el=document.getElementById('accent-style-'+mode);if(el)el.textContent='';}
 function initAccentColors(){['light','dark'].forEach(mode=>{const s=localStorage.getItem(APP_KEY+'_color_'+mode);if(s)applyAccentColor(mode,s);});}
 initAccentColors();
-function initTheme(){const s=localStorage.getItem(APP_KEY+'_theme');const dark=window.matchMedia('(prefers-color-scheme:dark)').matches;setTheme(s||(dark?'dark':'light'),false);}
-function setTheme(t,save=true){document.documentElement.setAttribute('data-theme',t);const b=document.getElementById('theme-btn');if(b)b.textContent=t==='dark'?'☀️':'🌙';if(save)localStorage.setItem(APP_KEY+'_theme',t);}
+function initTheme(){const s=localStorage.getItem('hjemmebasen_theme');const dark=window.matchMedia('(prefers-color-scheme:dark)').matches;setTheme(s||(dark?'dark':'light'),false);}
+function setTheme(t,save=true){document.documentElement.setAttribute('data-theme',t);const b=document.getElementById('theme-btn');if(b)b.textContent=t==='dark'?'☀️':'🌙';if(save)localStorage.setItem('hjemmebasen_theme',t);}
 function toggleTheme(){setTheme(document.documentElement.getAttribute('data-theme')==='dark'?'light':'dark');}
 initTheme();
 
@@ -478,13 +478,20 @@ initTheme();
 function setStatus(msg,type=''){const s=document.getElementById('status-bar');s.textContent=msg;s.className='status-bar'+(type?' '+type:'');if(type==='ok')setTimeout(()=>{s.textContent='';s.className='status-bar';},2000);}
 
 // ── Lagring (Firebase via felles/storage.js) ─────────────────
+// Firebase RTDB lagrer IKKE tomme arrays – feltet fjernes fra noden.
+// Derfor må ALLE arrayfelter defaultes her, og adopsjon må aldri gates
+// på at et enkeltfelt finnes (da forkastes hele noden → datatap).
+function normaliser(d){
+  if(!Array.isArray(d.tasks))d.tasks=[];
+  if(!Array.isArray(d.categories)||!d.categories.length)d.categories=[...DEFAULT_CATS];
+  if(!Array.isArray(d.people))d.people=[];
+  if(!Array.isArray(d.archive))d.archive=[];
+  if(!Array.isArray(d.maintenance))d.maintenance=[];
+  d.maintenance.forEach(m=>{if(!Array.isArray(m.dates))m.dates=[];});
+  return d;
+}
 function adoptData(saved){
-  data=saved;
-  if(!data.tasks)data.tasks=[];
-  if(!data.categories?.length)data.categories=[...DEFAULT_CATS];
-  if(!data.people)data.people=[];
-  if(!data.archive)data.archive=[];
-  if(!data.maintenance)data.maintenance=[];
+  data=normaliser(saved);
   // Migrer til manuell rekkefølge: frist først (nærmest øverst), så prioritet/alfabetisk
   if(data.tasks.some(t=>!t.done&&t.order==null)){
     const po={high:0,normal:1,low:2};
@@ -513,7 +520,7 @@ async function load(){
     // dbGet kaster ved feil og gir null KUN når noden er tom (autoritativt svar,
     // ingen MQTT-tvetydighet). Tom node = ny husstand → trygt å starte blankt.
     const saved=await dbGet(FAMILIE,APP);
-    if(saved?.tasks!==undefined)adoptData(saved);
+    if(saved)adoptData(saved);
     // Personregisteret er kilden (ADR-0005): nye voksne flettes ALLTID inn.
     {
       const p=await dbGet(FAMILIE,'personer');
@@ -544,13 +551,13 @@ function autoTasksFromMaint(){
   if(added)save();
 }
 function setMyName(v){myName=v;localStorage.setItem('oppgaver_me',v);render();}
-let lastSave=0;
+let sistSkrevet=''; // JSON av egen siste skriving – brukes til å ignorere ekko fra lytteren
 async function save(){
   if(!dataLoaded){setStatus('Ikke lagret – data er ikke lastet ennå. Last siden på nytt.','err');return;}
   setStatus('Lagrer...');
   try{
+    sistSkrevet=JSON.stringify(data);
     await dbSet(FAMILIE,APP,data);
-    lastSave=Date.now();
     setStatus('Lagret ✓','ok');
   }catch(e){
     setStatus('Kunne ikke lagre – prøv igjen','err');
@@ -568,14 +575,16 @@ function isEditing(){
   });
 }
 // Sanntidssynk: lytteren fyrer ved alle endringer (også andres telefoner).
-// Hopper over mens man redigerer og rett etter egen lagring (ekko).
+// Ekko av egen skriving gjenkjennes på innhold (sistSkrevet), ikke tidsvindu.
 let stopListen=null;
 function startListen(){
   if(stopListen)return;
   stopListen=dbListen(FAMILIE,APP,saved=>{
-    if(!saved||saved.tasks===undefined)return;
-    if(isEditing()||Date.now()-lastSave<5000)return;
-    if(JSON.stringify(saved)===JSON.stringify(data))return;
+    if(!saved)return;
+    const s=JSON.stringify(normaliser(saved));
+    if(s===sistSkrevet)return;               // ekko av egen skriving – alltid ignorér
+    if(s===JSON.stringify(data))return;      // ingen reell endring
+    if(isEditing())return;                   // ekte endring – vent til brukeren er ferdig
     adoptData(saved);
     dataLoaded=true;
     render();
@@ -822,6 +831,7 @@ function addMaint(){
 }
 function maintDoneNow(id){
   const m=data.maintenance.find(x=>x.id===id);if(!m)return;
+  if(!Array.isArray(m.dates))m.dates=[]; // Firebase fjerner tomme arrays
   const td=todayStr();
   if(!m.dates.includes(td))m.dates.push(td);
   save();render();
@@ -874,6 +884,7 @@ function renderMaintHistory(m){
 }
 function maintAddDate(){
   const m=data.maintenance.find(x=>x.id===maintEditId);if(!m)return;
+  if(!Array.isArray(m.dates))m.dates=[]; // Firebase fjerner tomme arrays
   const d=document.getElementById('maint-add-date').value;if(!d)return;
   if(!m.dates.includes(d))m.dates.push(d);
   document.getElementById('maint-add-date').value='';
@@ -881,6 +892,7 @@ function maintAddDate(){
 }
 function maintDelDate(d){
   const m=data.maintenance.find(x=>x.id===maintEditId);if(!m)return;
+  if(!Array.isArray(m.dates))m.dates=[]; // Firebase fjerner tomme arrays
   m.dates=m.dates.filter(x=>x!==d);
   renderMaintHistory(m);
 }
