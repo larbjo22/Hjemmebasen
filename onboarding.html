@@ -200,11 +200,13 @@ function koble() {
   document.querySelectorAll('[data-fjern-barn]').forEach(b =>
     b.addEventListener('click', () => { lesSteg(); st.barn.splice(+b.dataset.fjernBarn, 1); render(); }));
 
-  // Sted (open-meteo geokoding – gratis, uten nøkkel)
+  // Sted (open-meteo geokoding – gratis, uten nøkkel).
+  // Søker på knapp, Enter og automatisk mens man skriver.
   const sBtn = document.getElementById('ob-sted-btn');
-  if (sBtn) sBtn.addEventListener('click', async () => {
-    const q = document.getElementById('ob-sted').value.trim();
-    if (!q) return;
+  const sInp = document.getElementById('ob-sted');
+  async function sokSted() {
+    const q = sInp ? sInp.value.trim() : '';
+    if (q.length < 2) return;
     setStatus('Søker...');
     try {
       const res = await fetch('https://geocoding-api.open-meteo.com/v1/search?name=' + encodeURIComponent(q) + '&count=5&language=no&format=json');
@@ -218,7 +220,13 @@ function koble() {
       document.querySelectorAll('[data-sted]').forEach(el =>
         el.addEventListener('click', () => { st.sted = st.stedTreff[+el.dataset.sted]; render(); }));
     } catch (e) { setStatus('Stedsøket feilet – hopp over, dette kan settes senere', 'err'); }
-  });
+  }
+  if (sBtn) sBtn.addEventListener('click', sokSted);
+  if (sInp) {
+    let sTimer = null;
+    sInp.addEventListener('keydown', e => { if (e.key === 'Enter') { clearTimeout(sTimer); sokSted(); } });
+    sInp.addEventListener('input', () => { clearTimeout(sTimer); sTimer = setTimeout(sokSted, 500); });
+  }
 
   // Ferdig
   const ferdig = document.getElementById('ob-ferdig');

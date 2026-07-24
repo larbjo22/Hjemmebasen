@@ -26,6 +26,7 @@
 .varsel.oransje .v-ikon{color:var(--varsle,var(--accent-text))}
 .varsel .v-tekst{flex:1;min-width:0}
 .varsel .v-pil{color:var(--text4);flex-shrink:0}
+.varsel .v-lukk{border:none;background:none;color:var(--text4);font-size:17px;line-height:1;cursor:pointer;padding:0 2px;flex-shrink:0}
 .varsel.rod{border-color:rgba(229,62,62,.45);background:rgba(229,62,62,.07)}
 .varsel.oransje{border-color:var(--accent-border);background:var(--accent-bg)}
 .varsel.gronn{border-color:rgba(22,163,74,.35)}
@@ -260,10 +261,15 @@ function tegnVarsler(fam, meta) {
         tekst: 'I dag til middag: ' + idag.meal + (idag.cook ? ' (' + idag.cook + ' lager)' : '') });
       else v.push({ prio: 3, ikon: 'ti-tools-kitchen-2', href: 'middag.html', tekst: 'Ingen middag planlagt i dag – spinn ruletten?' });
     }
-    // Ferske beskjeder på tavla (siste 24 t)
+    // Ferske beskjeder på tavla (siste 24 t) – minus utløpte og de du har skjult
     if (aktiv('beskjeder')) {
-      const lapper = (fam.beskjeder?.lapper || []).filter(l => Date.now() - l.ts < 86400000).sort((a, b) => b.ts - a.ts);
-      if (lapper.length) v.push({ prio: 3, ikon: 'ti-pin', href: 'beskjeder.html',
+      const skjulte = innst.skjulteLapper || {};
+      const lapper = (fam.beskjeder?.lapper || [])
+        .filter(l => Date.now() - l.ts < 86400000)
+        .filter(l => !(l.utlop && Date.now() > l.utlop))
+        .filter(l => !skjulte[l.id + '_' + l.ts])
+        .sort((a, b) => b.ts - a.ts);
+      if (lapper.length) v.push({ prio: 3, ikon: 'ti-pin', href: 'beskjeder.html', skjul: lapper[0].id + '_' + lapper[0].ts,
         tekst: lapper[0].fra + ': «' + lapper[0].tekst + '»' + (lapper.length > 1 ? ' (+' + (lapper.length - 1) + ' til)' : '') });
     }
     // Helse: neste dose
@@ -290,7 +296,8 @@ function tegnVarsler(fam, meta) {
   v.sort((a, b) => a.prio - b.prio);
   document.getElementById('varsler').innerHTML = v.map(x =>
     '<a class="varsel ' + (x.prio === 1 ? 'rod' : x.prio === 2 ? 'oransje' : 'gronn') + '" href="' + x.href + '">'
-    + '<span class="v-ikon"><i class="ti ' + x.ikon + '"></i></span><span class="v-tekst">' + esc(x.tekst) + '</span><span class="v-pil">›</span></a>').join('');
+    + '<span class="v-ikon"><i class="ti ' + x.ikon + '"></i></span><span class="v-tekst">' + esc(x.tekst) + '</span>'
+    + (x.skjul ? '<button class="v-lukk" data-skjul="' + x.skjul + '" title="Skjul for meg" aria-label="Skjul for meg">×</button>' : '<span class="v-pil">›</span>') + '</a>').join('');
 }
 
 // ── Status per app-flis ──
@@ -372,7 +379,7 @@ function appStatus(app, fam) {
       return { txt: 'Ingen aktive medisiner 💚' };
     }
     if (app === 'beskjeder') {
-      const lapper = d?.lapper || [];
+      const lapper = (d?.lapper || []).filter(l => !(l.utlop && Date.now() > l.utlop));
       if (!lapper.length) return { txt: 'Tavla er tom' };
       const siste = [...lapper].sort((a, b) => b.ts - a.ts)[0];
       return { txt: siste.fra + ': «' + siste.tekst + '»', varsel: Date.now() - siste.ts < 86400000 };
@@ -430,6 +437,16 @@ function tegnDashbord(fam, meta) {
   }).join('') || '<div class="empty-state" style="grid-column:1/-1">Ingen apper er aktivert for husstanden.</div>';
 }
 
+// Skjul en tavle-beskjed fra MIN forside (lappen henger fortsatt på tavla)
+document.getElementById('varsler').addEventListener('click', async e => {
+  const b = e.target.closest('[data-skjul]');
+  if (!b) return;
+  e.preventDefault(); e.stopPropagation();
+  innst.skjulteLapper = { ...(innst.skjulteLapper || {}), [b.dataset.skjul]: true };
+  try { await set(ref(db, 'brukere/' + user.uid + '/innstillinger/skjulteLapper/' + b.dataset.skjul), true); } catch (err) { /* vis-skjuling virker uansett */ }
+  if (sisteFam) tegnVarsler(sisteFam, sisteFam.meta || {});
+});
+
 // ── Hurtighandlinger rett fra forsiden ──
 document.getElementById('app-grid').addEventListener('click', async e => {
   const btn = e.target.closest('.dash-check');
@@ -439,7 +456,7 @@ document.getElementById('app-grid').addEventListener('click', async e => {
   try {
     if (btn.dataset.handling === 'hl-check') {
       const items = (sisteFam.handleliste?.items || []).map(i =>
-        i.id === parseInt(btn.dataset.id) ? { ...i, checked: true } : i);
+        i.id === parseInt(btn.dataset.id) ? { ...i, checked: true, av: (medlem?.navn || '').split(' ')[0] } : i);
       await set(ref(db, 'familier/' + familieId + '/handleliste/items'), items);
     } else if (btn.dataset.handling === 'opg-check') {
       // Samme semantikk som oppgave-appens completeTask: arkiver + fjern.
@@ -449,7 +466,7 @@ document.getElementById('app-grid').addEventListener('click', async e => {
       const ferdig = alle.find(t => t.id === id);
       if (ferdig) {
         const tasks = alle.filter(t => t.id !== id);
-        const archive = [...(sisteFam.oppgaver?.archive || []), { ...ferdig, done: true, completedDate: todayStr() }];
+        const archive = [...(sisteFam.oppgaver?.archive || []), { ...ferdig, done: true, completedDate: todayStr(), doneBy: (medlem?.navn || '').split(' ')[0] }];
         await set(ref(db, 'familier/' + familieId + '/oppgaver/tasks'), tasks);
         await set(ref(db, 'familier/' + familieId + '/oppgaver/archive'), archive);
       }
@@ -552,7 +569,7 @@ document.getElementById('tilpass-avbryt').addEventListener('click', () => {
 document.getElementById('tilpass-lagre').addEventListener('click', async () => {
   const varselAv = {};
   document.querySelectorAll('[data-varsel]').forEach(c => { if (!c.checked) varselAv[c.dataset.varsel] = true; });
-  innst = { rekkefolge: tilpassOrden, varselAv };
+  innst = { ...innst, rekkefolge: tilpassOrden, varselAv };
   await set(ref(db, 'brukere/' + user.uid + '/innstillinger'), innst);
   document.getElementById('tilpass-modal').style.display = 'none';
   if (sisteFam) { tegnVarsler(sisteFam, sisteFam.meta || {}); tegnDashbord(sisteFam, sisteFam.meta || {}); }
