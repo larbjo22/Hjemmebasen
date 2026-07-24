@@ -1,0 +1,246 @@
+<!DOCTYPE html>
+<html lang="no">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<link rel="manifest" href="manifest.webmanifest">
+<meta name="theme-color" content="#f97316">
+<link rel="apple-touch-icon" href="ikoner/apple-touch-icon.png">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="mobile-web-app-capable" content="yes">
+<title>Pakkelister</title>
+<link rel="stylesheet" href="felles/stil.css">
+<style>
+.liste-kort{cursor:pointer}
+.liste-topp{display:flex;align-items:center;gap:10px}
+.liste-emoji{font-size:26px;flex-shrink:0}
+.liste-navn{flex:1;font-size:15px;font-weight:700;min-width:0}
+.fremdrift{font-size:12px;font-weight:600;color:var(--text3);white-space:nowrap}
+.fremdrift.ferdig{color:var(--green)}
+.bar{height:6px;background:var(--surface2);border-radius:3px;overflow:hidden;margin-top:8px}
+.bar>div{height:100%;background:var(--accent);border-radius:3px;transition:width .25s}
+.bar.ferdig>div{background:var(--green)}
+.pk-item{display:flex;align-items:center;gap:10px;padding:9px 2px;border-bottom:1px solid var(--border2)}
+.pk-item:last-child{border-bottom:none}
+.pk-check{width:24px;height:24px;border-radius:50%;border:2px solid var(--border);background:transparent;cursor:pointer;flex-shrink:0;font-size:13px;color:#fff;line-height:1;padding:0}
+.pk-check.pakket{background:var(--green);border-color:var(--green)}
+.pk-navn{flex:1;font-size:14px}
+.pk-navn.pakket{text-decoration:line-through;color:var(--text3)}
+.tilbake{font-size:13px;color:var(--text2);text-decoration:none;display:inline-flex;align-items:center;gap:4px;margin-bottom:8px;background:none;border:none;cursor:pointer}
+.verktoy{display:flex;gap:6px;margin-top:10px}
+.verktoy .btn-ghost{flex:1}
+@media(min-width:700px){.fw{max-width:560px}}
+</style>
+</head>
+<body>
+<div class="fw">
+  <div class="top-bar">
+    <p class="app-title">🎒 Pakkelister</p>
+    <div class="top-right">
+      <button class="icon-btn" id="theme-btn"></button>
+    </div>
+  </div>
+
+  <!-- Oversikt over listene -->
+  <div id="visning-oversikt">
+    <div class="card">
+      <div class="card-title">➕ Ny pakkeliste</div>
+      <div style="display:flex;gap:6px">
+        <input type="text" id="ny-liste-navn" class="hinput" maxlength="40" placeholder="F.eks. Hytta, Barnehagen, Ferie..." style="flex:1;min-width:0" />
+        <button class="btn-ghost" id="ny-liste-btn">Opprett</button>
+      </div>
+      <p style="font-size:11px;color:var(--text3);margin-top:6px">Listene er gjenbrukbare: nullstill hakene før neste tur i stedet for å lage ny.</p>
+    </div>
+    <div id="liste-oversikt"></div>
+  </div>
+
+  <!-- Én liste -->
+  <div id="visning-liste" style="display:none">
+    <button class="tilbake" id="tilbake-btn">‹ Alle listene</button>
+    <div class="card">
+      <div class="liste-topp">
+        <span class="liste-emoji" id="aktiv-emoji"></span>
+        <span class="liste-navn" id="aktiv-navn"></span>
+        <span class="fremdrift" id="aktiv-fremdrift"></span>
+      </div>
+      <div class="bar" id="aktiv-bar"><div></div></div>
+      <div id="item-liste" style="margin-top:10px"></div>
+      <div style="display:flex;gap:6px;margin-top:10px">
+        <input type="text" id="ny-item" class="hinput" maxlength="60" placeholder="Legg til ting..." style="flex:1;min-width:0" />
+        <button class="btn-ghost" id="ny-item-btn">+</button>
+      </div>
+      <div class="verktoy">
+        <button class="btn-ghost" id="nullstill-btn">↩ Nullstill hakene</button>
+        <button class="btn-danger" id="slett-liste-btn">Slett lista</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="status-bar" id="status-bar"></div>
+</div>
+
+<script type="module">
+import { requireAuth } from './felles/auth.js';
+import { dbGet, dbSet, dbListen } from './felles/storage.js';
+import { esc, initTheme, toggleTheme, setStatus } from './felles/ui.js';
+import { monterNav } from './felles/nav.js';
+
+initTheme();
+document.getElementById('theme-btn').addEventListener('click', toggleTheme);
+
+const APP='pakkelister';
+const EMOJIS=['🎒','🏔️','🏖️','🧸','⚽','🎿','🚗','✈️','⛺','🛶'];
+let FAMILIE=null, data=null, dataLoaded=false, sistSkrevet='', aktivId=null;
+
+function normaliser(d){
+  const b=d||{};
+  if(!Array.isArray(b.lister))b.lister=[];
+  b.lister.forEach(l=>{if(!Array.isArray(l.items))l.items=[];});
+  const maxId=Math.max(0,...b.lister.map(l=>l.id||0),...b.lister.flatMap(l=>l.items.map(i=>i.id||0)));
+  if(!b.nextId||b.nextId<=maxId)b.nextId=maxId+1;
+  return b;
+}
+
+async function load(){
+  setStatus('Laster...');
+  try{
+    const ctx=await requireAuth();
+    if(!ctx.familieId){setStatus('Ingen husstand – kontakt administrator','err');return;}
+    FAMILIE=ctx.familieId;
+    monterNav(FAMILIE,APP);
+    data=normaliser(await dbGet(FAMILIE,APP));
+    dataLoaded=true;
+    setStatus('');
+    startListen();
+  }catch(e){setStatus('Kunne ikke laste – '+(e.message||'prøv igjen'),'err');return;}
+  render();
+}
+
+async function save(){
+  if(!dataLoaded){setStatus('Ikke lagret – data er ikke lastet','err');return;}
+  try{
+    sistSkrevet=JSON.stringify(data);
+    await dbSet(FAMILIE,APP,data);
+    setStatus('Lagret ✓','ok');
+  }catch(e){setStatus('Kunne ikke lagre – prøv igjen','err');}
+}
+
+let stopListen=null;
+function startListen(){
+  if(stopListen)return;
+  stopListen=dbListen(FAMILIE,APP,saved=>{
+    if(!saved)return;
+    if(JSON.stringify(saved)===sistSkrevet)return;
+    const s=JSON.stringify(normaliser(saved));
+    if(s===JSON.stringify(data))return;
+    if(skriverNoe())return;
+    data=JSON.parse(s);
+    render();
+  });
+}
+function skriverNoe(){
+  return ['ny-liste-navn','ny-item'].some(id=>{const e=document.getElementById(id);return e&&e.value.trim();});
+}
+
+function aktivListe(){return data.lister.find(l=>l.id===aktivId)||null;}
+
+function render(){
+  const l=aktivListe();
+  document.getElementById('visning-oversikt').style.display=l?'none':'block';
+  document.getElementById('visning-liste').style.display=l?'block':'none';
+  if(l)renderListe(l);else renderOversikt();
+}
+
+function renderOversikt(){
+  const el=document.getElementById('liste-oversikt');
+  el.innerHTML=data.lister.map(l=>{
+    const pakket=l.items.filter(i=>i.pakket).length;
+    const alt=l.items.length;
+    const ferdig=alt>0&&pakket===alt;
+    const pct=alt?Math.round(pakket/alt*100):0;
+    return '<div class="card liste-kort" data-aapne="'+l.id+'">'
+      +'<div class="liste-topp"><span class="liste-emoji">'+esc(l.emoji||'🎒')+'</span>'
+      +'<span class="liste-navn">'+esc(l.navn)+'</span>'
+      +'<span class="fremdrift'+(ferdig?' ferdig':'')+'">'+(alt?pakket+'/'+alt+(ferdig?' ✓':''):'tom')+'</span></div>'
+      +'<div class="bar'+(ferdig?' ferdig':'')+'"><div style="width:'+pct+'%"></div></div></div>';
+  }).join('')||'<div class="empty-state">Ingen pakkelister ennå.<br>Lag den første – f.eks. «Hytta» eller «Barnehagen» 🎒</div>';
+}
+
+function renderListe(l){
+  document.getElementById('aktiv-emoji').textContent=l.emoji||'🎒';
+  document.getElementById('aktiv-navn').textContent=l.navn;
+  const pakket=l.items.filter(i=>i.pakket).length;
+  const ferdig=l.items.length>0&&pakket===l.items.length;
+  document.getElementById('aktiv-fremdrift').textContent=l.items.length?pakket+'/'+l.items.length+(ferdig?' ✓ Klart!':''):'';
+  document.getElementById('aktiv-fremdrift').className='fremdrift'+(ferdig?' ferdig':'');
+  const bar=document.getElementById('aktiv-bar');
+  bar.className='bar'+(ferdig?' ferdig':'');
+  bar.firstElementChild.style.width=(l.items.length?Math.round(pakket/l.items.length*100):0)+'%';
+  document.getElementById('item-liste').innerHTML=l.items.map(i=>
+    '<div class="pk-item">'
+    +'<button class="pk-check'+(i.pakket?' pakket':'')+'" data-toggle="'+i.id+'" aria-label="'+(i.pakket?'Pakk ut':'Pakk')+'">'+(i.pakket?'✓':'')+'</button>'
+    +'<span class="pk-navn'+(i.pakket?' pakket':'')+'">'+esc(i.navn)+'</span>'
+    +'<button class="hrow-del" data-fjern="'+i.id+'" title="Fjern">×</button></div>').join('')
+    ||'<div class="empty-state" style="padding:.8rem">Tom liste – legg til ting under 👇</div>';
+}
+
+// ── Hendelser ──
+document.getElementById('ny-liste-btn').addEventListener('click',async()=>{
+  const inp=document.getElementById('ny-liste-navn');
+  const navn=inp.value.trim();
+  if(!navn)return;
+  const emoji=EMOJIS[data.lister.length%EMOJIS.length];
+  const id=data.nextId++;
+  data.lister.push({id,navn,emoji,items:[]});
+  inp.value='';
+  aktivId=id;
+  await save();render();
+  setTimeout(()=>document.getElementById('ny-item')?.focus(),50);
+});
+document.getElementById('ny-liste-navn').addEventListener('keydown',e=>{if(e.key==='Enter')document.getElementById('ny-liste-btn').click();});
+
+document.getElementById('liste-oversikt').addEventListener('click',e=>{
+  const k=e.target.closest('[data-aapne]');
+  if(k){aktivId=parseInt(k.dataset.aapne);render();}
+});
+document.getElementById('tilbake-btn').addEventListener('click',()=>{aktivId=null;render();});
+
+document.getElementById('ny-item-btn').addEventListener('click',async()=>{
+  const l=aktivListe();if(!l)return;
+  const inp=document.getElementById('ny-item');
+  const navn=inp.value.trim();
+  if(!navn)return;
+  l.items.push({id:data.nextId++,navn,pakket:false});
+  inp.value='';
+  await save();render();
+  document.getElementById('ny-item').focus();
+});
+document.getElementById('ny-item').addEventListener('keydown',e=>{if(e.key==='Enter')document.getElementById('ny-item-btn').click();});
+
+document.getElementById('item-liste').addEventListener('click',async e=>{
+  const l=aktivListe();if(!l)return;
+  const t=e.target.closest('[data-toggle]');
+  if(t){const i=l.items.find(x=>x.id===parseInt(t.dataset.toggle));if(i){i.pakket=!i.pakket;await save();render();}return;}
+  const f=e.target.closest('[data-fjern]');
+  if(f){l.items=l.items.filter(x=>x.id!==parseInt(f.dataset.fjern));await save();render();}
+});
+
+document.getElementById('nullstill-btn').addEventListener('click',async()=>{
+  const l=aktivListe();if(!l)return;
+  if(!confirm('Nullstille alle hakene i «'+l.navn+'»? (Tingene beholdes – klar for neste tur.)'))return;
+  l.items.forEach(i=>i.pakket=false);
+  await save();render();
+});
+document.getElementById('slett-liste-btn').addEventListener('click',async()=>{
+  const l=aktivListe();if(!l)return;
+  if(!confirm('Slette hele lista «'+l.navn+'» med '+l.items.length+' ting?'))return;
+  data.lister=data.lister.filter(x=>x.id!==l.id);
+  aktivId=null;
+  await save();render();
+});
+
+load();
+</script>
+</body>
+</html>

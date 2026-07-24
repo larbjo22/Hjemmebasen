@@ -11,11 +11,15 @@ export const APP_NAVN = {
   plikter: 'Plikter',
   sovn: 'Søvn',
   helse: 'Helse',
+  beskjeder: 'Beskjeder',
+  pakkelister: 'Pakkelister',
+  vekst: 'Vekst',
 };
 
 export const APP_IKON = {
   handleliste: '🛒', middag: '🍽️', oppgaver: '✅', fryser: '🧊',
   plikter: '⭐', sovn: '😴', helse: '🩹',
+  beskjeder: '📌', pakkelister: '🎒', vekst: '📏',
 };
 
 export function seedFamilie(navn, opprettetAv) {
@@ -25,7 +29,7 @@ export function seedFamilie(navn, opprettetAv) {
       opprettet: Date.now(),
       opprettetAv,
       onboardet: false,
-      apper: { handleliste: true, middag: true, oppgaver: true, fryser: true, plikter: true, sovn: true, helse: true },
+      apper: { handleliste: true, middag: true, oppgaver: true, fryser: true, plikter: true, sovn: true, helse: true, beskjeder: true, pakkelister: true, vekst: true },
     },
     personer: { voksne: [], barn: [] },
 
@@ -84,6 +88,22 @@ export function seedFamilie(navn, opprettetAv) {
         { id: 2, name: 'Ibux', intervalH: 6, maxDay: 3 },
       ],
       doser: [], vaksiner: [], syk: [], nextHid: 10,
+    },
+
+    beskjeder: { lapper: [], nextId: 1 },
+    vekst: { maalinger: [], nextId: 1 },
+    pakkelister: {
+      lister: [
+        { id: 1, navn: 'Hytta', emoji: '🏔️', items: [
+          { id: 10, navn: 'Ladere', pakket: false }, { id: 11, navn: 'Ullundertøy', pakket: false },
+          { id: 12, navn: 'Turmat', pakket: false }, { id: 13, navn: 'Førstehjelpsskrin', pakket: false },
+        ]},
+        { id: 2, navn: 'Barnehagen', emoji: '🧸', items: [
+          { id: 20, navn: 'Skiftetøy', pakket: false }, { id: 21, navn: 'Regntøy', pakket: false },
+          { id: 22, navn: 'Innesko', pakket: false },
+        ]},
+      ],
+      nextId: 30,
     },
   };
 }
