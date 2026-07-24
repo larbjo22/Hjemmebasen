@@ -1,0 +1,744 @@
+<!DOCTYPE html>
+<html lang="no">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+<meta http-equiv="Pragma" content="no-cache">
+<meta http-equiv="Expires" content="0">
+<title>Plikter</title>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@2.44.0/tabler-icons.min.css">
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --bg:#f5f5f5;--surface:#fff;--surface2:#f9f9f9;
+  --border:#e0e0e0;--border2:#f0f0f0;
+  --text:#1a1a1a;--text2:#666;--text3:#aaa;--text4:#bbb;
+  --accent:#10b981;--accent-bg:#ecfdf5;--accent-border:#a7f3d0;--accent-text:#047857;
+  --danger:#e53e3e;--green:#16a34a;--gold:#f59e0b;--gold-bg:#fffbeb;
+}
+@media(prefers-color-scheme:dark){:root{
+  --bg:#111;--surface:#1c1c1e;--surface2:#2c2c2e;--border:#2c2c2e;--border2:#3a3a3c;
+  --text:#f2f2f7;--text2:#aeaeb2;--text3:#636366;--text4:#48484a;
+  --accent:#34d399;--accent-bg:rgba(16,185,129,.15);--accent-border:rgba(16,185,129,.4);--accent-text:#6ee7b7;
+  --danger:#f87171;--green:#4ade80;--gold:#fbbf24;--gold-bg:rgba(245,158,11,.12);
+}}
+[data-theme="dark"]{
+  --bg:#111;--surface:#1c1c1e;--surface2:#2c2c2e;--border:#2c2c2e;--border2:#3a3a3c;
+  --text:#f2f2f7;--text2:#aeaeb2;--text3:#636366;--text4:#48484a;
+  --accent:#34d399;--accent-bg:rgba(16,185,129,.15);--accent-border:rgba(16,185,129,.4);--accent-text:#6ee7b7;
+  --danger:#f87171;--green:#4ade80;--gold:#fbbf24;--gold-bg:rgba(245,158,11,.12);
+}
+[data-theme="light"]{
+  --bg:#f5f5f5;--surface:#fff;--surface2:#f9f9f9;--border:#e0e0e0;--border2:#f0f0f0;
+  --text:#1a1a1a;--text2:#666;--text3:#aaa;--text4:#bbb;
+  --accent:#10b981;--accent-bg:#ecfdf5;--accent-border:#a7f3d0;--accent-text:#047857;
+  --danger:#e53e3e;--green:#16a34a;--gold:#f59e0b;--gold-bg:#fffbeb;
+}
+body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;background:var(--bg);color:var(--text);font-size:14px}
+/* Synlig fokusmarkør for tastaturbrukere */
+input:focus-visible,select:focus-visible,button:focus-visible,[role="button"]:focus-visible{outline:2px solid var(--accent);outline-offset:1px}
+.fw{max-width:480px;margin:0 auto;padding:.6rem .75rem}
+.top-bar{display:flex;align-items:center;justify-content:space-between;margin-bottom:.75rem}
+.app-title{font-size:15px;font-weight:600;display:flex;align-items:center;gap:6px}
+.app-title i{color:var(--accent)}
+.top-right{display:flex;align-items:center;gap:8px}
+.count-badge{font-size:11px;color:var(--gold);background:var(--gold-bg);border:1px solid var(--gold);border-radius:6px;padding:2px 8px;font-weight:600;display:flex;align-items:center;gap:3px}
+.theme-btn{width:28px;height:28px;border-radius:50%;border:1px solid var(--border);background:var(--surface2);cursor:pointer;font-size:14px;display:flex;align-items:center;justify-content:center;color:var(--text2)}
+.tabs{display:flex;gap:4px;margin-bottom:.75rem;background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:4px}
+.tab{flex:1;text-align:center;padding:6px 2px;font-size:12px;font-weight:500;border-radius:7px;cursor:pointer;color:var(--text2);border:none;background:transparent}
+.tab.active{background:var(--accent);color:#fff}
+/* Datovelger */
+.day-nav{display:flex;align-items:center;gap:8px;margin-bottom:.75rem;background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:8px 12px}
+.day-label{flex:1;text-align:center;font-size:13px;font-weight:500}
+.nav-btn{width:30px;height:30px;border-radius:50%;border:1px solid var(--border);background:var(--surface2);cursor:pointer;font-size:16px;display:flex;align-items:center;justify-content:center;color:var(--text2)}
+.nav-btn:hover{border-color:var(--accent)}
+.today-btn{font-size:11px;padding:4px 10px;border-radius:20px;border:1px solid var(--border);background:var(--surface2);cursor:pointer;color:var(--text2)}
+.today-btn:hover{border-color:var(--accent);color:var(--accent-text)}
+/* Barn-kort */
+.kid-card{background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:12px;margin-bottom:10px}
+.kid-head{display:flex;align-items:center;gap:8px;margin-bottom:10px}
+.kid-name{font-size:14px;font-weight:600;padding:3px 12px;border-radius:20px}
+.kid-stars{margin-left:auto;font-size:13px;font-weight:700;color:var(--gold);display:flex;align-items:center;gap:3px}
+.kid-stars small{font-size:10px;color:var(--text3);font-weight:500}
+.chore-row{display:flex;align-items:center;gap:10px;padding:8px 4px;border-bottom:1px solid var(--border2)}
+.chore-row:last-child{border-bottom:none}
+.chore-check{width:26px;height:26px;border-radius:50%;border:2px solid var(--border);background:transparent;cursor:pointer;display:flex;align-items:center;justify-content:center;flex-shrink:0;transition:all .15s}
+.chore-check:hover{border-color:var(--accent)}
+.chore-check.done{background:var(--gold);border-color:var(--gold);color:#fff}
+.chore-check.pending{border-color:var(--gold);border-style:dashed;color:var(--gold)}
+.kid-streak{font-size:12px;font-weight:700;color:var(--gold)}
+.approve-btn{width:100%;margin-top:8px;padding:8px;font-size:13px;font-weight:600;border:1px solid var(--accent-border);border-radius:8px;background:var(--accent-bg);color:var(--accent-text);cursor:pointer}
+.chore-ico{font-size:16px;color:var(--text3);width:18px;text-align:center;flex-shrink:0}
+.chore-name{flex:1;font-size:13px;font-weight:500}
+.chore-name.done{text-decoration:line-through;color:var(--text3)}
+.chore-pts{font-size:12px;font-weight:700;color:var(--gold);background:var(--gold-bg);border:1px solid var(--gold);border-radius:12px;padding:1px 8px;flex-shrink:0}
+.kid-empty{font-size:12px;color:var(--text4);font-style:italic;padding:4px 2px}
+/* Statistikk */
+.stat-section{background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:12px;margin-bottom:10px}
+.stat-title{font-size:11px;font-weight:600;color:var(--text2);text-transform:uppercase;letter-spacing:.05em;margin-bottom:10px;display:flex;align-items:center;gap:6px}
+.lead-row{display:flex;align-items:center;gap:8px;margin-bottom:8px}
+.lead-rank{font-size:13px;font-weight:700;color:var(--text3);min-width:20px}
+.lead-name{font-size:12px;font-weight:600;padding:2px 10px;border-radius:20px;min-width:60px;text-align:center}
+.lead-bar-wrap{flex:1;height:8px;background:var(--surface2);border-radius:4px;overflow:hidden}
+.lead-bar{height:100%;border-radius:4px;transition:width .3s}
+.lead-num{font-size:13px;font-weight:700;color:var(--gold);min-width:46px;text-align:right;display:flex;align-items:center;gap:2px;justify-content:flex-end}
+.wk-grid{display:flex;gap:5px;margin-top:6px}
+.wk-col{flex:1;display:flex;flex-direction:column;align-items:center;gap:3px}
+.wk-box{width:100%;aspect-ratio:1;border-radius:6px;background:var(--surface2);display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;color:var(--text3)}
+.wk-box.has{background:var(--accent-bg);color:var(--accent-text);border:1px solid var(--accent-border)}
+.wk-box.today{outline:2px solid var(--accent);outline-offset:1px}
+.wk-day{font-size:10px;color:var(--text3)}
+/* Belønninger */
+.bal-grid{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:10px}
+.bal-box{flex:1;min-width:90px;background:var(--surface2);border-radius:10px;padding:10px;text-align:center}
+.bal-name{font-size:12px;font-weight:600;padding:2px 10px;border-radius:20px;display:inline-block;margin-bottom:6px}
+.bal-num{font-size:22px;font-weight:800;color:var(--gold);display:flex;align-items:center;justify-content:center;gap:3px}
+.bal-lbl{font-size:10px;color:var(--text3);margin-top:2px}
+.reward-row{display:flex;align-items:center;gap:10px;padding:10px;background:var(--surface);border:1px solid var(--border2);border-radius:10px;margin-bottom:6px}
+.reward-ico{font-size:20px;color:var(--accent)}
+.reward-info{flex:1;min-width:0}
+.reward-name{font-size:13px;font-weight:600}
+.reward-cost{font-size:11px;color:var(--gold);font-weight:600;margin-top:1px}
+.reward-btn{font-size:12px;font-weight:600;padding:6px 12px;border-radius:8px;border:1px solid var(--accent-border);background:var(--accent-bg);color:var(--accent-text);cursor:pointer;flex-shrink:0}
+.redeem-item{display:flex;align-items:center;gap:8px;padding:7px 0;border-bottom:1px solid var(--border2);font-size:12px}
+.redeem-item:last-child{border-bottom:none}
+/* Innstillinger */
+.row-item{display:flex;align-items:center;gap:8px;padding:8px 0;border-bottom:1px solid var(--border2)}
+.row-item:last-child{border-bottom:none}
+.cat-add-row{display:flex;gap:6px;margin-top:8px}
+.cat-add-row input{flex:1;font-size:12px;padding:6px 8px;border:1px solid var(--border);border-radius:6px;outline:none;background:var(--surface);color:var(--text)}
+.cat-add-row button{font-size:12px;padding:0 12px;border:1px solid var(--border);background:var(--surface2);border-radius:6px;cursor:pointer;color:var(--text)}
+.add-btn-full{width:100%;padding:9px;font-size:13px;font-weight:500;background:var(--surface);border:1px dashed var(--border);border-radius:10px;cursor:pointer;color:var(--text2);display:flex;align-items:center;justify-content:center;gap:6px;margin-top:8px}
+.add-btn-full:hover{border-color:var(--accent);color:var(--accent-text)}
+.mini-btn{width:28px;height:28px;border-radius:50%;border:none;background:transparent;color:var(--text4);cursor:pointer;font-size:14px;display:flex;align-items:center;justify-content:center;flex-shrink:0}
+.mini-btn:hover{color:var(--text2);background:var(--surface2)}
+.mini-btn.danger:hover{color:#fff;background:var(--danger)}
+.tag{font-size:10px;color:var(--text3);background:var(--surface2);border:1px solid var(--border2);border-radius:10px;padding:1px 7px}
+.empty-state{text-align:center;padding:2rem;color:var(--text3);font-size:13px}
+/* Modal */
+.modal-bg{position:fixed;inset:0;background:rgba(0,0,0,.4);display:flex;align-items:flex-start;justify-content:center;padding-top:40px;z-index:100;overflow-y:auto}
+.modal{background:var(--surface);border-radius:12px;padding:1rem;width:90%;max-width:360px;box-shadow:0 8px 32px rgba(0,0,0,.15);margin:auto}
+.modal-title{font-size:15px;font-weight:600;margin-bottom:.75rem;color:var(--text)}
+.modal label{font-size:11px;color:var(--text2);display:block;margin-bottom:2px;margin-top:10px}
+.modal label:first-of-type{margin-top:0}
+.modal input,.modal select{width:100%;font-size:13px;padding:7px 9px;border:1px solid var(--border);border-radius:7px;outline:none;background:var(--surface);color:var(--text)}
+.chip-row{display:flex;flex-wrap:wrap;gap:5px;margin-top:4px}
+.chip{font-size:11px;padding:5px 11px;border-radius:20px;border:1px solid var(--border);background:var(--surface2);color:var(--text2);cursor:pointer}
+.chip.active{background:var(--accent-bg);color:var(--accent-text);border-color:var(--accent-border);font-weight:600}
+.chip-hint{font-size:11px;color:var(--text4);margin-top:4px}
+.icon-grid{display:grid;grid-template-columns:repeat(8,1fr);gap:4px;margin-top:4px}
+.icon-pick{aspect-ratio:1;border:1px solid var(--border);border-radius:8px;background:var(--surface2);color:var(--text2);cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:16px}
+.icon-pick.active{background:var(--accent-bg);color:var(--accent-text);border-color:var(--accent-border)}
+.modal-actions{display:flex;gap:7px;margin-top:1rem}
+.btn-primary{flex:1;padding:9px;font-size:13px;font-weight:600;background:var(--accent);border:none;border-radius:7px;cursor:pointer;color:#fff}
+.btn-ghost{padding:9px 14px;font-size:13px;background:var(--surface2);border:1px solid var(--border);border-radius:7px;cursor:pointer;color:var(--text2)}
+.btn-danger{padding:9px 14px;font-size:13px;background:var(--surface);border:1px solid #fca5a5;border-radius:7px;cursor:pointer;color:var(--danger)}
+.status-bar{font-size:11px;color:var(--text3);text-align:right;margin-top:4px;min-height:14px}
+.status-bar.err{color:var(--danger)}
+.status-bar.ok{color:var(--green)}
+</style>
+</head>
+<body>
+<main class="fw">
+  <div class="top-bar">
+    <h1 class="app-title"><a href="index.html" title="Til forsiden" aria-label="Til forsiden" style="text-decoration:none;margin-right:2px">🏠</a><i class="ti ti-stars" aria-hidden="true"></i>Plikter</h1>
+    <div class="top-right">
+      <span class="count-badge" id="count-badge" aria-label="Stjerner denne uka"><i class="ti ti-star-filled" style="font-size:11px" aria-hidden="true"></i> 0</span>
+      <button class="theme-btn" id="theme-btn" onclick="toggleTheme()" title="Bytt tema" aria-label="Bytt mellom lyst og mørkt tema"></button>
+    </div>
+  </div>
+
+  <div class="tabs">
+    <button class="tab active" id="tab-today" onclick="setView('today')"><i class="ti ti-checklist"></i> I dag</button>
+    <button class="tab" id="tab-week" onclick="setView('week')"><i class="ti ti-chart-bar"></i> Uke</button>
+    <button class="tab" id="tab-rewards" onclick="setView('rewards')"><i class="ti ti-gift"></i> Belønning</button>
+    <button class="tab" id="tab-settings" onclick="setView('settings')" aria-label="Innstillinger"><i class="ti ti-settings" aria-hidden="true"></i></button>
+  </div>
+
+  <!-- I dag -->
+  <div id="view-today">
+    <div class="day-nav">
+      <button class="nav-btn" onclick="changeDay(-1)" aria-label="Forrige dag">‹</button>
+      <span class="day-label" id="day-label"></span>
+      <button class="nav-btn" onclick="changeDay(1)" aria-label="Neste dag">›</button>
+      <button class="today-btn" onclick="goToday()">I dag</button>
+    </div>
+    <div id="today-list"></div>
+  </div>
+
+  <!-- Uke -->
+  <div id="view-week" style="display:none">
+    <div class="day-nav">
+      <button class="nav-btn" onclick="changeWeek(-1)" aria-label="Forrige uke">‹</button>
+      <span class="day-label" id="week-label"></span>
+      <button class="nav-btn" onclick="changeWeek(1)" aria-label="Neste uke">›</button>
+      <button class="today-btn" onclick="goThisWeek()">Nå</button>
+    </div>
+    <div id="week-content"></div>
+  </div>
+
+  <!-- Belønninger -->
+  <div id="view-rewards" style="display:none">
+    <div class="stat-section">
+      <div class="stat-title"><i class="ti ti-wallet"></i> Saldo</div>
+      <div class="bal-grid" id="bal-grid"></div>
+    </div>
+    <div class="stat-section">
+      <div class="stat-title"><i class="ti ti-gift"></i> Belønninger</div>
+      <div id="reward-list"></div>
+    </div>
+    <div class="stat-section">
+      <div class="stat-title"><i class="ti ti-history"></i> Innløst</div>
+      <div id="redeem-list"></div>
+    </div>
+  </div>
+
+  <!-- Innstillinger -->
+  <div id="view-settings" style="display:none">
+    <div class="stat-section">
+      <div class="stat-title"><i class="ti ti-mood-kid"></i> Barn</div>
+      <div id="kids-manage"></div>
+      <div class="cat-add-row">
+        <input type="text" id="new-kid" placeholder="Navn på barn..." aria-label="Navn på barn" maxlength="30" />
+        <button onclick="addKid()">Legg til</button>
+      </div>
+    </div>
+    <div class="stat-section">
+      <div class="stat-title"><i class="ti ti-shield-lock"></i> Foreldre</div>
+      <label class="row-item" style="cursor:pointer"><input type="checkbox" id="set-approval" onchange="toggleApproval()" style="width:auto"> <span style="flex:1;font-size:13px">Krev godkjenning før poeng telles</span></label>
+      <div class="row-item"><span style="flex:1;font-size:13px">Kroner per poeng<span style="color:var(--text4);font-size:11px;display:block">0 = skjul kronesaldo</span></span><input type="number" id="set-kr" min="0" step="0.05" onchange="setKrPerPoint(this.value)" aria-label="Kroner per poeng" style="width:80px;font-size:13px;padding:6px;border:1px solid var(--border);border-radius:7px;background:var(--surface);color:var(--text);text-align:right"></div>
+      <div class="row-item"><span style="flex:1;font-size:13px">Foreldre-PIN<span style="color:var(--text4);font-size:11px;display:block">tom = ingen lås</span></span><input type="text" id="set-pin" inputmode="numeric" maxlength="8" onchange="setPin(this.value)" aria-label="Foreldre-PIN" style="width:80px;font-size:13px;padding:6px;border:1px solid var(--border);border-radius:7px;background:var(--surface);color:var(--text);text-align:center"></div>
+    </div>
+    <div class="stat-section">
+      <div class="stat-title"><i class="ti ti-list-check"></i> Plikter</div>
+      <div id="chores-manage"></div>
+      <button class="add-btn-full" onclick="openChoreModal()"><i class="ti ti-plus"></i> Ny plikt</button>
+    </div>
+    <div class="stat-section">
+      <div class="stat-title"><i class="ti ti-gift"></i> Belønninger</div>
+      <div id="rewards-manage"></div>
+      <button class="add-btn-full" onclick="openRewardModal()"><i class="ti ti-plus"></i> Ny belønning</button>
+    </div>
+    <div class="stat-section">
+      <div class="stat-title"><i class="ti ti-palette"></i> Fargetema</div>
+      <div style="margin-bottom:10px">
+        <div style="font-size:12px;color:var(--text2);margin-bottom:6px">☀️ Lys modus</div>
+        <div style="display:flex;align-items:center;gap:10px">
+          <input type="color" id="color-light" onchange="setAccentColor('light',this.value)" style="width:44px;height:36px;border:1px solid var(--border);border-radius:8px;cursor:pointer;background:none;padding:2px" />
+          <button onclick="resetAccentColor('light')" style="font-size:11px;padding:4px 10px;border:1px solid var(--border);border-radius:6px;background:var(--surface2);color:var(--text2);cursor:pointer">Tilbakestill</button>
+        </div>
+      </div>
+      <div>
+        <div style="font-size:12px;color:var(--text2);margin-bottom:6px">🌙 Mørk modus</div>
+        <div style="display:flex;align-items:center;gap:10px">
+          <input type="color" id="color-dark" onchange="setAccentColor('dark',this.value)" style="width:44px;height:36px;border:1px solid var(--border);border-radius:8px;cursor:pointer;background:none;padding:2px" />
+          <button onclick="resetAccentColor('dark')" style="font-size:11px;padding:4px 10px;border:1px solid var(--border);border-radius:6px;background:var(--surface2);color:var(--text2);cursor:pointer">Tilbakestill</button>
+        </div>
+      </div>
+    </div>
+    <div class="stat-section">
+      <div class="stat-title"><i class="ti ti-database"></i> Data</div>
+      <p style="font-size:12px;color:var(--text3);margin-bottom:10px">Lagres i Hjemmebasen (Firebase) og deles med hele husstanden.</p>
+      <button class="btn-danger" style="width:100%" onclick="clearLog()">Nullstill all logg og innløsninger</button>
+    </div>
+  </div>
+
+  <div class="status-bar" id="status-bar"></div>
+
+  <!-- Plikt-modal -->
+  <div class="modal-bg" id="chore-modal" style="display:none" onclick="if(event.target===this)hideChoreModal()">
+    <div class="modal" role="dialog" aria-modal="true" aria-labelledby="chore-modal-title" onclick="event.stopPropagation()">
+      <p class="modal-title" id="chore-modal-title">Ny plikt</p>
+      <input type="hidden" id="chore-id" />
+      <label for="chore-name">Navn</label>
+      <input type="text" id="chore-name" placeholder="F.eks. Rydde rommet" />
+      <label for="chore-points">Poeng</label>
+      <input type="number" id="chore-points" min="1" value="10" />
+      <label>Ikon</label>
+      <div class="icon-grid" id="chore-icons"></div>
+      <label>Dager <span style="color:var(--text4)">(ingen valgt = hver dag)</span></label>
+      <div class="chip-row" id="chore-days"></div>
+      <label>Hvem <span style="color:var(--text4)">(ingen valgt = alle barn)</span></label>
+      <div class="chip-row" id="chore-kids"></div>
+      <div class="modal-actions">
+        <button class="btn-danger" id="chore-del" onclick="deleteChore()">Slett</button>
+        <button class="btn-ghost" onclick="hideChoreModal()">Avbryt</button>
+        <button class="btn-primary" onclick="saveChore()">Lagre</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Belønning-modal -->
+  <div class="modal-bg" id="reward-modal" style="display:none" onclick="if(event.target===this)hideRewardModal()">
+    <div class="modal" role="dialog" aria-modal="true" aria-labelledby="reward-modal-title" onclick="event.stopPropagation()">
+      <p class="modal-title" id="reward-modal-title">Ny belønning</p>
+      <input type="hidden" id="reward-id" />
+      <label for="reward-name">Navn</label>
+      <input type="text" id="reward-name" placeholder="F.eks. 30 min skjermtid" />
+      <label for="reward-cost">Pris (poeng)</label>
+      <input type="number" id="reward-cost" min="1" value="50" />
+      <label>Ikon</label>
+      <div class="icon-grid" id="reward-icons"></div>
+      <div class="modal-actions">
+        <button class="btn-danger" id="reward-del" onclick="deleteReward()">Slett</button>
+        <button class="btn-ghost" onclick="hideRewardModal()">Avbryt</button>
+        <button class="btn-primary" onclick="saveReward()">Lagre</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Innløs-modal -->
+  <div class="modal-bg" id="redeem-modal" style="display:none" onclick="if(event.target===this)hideRedeemModal()">
+    <div class="modal" role="dialog" aria-modal="true" aria-labelledby="redeem-modal-title" onclick="event.stopPropagation()">
+      <p class="modal-title" id="redeem-modal-title">Løs inn belønning</p>
+      <p id="redeem-sub" style="font-size:12px;color:var(--text3);margin-bottom:10px"></p>
+      <input type="hidden" id="redeem-reward-id" />
+      <div id="redeem-kids"></div>
+      <div class="modal-actions">
+        <button class="btn-ghost" onclick="hideRedeemModal()">Avbryt</button>
+      </div>
+    </div>
+  </div>
+</main>
+
+<script type="module">
+// ── Hjemmebasen-port ─────────────────────────────────────────
+// Portet fra ha-apper (chores.html): MQTT/WebSocket byttet med Firebase
+// (felles/storage.js). Datatap-vernet består (dbSet nekter før lesning);
+// sanntidslytter erstatter polling. Barn seedes lat fra personregisteret.
+import { requireAuth } from './felles/auth.js';
+import { dbGet, dbSet, dbListen } from './felles/storage.js';
+import { esc, todayStr } from './felles/ui.js';
+const APP='plikter';
+let FAMILIE=null;
+
+const DAYS_SHORT=['Man','Tir','Ons','Tor','Fre','Lør','Søn'];
+const DAYS_NO=['Mandag','Tirsdag','Onsdag','Torsdag','Fredag','Lørdag','Søndag'];
+const KID_COLORS=['#2563eb','#c2185b','#7b1fa2','#16a34a','#e65100','#0891b2','#db2777','#0d9488'];
+const ICONS=['ti-bed','ti-dog','ti-trash','ti-dish','ti-tooth','ti-books','ti-shirt','ti-broom',
+  'ti-plant-2','ti-paw','ti-shoe','ti-bath','ti-vacuum','ti-leaf','ti-tools-kitchen-2','ti-backpack',
+  'ti-ball-football','ti-music','ti-pencil','ti-bottle','ti-recycle','ti-wash-machine','ti-bucket','ti-cat'];
+
+const DEFAULT_DATA={
+  kids:[{id:1,name:'Barn 1'}],
+  chores:[
+    {id:2,name:'Rydde rommet',icon:'ti-bed',points:10,days:[],kids:[]},
+    {id:3,name:'Pusse tenner',icon:'ti-tooth',points:5,days:[],kids:[]},
+    {id:4,name:'Dekke bordet',icon:'ti-dish',points:5,days:[],kids:[]},
+  ],
+  log:[],     // {id,choreId,kidId,date,points,ts}
+  rewards:[
+    {id:5,name:'30 min skjermtid',icon:'ti-device-tv',cost:50},
+  ],
+  spent:[],   // {id,kidId,rewardId,name,cost,date,ts}
+  settings:{krPerPoint:0,pin:'',requireApproval:false},
+};
+
+let data=JSON.parse(JSON.stringify(DEFAULT_DATA));
+let dataLoaded=false; // sant først når en ekte lesning har lyktes – hindrer overskriving
+let currentView='today',homeDate=todayStr(),weekOffset=0,nextId=100;
+let choreDays=[],choreKids=[],choreIcon=ICONS[0],rewardIcon='ti-gift';
+
+// ── Dato ─────────────────────────────────────────────────────
+function toDateStr(d){return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');}
+function addDays(str,n){const d=new Date(str+'T12:00:00');d.setDate(d.getDate()+n);return toDateStr(d);}
+function weekdayIdx(str){const d=new Date(str+'T12:00:00');return (d.getDay()+6)%7;}
+function fmtDay(str){const d=new Date(str+'T12:00:00');return DAYS_NO[weekdayIdx(str)]+' '+d.toLocaleDateString('nb-NO',{day:'numeric',month:'short'});}
+function getMonday(off){const d=new Date();const day=d.getDay();d.setDate(d.getDate()-day+(day===0?-6:1)+off*7);d.setHours(0,0,0,0);return d;}
+function getWeekDates(off){const m=getMonday(off);return Array.from({length:7},(_,i)=>{const d=new Date(m);d.setDate(m.getDate()+i);return toDateStr(d);});}
+function getWeekNumber(d){const date=new Date(d);date.setHours(0,0,0,0);date.setDate(date.getDate()+3-(date.getDay()+6)%7);const w1=new Date(date.getFullYear(),0,4);return 1+Math.round(((date-w1)/86400000-3+(w1.getDay()+6)%7)/7);}
+
+// ── Status / tema ────────────────────────────────────────────
+function setStatus(msg,type=''){const s=document.getElementById('status-bar');s.textContent=msg;s.className='status-bar'+(type?' '+type:'');if(type==='ok')setTimeout(()=>{s.textContent='';s.className='status-bar';},2000);}
+const APP_KEY='plikter';
+const DEFAULT_COLORS={light:'#10b981',dark:'#34d399'};
+function hexToRgb(hex){return parseInt(hex.slice(1,3),16)+','+parseInt(hex.slice(3,5),16)+','+parseInt(hex.slice(5,7),16);}
+function applyAccentColor(mode,hex){const rgb=hexToRgb(hex);let el=document.getElementById('accent-style-'+mode);if(!el){el=document.createElement('style');el.id='accent-style-'+mode;document.head.appendChild(el);}const sel=mode==='dark'?'[data-theme="dark"]':'[data-theme="light"]';el.textContent=sel+`{--accent:${hex};--accent-bg:rgba(${rgb},.12);--accent-border:rgba(${rgb},.4);--accent-text:${hex};}@media(prefers-color-scheme:${mode}){:root:not([data-theme]){--accent:${hex};--accent-bg:rgba(${rgb},.12);--accent-border:rgba(${rgb},.4);--accent-text:${hex};}}`;}
+function setAccentColor(mode,hex){localStorage.setItem(APP_KEY+'_color_'+mode,hex);applyAccentColor(mode,hex);updateColorPickers();}
+function resetAccentColor(mode){localStorage.removeItem(APP_KEY+'_color_'+mode);const el=document.getElementById('accent-style-'+mode);if(el)el.textContent='';updateColorPickers();}
+function initAccentColors(){['light','dark'].forEach(mode=>{const s=localStorage.getItem(APP_KEY+'_color_'+mode);if(s)applyAccentColor(mode,s);});updateColorPickers();}
+function updateColorPickers(){['light','dark'].forEach(mode=>{const s=localStorage.getItem(APP_KEY+'_color_'+mode)||DEFAULT_COLORS[mode];const i=document.getElementById('color-'+mode);if(i)i.value=s;});}
+initAccentColors();
+function initTheme(){const s=localStorage.getItem(APP_KEY+'_theme');const dark=window.matchMedia('(prefers-color-scheme:dark)').matches;setTheme(s||(dark?'dark':'light'),false);}
+function setTheme(t,save=true){document.documentElement.setAttribute('data-theme',t);const b=document.getElementById('theme-btn');if(b)b.textContent=t==='dark'?'☀️':'🌙';if(save)localStorage.setItem(APP_KEY+'_theme',t);}
+function toggleTheme(){setTheme(document.documentElement.getAttribute('data-theme')==='dark'?'light':'dark');}
+initTheme();
+
+function kidColor(name){let h=0;for(let i=0;i<name.length;i++)h=(h+name.charCodeAt(i))%KID_COLORS.length;return KID_COLORS[h];}
+
+// ── Lagring (Firebase via felles/storage.js) ─────────────────
+function adoptData(saved){
+  data=saved;
+  if(!data.kids)data.kids=[];
+  if(!data.chores)data.chores=[];
+  if(!data.log)data.log=[];
+  if(!data.rewards)data.rewards=[];
+  if(!data.spent)data.spent=[];
+  if(!data.settings)data.settings={krPerPoint:0,pin:'',requireApproval:false};
+  const ids=[...data.kids,...data.chores,...data.log,...data.rewards,...data.spent].map(x=>x.id).filter(Boolean);
+  nextId=ids.length?Math.max(...ids)+1:100;
+}
+async function load(){
+  setStatus('Laster...');
+  try{
+    if(!FAMILIE){
+      const ctx=await requireAuth();
+      if(!ctx.familieId){setStatus('Ingen husstand – kontakt administrator','err');return;}
+      FAMILIE=ctx.familieId;
+    }
+    // dbGet kaster ved feil og gir null KUN når noden er tom (autoritativt svar,
+    // ingen MQTT-tvetydighet). Tom node = ny husstand → trygt å starte blankt.
+    const saved=await dbGet(FAMILIE,APP);
+    if(saved&&saved.kids!==undefined)adoptData(saved);
+    dataLoaded=true;
+    // Lat seeding: ingen barn i plikter ennå → hent fra personregisteret
+    // (kun i minnet – lagres først når brukeren selv gjør en endring).
+    if(!data.kids||data.kids.length===0){
+      const p=await dbGet(FAMILIE,'personer');
+      data.kids=(p?.barn||[]).map(b=>({id:b.id,name:b.navn}));
+      const kidIds=data.kids.map(k=>k.id).filter(x=>typeof x==='number');
+      if(kidIds.length)nextId=Math.max(nextId,Math.max(...kidIds)+1);
+    }
+    setStatus('');
+    startListen();
+  }catch(e){setStatus('Kunne ikke laste – '+(e.message||'prøv igjen'),'err');}
+  render();
+}
+let lastSave=0;
+async function save(){
+  if(!dataLoaded){setStatus('Ikke lagret – data er ikke lastet ennå. Last siden på nytt.','err');return;}
+  setStatus('Lagrer...');
+  try{
+    await dbSet(FAMILIE,APP,data);
+    lastSave=Date.now();
+    setStatus('Lagret ✓','ok');
+  }catch(e){
+    setStatus('Kunne ikke lagre – prøv igjen','err');
+  }
+}
+function newId(){return nextId++;}
+
+// Sanntidssynk: lytteren fyrer ved alle endringer (også andres telefoner).
+// Hopper over mens man redigerer og rett etter egen lagring (ekko).
+function isEditing(){
+  const inp=document.getElementById('new-kid');
+  if(inp&&inp.value.trim())return true;
+  const ae=document.activeElement;
+  if(ae&&/^(INPUT|TEXTAREA|SELECT)$/.test(ae.tagName))return true;
+  return ['chore-modal','reward-modal','redeem-modal'].some(id=>{
+    const e=document.getElementById(id);return e&&e.style.display&&e.style.display!=='none';
+  });
+}
+let stopListen=null;
+function startListen(){
+  if(stopListen)return;
+  stopListen=dbListen(FAMILIE,APP,saved=>{
+    if(!saved||saved.kids===undefined)return;
+    if(isEditing()||Date.now()-lastSave<5000)return;
+    if(JSON.stringify(saved)===JSON.stringify(data))return;
+    adoptData(saved);
+    dataLoaded=true;
+    render();
+  });
+}
+
+// ── Plikt-logikk ─────────────────────────────────────────────
+function choreActiveOn(c,dateStr){return (!c.days||!c.days.length)?true:c.days.includes(weekdayIdx(dateStr));}
+function choreForKid(c,kidId){return (!c.kids||!c.kids.length)?true:c.kids.includes(kidId);}
+function choresFor(kidId,dateStr){return data.chores.filter(c=>choreForKid(c,kidId)&&choreActiveOn(c,dateStr));}
+function logEntry(choreId,kidId,dateStr){return data.log.find(l=>l.choreId===choreId&&l.kidId===kidId&&l.date===dateStr);}
+function isDone(choreId,kidId,dateStr){return data.log.some(l=>l.choreId===choreId&&l.kidId===kidId&&l.date===dateStr);}
+function isPending(choreId,kidId,dateStr){const l=logEntry(choreId,kidId,dateStr);return !!(l&&l.pending);}
+function toggleDone(choreId,kidId,dateStr){
+  const i=data.log.findIndex(l=>l.choreId===choreId&&l.kidId===kidId&&l.date===dateStr);
+  if(i>=0){data.log.splice(i,1);}
+  else{const c=data.chores.find(c=>c.id===choreId);const e={id:newId(),choreId,kidId,date:dateStr,points:c?c.points:0,ts:Date.now()};if(data.settings&&data.settings.requireApproval)e.pending=true;data.log.push(e);}
+  save();render();
+}
+// Poeng teller kun godkjente (ikke-ventende) loggføringer.
+function pointsBetween(kidId,fromStr,toStr){return data.log.filter(l=>l.kidId===kidId&&!l.pending&&l.date>=fromStr&&l.date<=toStr).reduce((s,l)=>s+(l.points||0),0);}
+function earnedTotal(kidId){return data.log.filter(l=>l.kidId===kidId&&!l.pending).reduce((s,l)=>s+(l.points||0),0);}
+// Streak: antall dager på rad t.o.m. i dag med minst én godkjent plikt.
+function kidStreak(kidId){
+  let streak=0,d=todayStr();
+  for(let i=0;i<400;i++){
+    const has=data.log.some(l=>l.kidId===kidId&&!l.pending&&l.date===d);
+    if(has)streak++;else if(i>0)break; else break; // brytes ved første dag uten
+    d=addDays(d,-1);
+  }
+  return streak;
+}
+// Foreldre-PIN: true hvis ingen PIN satt eller riktig oppgitt.
+function requirePin(){
+  const pin=data.settings&&data.settings.pin;
+  if(!pin)return true;
+  const inp=prompt('Foreldre-PIN:');
+  if(inp===null)return false;
+  if(inp===pin)return true;
+  alert('Feil PIN.');return false;
+}
+// Godkjenn alle ventende plikter for et barn på en dag.
+function approveDay(kidId,dateStr){
+  if(!requirePin())return;
+  data.log.forEach(l=>{if(l.kidId===kidId&&l.date===dateStr&&l.pending)delete l.pending;});
+  save();render();
+}
+function setKrPerPoint(v){data.settings.krPerPoint=Math.max(0,parseFloat(v)||0);save();render();}
+function setPin(v){data.settings.pin=(v||'').trim();save();render();}
+function toggleApproval(){data.settings.requireApproval=!data.settings.requireApproval;save();render();}
+function krLabel(points){const k=data.settings&&data.settings.krPerPoint;return k>0?(Math.round(points*k*100)/100).toString().replace('.',',')+' kr':'';}
+function spentTotal(kidId){return data.spent.filter(s=>s.kidId===kidId).reduce((s,x)=>s+(x.cost||0),0);}
+function balance(kidId){return earnedTotal(kidId)-spentTotal(kidId);}
+
+// ── Views ────────────────────────────────────────────────────
+function setView(v){if(v==='settings'&&!requirePin())return;currentView=v;['today','week','rewards','settings'].forEach(x=>{document.getElementById('view-'+x).style.display=v===x?'block':'none';document.getElementById('tab-'+x).classList.toggle('active',v===x);});render();}
+function changeDay(n){homeDate=addDays(homeDate,n);render();}
+function goToday(){homeDate=todayStr();render();}
+function changeWeek(n){weekOffset+=n;render();}
+function goThisWeek(){weekOffset=0;render();} // «Nå»-knappen (module-scope: kan ikke settes inline)
+
+function render(){
+  const thisWeek=getWeekDates(0);
+  const weekStars=data.kids.reduce((s,k)=>s+pointsBetween(k.id,thisWeek[0],thisWeek[6]),0);
+  document.getElementById('count-badge').innerHTML='<i class="ti ti-star-filled" style="font-size:11px"></i> '+weekStars;
+  if(currentView==='today')renderToday();
+  else if(currentView==='week')renderWeek();
+  else if(currentView==='rewards')renderRewards();
+  else renderSettings();
+}
+
+function renderToday(){
+  document.getElementById('day-label').textContent=(homeDate===todayStr()?'I dag · ':'')+fmtDay(homeDate);
+  const wk=getWeekDates(0);
+  const el=document.getElementById('today-list');
+  if(!data.kids.length){el.innerHTML='<div class="empty-state"><i class="ti ti-mood-kid" style="font-size:28px;display:block;margin-bottom:8px"></i>Legg til barn i innstillinger</div>';return;}
+  el.innerHTML=data.kids.map(kid=>{
+    const col=kidColor(kid.name);
+    const chores=choresFor(kid.id,homeDate);
+    const dayPts=data.log.filter(l=>l.kidId===kid.id&&!l.pending&&l.date===homeDate).reduce((s,l)=>s+(l.points||0),0);
+    const weekPts=pointsBetween(kid.id,wk[0],wk[6]);
+    const streak=kidStreak(kid.id);
+    let pendingCount=0;
+    let rows=chores.length?chores.map(c=>{
+      const done=isDone(c.id,kid.id,homeDate);
+      const pending=done&&isPending(c.id,kid.id,homeDate);
+      if(pending)pendingCount++;
+      return '<div class="chore-row">'
+        +'<button class="chore-check'+(done&&!pending?' done':'')+(pending?' pending':'')+'" aria-pressed="'+done+'" aria-label="'+esc(c.name)+' – marker som gjort" onclick="toggleDone('+c.id+','+kid.id+',\''+homeDate+'\')">'+(pending?'<i class="ti ti-clock" style="font-size:13px" aria-hidden="true"></i>':done?'<i class="ti ti-check" style="font-size:14px" aria-hidden="true"></i>':'')+'</button>'
+        +'<i class="ti '+(c.icon||'ti-circle')+' chore-ico" aria-hidden="true"></i>'
+        +'<span class="chore-name'+(done&&!pending?' done':'')+'">'+esc(c.name)+(pending?' <span style="font-size:10px;color:var(--gold)">(venter godkjenning)</span>':'')+'</span>'
+        +'<span class="chore-pts"><i class="ti ti-star-filled" style="font-size:9px;vertical-align:0" aria-hidden="true"></i> '+c.points+'</span>'
+        +'</div>';
+    }).join(''):'<div class="kid-empty">Ingen plikter denne dagen</div>';
+    const approveBtn=pendingCount?'<button class="approve-btn" onclick="approveDay('+kid.id+',\''+homeDate+'\')">✓ Godkjenn '+pendingCount+'</button>':'';
+    return '<div class="kid-card">'
+      +'<div class="kid-head">'
+      +'<span class="kid-name" style="background:'+col+'22;color:'+col+'">'+esc(kid.name)+'</span>'
+      +(streak>=2?'<span class="kid-streak">🔥 '+streak+'</span>':'')
+      +'<span class="kid-stars"><i class="ti ti-star-filled" aria-hidden="true"></i> '+dayPts+' <small>i dag · '+weekPts+' denne uka</small></span>'
+      +'</div>'+rows+approveBtn+'</div>';
+  }).join('');
+}
+
+function renderWeek(){
+  const wk=getWeekDates(weekOffset);
+  document.getElementById('week-label').textContent='Uke '+getWeekNumber(new Date(wk[0]+'T12:00:00'));
+  const todayS=todayStr();
+  if(!data.kids.length){document.getElementById('week-content').innerHTML='<div class="empty-state">Legg til barn først</div>';return;}
+  // Leaderboard
+  const board=data.kids.map(k=>({k,pts:pointsBetween(k.id,wk[0],wk[6])})).sort((a,b)=>b.pts-a.pts);
+  const maxPts=Math.max(1,...board.map(b=>b.pts));
+  let html='<div class="stat-section"><div class="stat-title"><i class="ti ti-trophy"></i> Ukas stjerner</div>';
+  board.forEach((b,i)=>{
+    const col=kidColor(b.k.name);
+    html+='<div class="lead-row"><span class="lead-rank">'+(i+1)+'.</span>'
+      +'<span class="lead-name" style="background:'+col+'22;color:'+col+'">'+esc(b.k.name)+'</span>'
+      +'<div class="lead-bar-wrap"><div class="lead-bar" style="width:'+Math.round(b.pts/maxPts*100)+'%;background:'+col+'"></div></div>'
+      +'<span class="lead-num"><i class="ti ti-star-filled" style="font-size:11px"></i> '+b.pts+'</span></div>';
+  });
+  html+='</div>';
+  // Per barn: 7-dagers fullføring
+  data.kids.forEach(kid=>{
+    const col=kidColor(kid.name);
+    html+='<div class="stat-section"><div class="stat-title"><span style="color:'+col+'">'+esc(kid.name)+'</span></div><div class="wk-grid">';
+    wk.forEach((ds,i)=>{
+      const total=choresFor(kid.id,ds).length;
+      const done=data.log.filter(l=>l.kidId===kid.id&&l.date===ds).length;
+      const cls='wk-box'+(done>0?' has':'')+(ds===todayS?' today':'');
+      html+='<div class="wk-col"><div class="'+cls+'">'+(total?done+'/'+total:'–')+'</div><div class="wk-day">'+DAYS_SHORT[i]+'</div></div>';
+    });
+    html+='</div></div>';
+  });
+  document.getElementById('week-content').innerHTML=html;
+}
+
+function renderRewards(){
+  // Saldo
+  document.getElementById('bal-grid').innerHTML=data.kids.length?data.kids.map(k=>{
+    const col=kidColor(k.name);
+    const kr=krLabel(balance(k.id));
+    return '<div class="bal-box"><div class="bal-name" style="background:'+col+'22;color:'+col+'">'+esc(k.name)+'</div>'
+      +'<div class="bal-num"><i class="ti ti-star-filled" style="font-size:16px" aria-hidden="true"></i> '+balance(k.id)+'</div>'
+      +'<div class="bal-lbl">poeng å bruke'+(kr?' · '+kr:'')+'</div></div>';
+  }).join(''):'<div class="kid-empty">Legg til barn først</div>';
+  // Belønninger
+  document.getElementById('reward-list').innerHTML=data.rewards.length?data.rewards.map(r=>
+    '<div class="reward-row"><i class="ti '+(r.icon||'ti-gift')+' reward-ico"></i>'
+    +'<div class="reward-info"><div class="reward-name">'+esc(r.name)+'</div>'
+    +'<div class="reward-cost"><i class="ti ti-star-filled" style="font-size:9px"></i> '+r.cost+' poeng</div></div>'
+    +'<button class="reward-btn" onclick="openRedeemModal('+r.id+')">Løs inn</button></div>'
+  ).join(''):'<div class="kid-empty">Ingen belønninger – legg til i innstillinger</div>';
+  // Innløst
+  const recent=[...data.spent].sort((a,b)=>(b.ts||0)-(a.ts||0)).slice(0,15);
+  document.getElementById('redeem-list').innerHTML=recent.length?recent.map(s=>{
+    const k=data.kids.find(k=>k.id===s.kidId);const col=k?kidColor(k.name):'#999';
+    return '<div class="redeem-item"><span class="lead-name" style="background:'+col+'22;color:'+col+';min-width:auto">'+esc(k?k.name:'?')+'</span>'
+      +'<span style="flex:1">'+esc(s.name)+'</span>'
+      +'<span style="color:var(--danger);font-weight:600">−'+s.cost+'</span>'
+      +'<span class="tag">'+esc(new Date(s.ts||Date.now()).toLocaleDateString('nb-NO',{day:'numeric',month:'short'}))+'</span></div>';
+  }).join(''):'<div class="kid-empty">Ingen innløsninger ennå</div>';
+}
+
+function renderSettings(){
+  updateColorPickers();
+  // Foreldre-innstillinger
+  const s=data.settings||{};
+  const ap=document.getElementById('set-approval');if(ap)ap.checked=!!s.requireApproval;
+  const kr=document.getElementById('set-kr');if(kr)kr.value=s.krPerPoint||0;
+  const pn=document.getElementById('set-pin');if(pn)pn.value=s.pin||'';
+  // Barn
+  document.getElementById('kids-manage').innerHTML=data.kids.map(k=>{
+    const col=kidColor(k.name);
+    return '<div class="row-item"><span class="kid-name" style="background:'+col+'22;color:'+col+'">'+esc(k.name)+'</span>'
+      +'<span style="flex:1"></span><span class="tag">'+earnedTotal(k.id)+' opptjent</span>'
+      +'<button class="mini-btn danger" onclick="deleteKid('+k.id+')" aria-label="Slett barn"><i class="ti ti-trash" aria-hidden="true"></i></button></div>';
+  }).join('')||'<div class="kid-empty">Ingen barn ennå</div>';
+  // Plikter
+  document.getElementById('chores-manage').innerHTML=data.chores.map(c=>{
+    const dayTxt=(!c.days||!c.days.length)?'Hver dag':c.days.slice().sort().map(d=>DAYS_SHORT[d]).join(', ');
+    const whoTxt=(!c.kids||!c.kids.length)?'Alle':c.kids.map(id=>{const k=data.kids.find(k=>k.id===id);return k?k.name:'?';}).join(', ');
+    return '<div class="row-item"><i class="ti '+(c.icon||'ti-circle')+'" style="font-size:16px;color:var(--text3)"></i>'
+      +'<div style="flex:1;min-width:0"><div style="font-size:13px;font-weight:500">'+esc(c.name)+'</div>'
+      +'<div style="font-size:11px;color:var(--text3);margin-top:1px">'+dayTxt+' · '+esc(whoTxt)+'</div></div>'
+      +'<span class="chore-pts"><i class="ti ti-star-filled" style="font-size:9px"></i> '+c.points+'</span>'
+      +'<button class="mini-btn" onclick="openChoreModal('+c.id+')" aria-label="Rediger plikt"><i class="ti ti-edit" aria-hidden="true"></i></button></div>';
+  }).join('')||'<div class="kid-empty">Ingen plikter ennå</div>';
+  // Belønninger
+  document.getElementById('rewards-manage').innerHTML=data.rewards.map(r=>
+    '<div class="row-item"><i class="ti '+(r.icon||'ti-gift')+'" style="font-size:16px;color:var(--text3)"></i>'
+    +'<span style="flex:1;font-size:13px;font-weight:500">'+esc(r.name)+'</span>'
+    +'<span class="chore-pts"><i class="ti ti-star-filled" style="font-size:9px"></i> '+r.cost+'</span>'
+    +'<button class="mini-btn" onclick="openRewardModal('+r.id+')" aria-label="Rediger belønning"><i class="ti ti-edit" aria-hidden="true"></i></button></div>'
+  ).join('')||'<div class="kid-empty">Ingen belønninger ennå</div>';
+}
+
+// ── Barn ─────────────────────────────────────────────────────
+function addKid(){const inp=document.getElementById('new-kid');const name=inp.value.trim();if(!name)return;if(data.kids.some(k=>k.name===name)){inp.value='';return;}data.kids.push({id:newId(),name});inp.value='';save();render();}
+function deleteKid(id){const k=data.kids.find(k=>k.id===id);if(!k)return;if(!confirm('Slette '+k.name+'? Loggen beholdes.'))return;data.kids=data.kids.filter(k=>k.id!==id);save();render();}
+document.getElementById('new-kid').addEventListener('keydown',e=>{if(e.key==='Enter')addKid();});
+
+// ── Plikt-modal ──────────────────────────────────────────────
+function renderIconGrid(elId,sel,cb){document.getElementById(elId).innerHTML=ICONS.map(ic=>'<div class="icon-pick'+(ic===sel?' active':'')+'" role="button" tabindex="0" aria-label="Velg ikon" onclick="'+cb+'(\''+ic+'\')"><i class="ti '+ic+'" aria-hidden="true"></i></div>').join('');}
+function pickChoreIcon(ic){choreIcon=ic;renderIconGrid('chore-icons',choreIcon,'pickChoreIcon');}
+function renderChoreChips(){
+  document.getElementById('chore-days').innerHTML=DAYS_SHORT.map((d,i)=>'<span class="chip'+(choreDays.includes(i)?' active':'')+'" role="button" tabindex="0" onclick="toggleChoreDay('+i+')">'+d+'</span>').join('');
+  document.getElementById('chore-kids').innerHTML=data.kids.length?data.kids.map(k=>'<span class="chip'+(choreKids.includes(k.id)?' active':'')+'" role="button" tabindex="0" onclick="toggleChoreKid('+k.id+')">'+esc(k.name)+'</span>').join(''):'<span class="chip-hint">Ingen barn lagt til</span>';
+}
+function toggleChoreDay(i){const p=choreDays.indexOf(i);if(p>=0)choreDays.splice(p,1);else choreDays.push(i);renderChoreChips();}
+function toggleChoreKid(id){const p=choreKids.indexOf(id);if(p>=0)choreKids.splice(p,1);else choreKids.push(id);renderChoreChips();}
+function openChoreModal(id){
+  const c=id?data.chores.find(c=>c.id===id):null;
+  document.getElementById('chore-modal-title').textContent=c?'Rediger plikt':'Ny plikt';
+  document.getElementById('chore-id').value=c?c.id:'';
+  document.getElementById('chore-name').value=c?c.name:'';
+  document.getElementById('chore-points').value=c?c.points:10;
+  choreIcon=c?(c.icon||ICONS[0]):ICONS[0];
+  choreDays=c&&c.days?[...c.days]:[];
+  choreKids=c&&c.kids?[...c.kids]:[];
+  document.getElementById('chore-del').style.display=c?'block':'none';
+  renderIconGrid('chore-icons',choreIcon,'pickChoreIcon');
+  renderChoreChips();
+  document.getElementById('chore-modal').style.display='flex';
+}
+function hideChoreModal(){document.getElementById('chore-modal').style.display='none';}
+function saveChore(){
+  const name=document.getElementById('chore-name').value.trim();if(!name){document.getElementById('chore-name').focus();return;}
+  const points=Math.max(1,parseInt(document.getElementById('chore-points').value,10)||1);
+  const id=parseInt(document.getElementById('chore-id').value,10);
+  if(id){const c=data.chores.find(c=>c.id===id);if(c){c.name=name;c.points=points;c.icon=choreIcon;c.days=[...choreDays];c.kids=[...choreKids];}}
+  else{data.chores.push({id:newId(),name,points,icon:choreIcon,days:[...choreDays],kids:[...choreKids]});}
+  hideChoreModal();save();render();
+}
+function deleteChore(){const id=parseInt(document.getElementById('chore-id').value,10);if(!id)return;if(!confirm('Slette plikten?'))return;data.chores=data.chores.filter(c=>c.id!==id);hideChoreModal();save();render();}
+
+// ── Belønning-modal ──────────────────────────────────────────
+function pickRewardIcon(ic){rewardIcon=ic;renderIconGrid('reward-icons',rewardIcon,'pickRewardIcon');}
+function openRewardModal(id){
+  const r=id?data.rewards.find(r=>r.id===id):null;
+  document.getElementById('reward-modal-title').textContent=r?'Rediger belønning':'Ny belønning';
+  document.getElementById('reward-id').value=r?r.id:'';
+  document.getElementById('reward-name').value=r?r.name:'';
+  document.getElementById('reward-cost').value=r?r.cost:50;
+  rewardIcon=r?(r.icon||'ti-gift'):'ti-gift';
+  document.getElementById('reward-del').style.display=r?'block':'none';
+  renderIconGrid('reward-icons',rewardIcon,'pickRewardIcon');
+  document.getElementById('reward-modal').style.display='flex';
+}
+function hideRewardModal(){document.getElementById('reward-modal').style.display='none';}
+function saveReward(){
+  const name=document.getElementById('reward-name').value.trim();if(!name){document.getElementById('reward-name').focus();return;}
+  const cost=Math.max(1,parseInt(document.getElementById('reward-cost').value,10)||1);
+  const id=parseInt(document.getElementById('reward-id').value,10);
+  if(id){const r=data.rewards.find(r=>r.id===id);if(r){r.name=name;r.cost=cost;r.icon=rewardIcon;}}
+  else{data.rewards.push({id:newId(),name,cost,icon:rewardIcon});}
+  hideRewardModal();save();render();
+}
+function deleteReward(){const id=parseInt(document.getElementById('reward-id').value,10);if(!id)return;if(!confirm('Slette belønningen?'))return;data.rewards=data.rewards.filter(r=>r.id!==id);hideRewardModal();save();render();}
+
+// ── Innløsing ────────────────────────────────────────────────
+function openRedeemModal(rewardId){
+  const r=data.rewards.find(r=>r.id===rewardId);if(!r)return;
+  document.getElementById('redeem-reward-id').value=rewardId;
+  document.getElementById('redeem-sub').innerHTML=esc(r.name)+' – koster <b>'+r.cost+'</b> poeng. Hvem løser inn?';
+  document.getElementById('redeem-kids').innerHTML=data.kids.map(k=>{
+    const col=kidColor(k.name);const bal=balance(k.id);const can=bal>=r.cost;
+    return '<div class="row-item"><span class="kid-name" style="background:'+col+'22;color:'+col+'">'+esc(k.name)+'</span>'
+      +'<span style="flex:1"></span><span class="kid-stars" style="margin:0"><i class="ti ti-star-filled"></i> '+bal+'</span>'
+      +'<button class="reward-btn" '+(can?'':'disabled style="opacity:.4;cursor:not-allowed"')+' onclick="'+(can?'doRedeem('+k.id+','+rewardId+')':'')+'">'+(can?'Løs inn':'For lite')+'</button></div>';
+  }).join('')||'<div class="kid-empty">Ingen barn</div>';
+  document.getElementById('redeem-modal').style.display='flex';
+}
+function hideRedeemModal(){document.getElementById('redeem-modal').style.display='none';}
+function doRedeem(kidId,rewardId){
+  const r=data.rewards.find(r=>r.id===rewardId);const k=data.kids.find(k=>k.id===kidId);if(!r||!k)return;
+  if(balance(kidId)<r.cost){alert('Ikke nok poeng.');return;}
+  if(!requirePin())return;
+  if(!confirm(k.name+' løser inn "'+r.name+'" for '+r.cost+' poeng?'))return;
+  data.spent.push({id:newId(),kidId,rewardId,name:r.name,cost:r.cost,date:todayStr(),ts:Date.now()});
+  hideRedeemModal();save();render();
+}
+
+function clearLog(){if(!confirm('Nullstille all logg og alle innløsninger? Barn, plikter og belønninger beholdes.'))return;data.log=[];data.spent=[];save();render();}
+
+// Tastatur (Enter/Space) for klikkbare elementer med role="button" som ikke er ekte <button>.
+document.addEventListener('keydown',e=>{
+  if((e.key==='Enter'||e.key===' ')&&e.target.matches('[role="button"]')&&e.target.tagName!=='BUTTON'){e.preventDefault();e.target.click();}
+});
+// Escape lukker åpen modal.
+document.addEventListener('keydown',e=>{
+  if(e.key!=='Escape')return;
+  ['chore-modal','reward-modal','redeem-modal'].forEach(id=>{const m=document.getElementById(id);if(m&&m.style.display!=='none')m.style.display='none';});
+});
+
+// Modul-scope: funksjoner brukt i on*-attributter må eksponeres på window.
+Object.assign(window,{addKid,approveDay,changeDay,changeWeek,clearLog,deleteChore,
+deleteKid,deleteReward,doRedeem,goThisWeek,goToday,hideChoreModal,hideRedeemModal,
+hideRewardModal,openChoreModal,openRedeemModal,openRewardModal,pickChoreIcon,
+pickRewardIcon,resetAccentColor,saveChore,saveReward,setAccentColor,setKrPerPoint,
+setPin,setView,toggleApproval,toggleChoreDay,toggleChoreKid,toggleDone,toggleTheme});
+
+load();
+</script>
+</body>
+</html>

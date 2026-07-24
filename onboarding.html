@@ -1,0 +1,246 @@
+<!DOCTYPE html>
+<html lang="no">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Hjemmebasen – Kom i gang</title>
+<link rel="stylesheet" href="felles/stil.css">
+<style>
+.ob-wrap{max-width:440px;margin:0 auto;padding:1.2rem .9rem 2rem}
+.ob-prog{display:flex;gap:5px;margin-bottom:1.1rem}
+.ob-dot{flex:1;height:4px;border-radius:2px;background:var(--border)}
+.ob-dot.on{background:var(--accent)}
+.ob-tittel{font-size:19px;font-weight:800;margin-bottom:4px}
+.ob-under{font-size:12.5px;color:var(--text3);line-height:1.5;margin-bottom:14px}
+.chiprad{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:10px}
+.pchip{display:inline-flex;align-items:center;gap:6px;font-size:13px;padding:7px 12px;border-radius:18px;border:1px solid var(--accent-border);background:var(--accent-bg);color:var(--accent-text);font-weight:600}
+.pchip button{border:none;background:none;color:inherit;cursor:pointer;font-size:14px;padding:0}
+.leggtil-rad{display:flex;gap:6px}
+.leggtil-rad .hinput{flex:1;min-width:0}
+.barn-rad{display:flex;gap:6px;align-items:center;margin-bottom:6px}
+.barn-rad .hinput{min-width:0}
+.appvalg{display:flex;align-items:center;gap:10px;padding:10px 4px;border-bottom:1px solid var(--border2);cursor:pointer}
+.appvalg:last-child{border-bottom:none}
+.appvalg .emoji{font-size:22px}
+.appvalg .navn{flex:1;font-size:14px;font-weight:600}
+.appvalg input{width:19px;height:19px;accent-color:var(--accent)}
+.stedresultat{padding:9px 10px;border:1px solid var(--border2);border-radius:8px;margin-bottom:5px;font-size:13px;cursor:pointer}
+.stedresultat:hover,.stedresultat.valgt{border-color:var(--accent);background:var(--accent-bg)}
+.ob-nav{display:flex;gap:8px;margin-top:16px}
+.ob-nav .btn-primary{flex:1;width:auto}
+.hopp{text-align:center;margin-top:10px}
+.oppsummering{font-size:13px;line-height:1.7}
+.oppsummering b{font-weight:700}
+</style>
+</head>
+<body>
+<div class="ob-wrap">
+  <div class="ob-prog" id="prog"></div>
+  <div class="card" id="steg-kort"></div>
+  <div class="status-bar" id="status-bar"></div>
+</div>
+
+<script type="module">
+import { requireAuth, db } from './felles/auth.js';
+import { dbGet, dbSet } from './felles/storage.js';
+import { esc, initTheme, setStatus } from './felles/ui.js';
+import { APP_NAVN, APP_IKON } from './felles/seed.js';
+
+initTheme();
+
+const { familieId } = await requireAuth();
+if (!familieId) location.replace('index.html');
+
+// Eksisterende data (dbGet markerer nodene som lest → trygt å skrive)
+const meta = (await dbGet(familieId, 'meta')) || {};
+const personerLagret = (await dbGet(familieId, 'personer')) || {};
+
+// Veiviser-tilstand
+const st = {
+  navn: meta.navn || '',
+  voksne: [...(personerLagret.voksne || [])],
+  barn: (personerLagret.barn || []).map(b => ({ ...b })),
+  sted: meta.sted || null,
+  apper: { ...(meta.apper || {}) },
+  stedTreff: [], stedValgt: null,
+};
+Object.keys(APP_NAVN).forEach(a => { if (st.apper[a] === undefined) st.apper[a] = true; });
+
+let steg = 0;
+const ANT = 6;
+
+function alderAar(fodt) {
+  if (!fodt) return null;
+  return (Date.now() - new Date(fodt).getTime()) / (365.25 * 86400000);
+}
+
+function render() {
+  document.getElementById('prog').innerHTML =
+    Array.from({ length: ANT }, (_, i) => '<div class="ob-dot' + (i <= steg ? ' on' : '') + '"></div>').join('');
+  const k = document.getElementById('steg-kort');
+
+  if (steg === 0) {
+    k.innerHTML = '<div class="ob-tittel">👋 Velkommen til Hjemmebasen!</div>'
+      + '<div class="ob-under">Familiens apper – handleliste, middagsplan, oppgaver og mer – samlet på ett sted. Først: hva skal husstanden hete?</div>'
+      + '<label for="ob-navn">Husstandens navn</label>'
+      + '<input class="hinput" id="ob-navn" maxlength="40" value="' + esc(st.navn) + '" placeholder="F.eks. Familien Hansen" />'
+      + nav(false);
+  } else if (steg === 1) {
+    k.innerHTML = '<div class="ob-tittel">🧑‍🍳 De voksne</div>'
+      + '<div class="ob-under">Navnene brukes i middagsplanen («hvem lager?») og oppgavelista. Kortnavn holder.</div>'
+      + '<div class="chiprad">' + st.voksne.map((v, i) =>
+          '<span class="pchip">' + esc(v) + '<button data-fjern-voksen="' + i + '" aria-label="Fjern">×</button></span>').join('') + '</div>'
+      + '<div class="leggtil-rad"><input class="hinput" id="ob-voksen" maxlength="30" placeholder="Navn..." /><button class="btn-ghost" id="ob-voksen-btn">Legg til</button></div>'
+      + nav();
+  } else if (steg === 2) {
+    k.innerHTML = '<div class="ob-tittel">🧒 Barna</div>'
+      + '<div class="ob-under">Brukes i plikter, helse og søvnsporing. Fødselsdato gir aldersbaserte anbefalinger (f.eks. våkenvinduer for babyer). Har dere ikke barn, hopper du bare videre.</div>'
+      + st.barn.map((b, i) =>
+          '<div class="barn-rad"><input class="hinput" style="flex:2" maxlength="30" value="' + esc(b.navn) + '" data-barn-navn="' + i + '" placeholder="Navn" />'
+          + '<input class="hinput" style="flex:1.4" type="date" value="' + esc(b.fodt || '') + '" data-barn-fodt="' + i + '" />'
+          + '<button class="hrow-del" data-fjern-barn="' + i + '">×</button></div>').join('')
+      + '<button class="btn-ghost" style="width:100%;margin-top:4px" id="ob-barn-btn">+ Legg til barn</button>'
+      + nav();
+  } else if (steg === 3) {
+    k.innerHTML = '<div class="ob-tittel">📍 Hvor bor dere?</div>'
+      + '<div class="ob-under">Brukes til værbaserte påkledningsråd for barna (kommer snart). Kan hoppes over.</div>'
+      + '<div class="leggtil-rad"><input class="hinput" id="ob-sted" placeholder="Stedsnavn, f.eks. Skien..." value="' + esc(st.sted?.navn || '') + '" /><button class="btn-ghost" id="ob-sted-btn">Søk</button></div>'
+      + '<div id="ob-sted-treff" style="margin-top:8px">'
+      + (st.sted ? '<div class="stedresultat valgt">✓ ' + esc(st.sted.navn) + '</div>' : '')
+      + '</div>'
+      + nav();
+  } else if (steg === 4) {
+    const barnUnder3 = st.barn.some(b => { const a = alderAar(b.fodt); return a !== null && a < 3; });
+    if (!barnUnder3 && st.apper.sovn === true && !st._sovnJustert) st.apper.sovn = st.barn.length > 0;
+    k.innerHTML = '<div class="ob-tittel">📱 Hvilke apper vil dere bruke?</div>'
+      + '<div class="ob-under">Dette kan endres når som helst senere (av administrator).</div>'
+      + Object.keys(APP_NAVN).map(a =>
+          '<label class="appvalg"><span class="emoji">' + APP_IKON[a] + '</span><span class="navn">' + esc(APP_NAVN[a]) + '</span>'
+          + '<input type="checkbox" data-app="' + a + '"' + (st.apper[a] !== false ? ' checked' : '') + '></label>').join('')
+      + nav();
+  } else {
+    k.innerHTML = '<div class="ob-tittel">✅ Klart!</div>'
+      + '<div class="ob-under">Sjekk at alt stemmer – så er dere i gang.</div>'
+      + '<div class="oppsummering">'
+      + '<b>' + esc(st.navn || 'Husstanden') + '</b><br>'
+      + '👤 Voksne: ' + (st.voksne.map(esc).join(', ') || '<i>ingen</i>') + '<br>'
+      + '🧒 Barn: ' + (st.barn.filter(b => b.navn).map(b => esc(b.navn)).join(', ') || '<i>ingen</i>') + '<br>'
+      + '📍 Sted: ' + (st.sted ? esc(st.sted.navn) : '<i>ikke valgt</i>') + '<br>'
+      + '📱 Apper: ' + Object.keys(APP_NAVN).filter(a => st.apper[a] !== false).map(a => APP_IKON[a]).join(' ')
+      + '</div>'
+      + '<div class="ob-nav"><button class="btn-ghost" id="ob-tilbake">Tilbake</button><button class="btn-primary" id="ob-ferdig">Start Hjemmebasen 🎉</button></div>';
+  }
+  koble();
+}
+
+function nav(medTilbake = true) {
+  return '<div class="ob-nav">'
+    + (medTilbake ? '<button class="btn-ghost" id="ob-tilbake">Tilbake</button>' : '')
+    + '<button class="btn-primary" id="ob-neste">Neste</button></div>'
+    + (steg === 2 || steg === 3 ? '<div class="hopp"><button class="btn-lenke" id="ob-hopp">Hopp over</button></div>' : '');
+}
+
+function lesSteg() {
+  if (steg === 0) { const v = document.getElementById('ob-navn')?.value.trim(); if (v) st.navn = v; }
+  if (steg === 2) {
+    document.querySelectorAll('[data-barn-navn]').forEach(i => st.barn[+i.dataset.barnNavn].navn = i.value.trim());
+    document.querySelectorAll('[data-barn-fodt]').forEach(i => st.barn[+i.dataset.barnFodt].fodt = i.value);
+  }
+  if (steg === 4) {
+    document.querySelectorAll('[data-app]').forEach(c => { st.apper[c.dataset.app] = c.checked; });
+    st._sovnJustert = true;
+  }
+}
+
+function koble() {
+  const neste = document.getElementById('ob-neste');
+  if (neste) neste.addEventListener('click', () => {
+    if (steg === 0 && !document.getElementById('ob-navn').value.trim()) { setStatus('Gi husstanden et navn først', 'err'); return; }
+    lesSteg(); steg++; render();
+  });
+  const tilbake = document.getElementById('ob-tilbake');
+  if (tilbake) tilbake.addEventListener('click', () => { lesSteg(); steg--; render(); });
+  const hopp = document.getElementById('ob-hopp');
+  if (hopp) hopp.addEventListener('click', () => { steg++; render(); });
+
+  // Voksne
+  const vBtn = document.getElementById('ob-voksen-btn');
+  if (vBtn) {
+    const leggTil = () => {
+      const inp = document.getElementById('ob-voksen');
+      const navn = inp.value.trim();
+      if (!navn || st.voksne.includes(navn)) return;
+      st.voksne.push(navn); render();
+      setTimeout(() => document.getElementById('ob-voksen')?.focus(), 30);
+    };
+    vBtn.addEventListener('click', leggTil);
+    document.getElementById('ob-voksen').addEventListener('keydown', e => { if (e.key === 'Enter') leggTil(); });
+  }
+  document.querySelectorAll('[data-fjern-voksen]').forEach(b =>
+    b.addEventListener('click', () => { st.voksne.splice(+b.dataset.fjernVoksen, 1); render(); }));
+
+  // Barn
+  const bBtn = document.getElementById('ob-barn-btn');
+  if (bBtn) bBtn.addEventListener('click', () => {
+    lesSteg();
+    const id = Math.max(0, ...st.barn.map(b => b.id || 0)) + 1;
+    st.barn.push({ id, navn: '', fodt: '' }); render();
+  });
+  document.querySelectorAll('[data-fjern-barn]').forEach(b =>
+    b.addEventListener('click', () => { lesSteg(); st.barn.splice(+b.dataset.fjernBarn, 1); render(); }));
+
+  // Sted (open-meteo geokoding – gratis, uten nøkkel)
+  const sBtn = document.getElementById('ob-sted-btn');
+  if (sBtn) sBtn.addEventListener('click', async () => {
+    const q = document.getElementById('ob-sted').value.trim();
+    if (!q) return;
+    setStatus('Søker...');
+    try {
+      const res = await fetch('https://geocoding-api.open-meteo.com/v1/search?name=' + encodeURIComponent(q) + '&count=5&language=no&format=json');
+      const j = await res.json();
+      st.stedTreff = (j.results || []).map(r => ({
+        navn: r.name + (r.admin1 ? ', ' + r.admin1 : ''), lat: r.latitude, lon: r.longitude,
+      }));
+      setStatus(st.stedTreff.length ? '' : 'Ingen treff – prøv et annet navn', st.stedTreff.length ? '' : 'err');
+      document.getElementById('ob-sted-treff').innerHTML = st.stedTreff.map((t, i) =>
+        '<div class="stedresultat" data-sted="' + i + '">📍 ' + esc(t.navn) + '</div>').join('');
+      document.querySelectorAll('[data-sted]').forEach(el =>
+        el.addEventListener('click', () => { st.sted = st.stedTreff[+el.dataset.sted]; render(); }));
+    } catch (e) { setStatus('Stedsøket feilet – hopp over, dette kan settes senere', 'err'); }
+  });
+
+  // Ferdig
+  const ferdig = document.getElementById('ob-ferdig');
+  if (ferdig) ferdig.addEventListener('click', fullfor);
+}
+
+async function fullfor() {
+  const btn = document.getElementById('ob-ferdig');
+  btn.disabled = true; btn.textContent = 'Lagrer...';
+  try {
+    const barn = st.barn.filter(b => b.navn);
+    // Personregisteret – kilden til sannhet for alle appene (ADR-0005)
+    await dbSet(familieId, 'personer', { voksne: st.voksne, barn });
+    await dbSet(familieId, 'meta', {
+      ...meta, navn: st.navn, apper: st.apper,
+      sted: st.sted || null, onboardet: true,
+    });
+    // Seed personlister i appene som har dem (leses først – datatap-vernet)
+    const middag = await dbGet(familieId, 'middag');
+    if (middag) {
+      const folk = [...st.voksne, 'Felles'].filter((v, i, a) => a.indexOf(v) === i);
+      await dbSet(familieId, 'middag', { ...middag, people: folk });
+    }
+    const oppgaver = await dbGet(familieId, 'oppgaver');
+    if (oppgaver) await dbSet(familieId, 'oppgaver', { ...oppgaver, people: [...st.voksne] });
+    location.replace('index.html');
+  } catch (e) {
+    setStatus('Kunne ikke lagre: ' + (e.message || 'prøv igjen'), 'err');
+    btn.disabled = false; btn.textContent = 'Start Hjemmebasen 🎉';
+  }
+}
+
+render();
+</script>
+</body>
+</html>

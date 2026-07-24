@@ -6,12 +6,28 @@
 <title>Hjemmebasen</title>
 <link rel="stylesheet" href="felles/stil.css">
 <style>
-.onboard-banner{background:var(--accent-bg);border:1px solid var(--accent-border);border-radius:12px;padding:10px 12px;font-size:12.5px;color:var(--accent-text);line-height:1.45;margin-bottom:10px}
+/* Dashbord-fliser med statuslinje */
+.app-tile{text-align:left;padding:14px;display:flex;align-items:center;gap:12px}
+.app-tile .emoji{font-size:30px;display:block;margin-bottom:0;flex-shrink:0}
+.tile-tekst{flex:1;min-width:0}
+.app-tile .navn{display:block}
+.tile-status{display:block;font-size:11.5px;color:var(--text3);margin-top:3px;line-height:1.4;overflow:hidden;text-overflow:ellipsis}
+.tile-status.varsel{color:var(--accent-text);font-weight:600}
+.app-tile.kommer .tile-status{font-style:italic}
 .admin-lenke{display:block;text-align:center;margin-top:14px;font-size:12px;color:var(--text3);text-decoration:none}
 .admin-lenke:hover{color:var(--accent-text)}
-#meny{position:absolute;right:0;top:34px;background:var(--surface);border:1px solid var(--border);border-radius:10px;box-shadow:0 6px 24px rgba(0,0,0,.12);z-index:50;min-width:150px;overflow:hidden}
-#meny button{display:block;width:100%;text-align:left;padding:10px 14px;font-size:13px;border:none;background:none;color:var(--text);cursor:pointer}
-#meny button:hover{background:var(--surface2)}
+#meny{position:absolute;right:0;top:34px;background:var(--surface);border:1px solid var(--border);border-radius:10px;box-shadow:0 6px 24px rgba(0,0,0,.12);z-index:50;min-width:170px;overflow:hidden}
+#meny a,#meny button{display:block;width:100%;text-align:left;padding:10px 14px;font-size:13px;border:none;background:none;color:var(--text);cursor:pointer;text-decoration:none}
+#meny a:hover,#meny button:hover{background:var(--surface2)}
+/* PC: bredere brett og flere kolonner – samme kode, bare CSS */
+@media(min-width:700px){
+  .fw{max-width:760px}
+  .app-grid{grid-template-columns:repeat(3,1fr);gap:12px}
+}
+@media(min-width:1100px){
+  .fw{max-width:980px}
+  .app-grid{grid-template-columns:repeat(4,1fr)}
+}
 </style>
 </head>
 <body>
@@ -22,14 +38,10 @@
       <button class="icon-btn" id="theme-btn"></button>
       <button class="icon-btn" id="meny-btn">⚙️</button>
       <div id="meny" style="display:none">
+        <a href="onboarding.html" id="meny-oppsett">Endre oppsett</a>
         <button id="logg-ut-btn">Logg ut</button>
       </div>
     </div>
-  </div>
-
-  <div class="onboard-banner" id="onboard-banner" style="display:none">
-    👋 Velkommen! Oppsettet av husstanden (navn, barn, sted) kommer i neste
-    versjon – appene under bruker standardoppsett så lenge.
   </div>
 
   <div class="app-grid" id="app-grid"></div>
@@ -40,9 +52,9 @@
 
 <script type="module">
 import { requireAuth, loggUt, db } from './felles/auth.js';
-import { esc, initTheme, toggleTheme, setStatus } from './felles/ui.js';
+import { esc, todayStr, initTheme, toggleTheme } from './felles/ui.js';
 import { APP_NAVN, APP_IKON } from './felles/seed.js';
-import { ref, get } from 'https://www.gstatic.com/firebasejs/10.14.1/firebase-database.js';
+import { ref, onValue } from 'https://www.gstatic.com/firebasejs/10.14.1/firebase-database.js';
 
 initTheme();
 document.getElementById('theme-btn').addEventListener('click', toggleTheme);
@@ -52,37 +64,86 @@ document.getElementById('meny-btn').addEventListener('click', () => {
 });
 document.getElementById('logg-ut-btn').addEventListener('click', loggUt);
 
-// Appene som faktisk er bygget så langt. Utvides i etappe 2 og 3 –
-// aktiverte apper som ikke er bygget vises som «kommer».
-const BYGGET = new Set([]);
+// Appene som er bygget så langt (utvides i etappe 3 med sovn + helse)
+const BYGGET = new Set(['handleliste', 'middag', 'oppgaver', 'fryser', 'plikter']);
 
 const { erAdmin, familieId } = await requireAuth();
-
 if (erAdmin) document.getElementById('admin-lenke').style.display = 'block';
 
 if (!familieId) {
-  // Admin uten egen husstand: vis bare admin-inngangen
   document.getElementById('app-grid').innerHTML =
     '<div class="empty-state" style="grid-column:1/-1">Du er administrator uten egen husstand.<br>Bruk admin-siden for å opprette husstander.</div>';
+  document.getElementById('meny-oppsett').style.display = 'none';
 } else {
-  const meta = (await get(ref(db, 'familier/' + familieId + '/meta'))).val() || {};
-  document.getElementById('fam-navn').textContent = meta.navn || 'Hjemmebasen';
-  document.title = meta.navn ? meta.navn + ' – Hjemmebasen' : 'Hjemmebasen';
-  if (!meta.onboardet) document.getElementById('onboard-banner').style.display = 'block';
+  // Lytter på hele husstanden → dashbordet er alltid ferskt (read-only her)
+  onValue(ref(db, 'familier/' + familieId), snap => {
+    const fam = snap.exists() ? snap.val() : {};
+    const meta = fam.meta || {};
+    if (!meta.onboardet) { location.replace('onboarding.html'); return; }
+    document.getElementById('fam-navn').textContent = meta.navn || 'Hjemmebasen';
+    document.title = meta.navn ? meta.navn + ' – Hjemmebasen' : 'Hjemmebasen';
+    tegnDashbord(fam, meta);
+  });
+}
 
+// ── Statuslinje per app – «enkel og god oversikt» ────────────
+function dagerMellom(a, b) { return Math.floor((new Date(a) - new Date(b)) / 86400000); }
+
+function appStatus(app, fam) {
+  const d = fam[app];
+  try {
+    if (app === 'handleliste') {
+      const varer = (d?.items || []).filter(i => !i.checked).length;
+      const div = (d?.other || []).filter(o => !o.checked).length;
+      if (!varer && !div) return { txt: 'Lista er tom ✓' };
+      return { txt: varer + ' å handle' + (div ? ' · ' + div + ' diverse' : ''), varsel: varer > 0 };
+    }
+    if (app === 'middag') {
+      const idag = (d?.meals || []).find(m => m.date === todayStr());
+      if (idag) return { txt: 'I dag: ' + idag.meal, varsel: true };
+      return { txt: 'Ingen middag planlagt i dag' };
+    }
+    if (app === 'oppgaver') {
+      const aapne = (d?.tasks || []).filter(t => !t.done);
+      const forfalt = aapne.filter(t => t.date && t.date < todayStr()).length;
+      if (!aapne.length) return { txt: 'Alt gjort ✓' };
+      return { txt: aapne.length + ' åpne' + (forfalt ? ' · ' + forfalt + ' på overtid' : ''), varsel: forfalt > 0 };
+    }
+    if (app === 'fryser') {
+      const items = d?.items || [];
+      const brukOpp = items.filter(i => {
+        const alder = i.added ? dagerMellom(todayStr(), i.added) : null;
+        const utlop = i.expiry ? dagerMellom(i.expiry, todayStr()) : null;
+        return (alder !== null && alder >= 90) || (utlop !== null && utlop <= 30);
+      }).length;
+      if (!items.length) return { txt: 'Tom fryser' };
+      return { txt: items.length + ' varer' + (brukOpp ? ' · ' + brukOpp + ' bør brukes opp' : ''), varsel: brukOpp > 0 };
+    }
+    if (app === 'plikter') {
+      const barn = (d?.kids || []).length;
+      const plikter = (d?.chores || []).length;
+      if (!barn) return { txt: 'Ingen barn lagt til ennå' };
+      return { txt: barn + ' barn · ' + plikter + ' plikter' };
+    }
+  } catch (e) { /* defensivt: en rar blob skal aldri velte dashbordet */ }
+  return { txt: '' };
+}
+
+function tegnDashbord(fam, meta) {
   const apper = meta.apper || {};
   const aktive = Object.keys(APP_NAVN).filter(a => apper[a] !== false);
   document.getElementById('app-grid').innerHTML = aktive.map(a => {
-    const bygget = BYGGET.has(a);
-    if (bygget) {
+    if (BYGGET.has(a)) {
+      const s = appStatus(a, fam);
       return '<a class="app-tile" href="' + a + '.html">'
         + '<span class="emoji">' + APP_IKON[a] + '</span>'
-        + '<span class="navn">' + esc(APP_NAVN[a]) + '</span></a>';
+        + '<span class="tile-tekst"><span class="navn">' + esc(APP_NAVN[a]) + '</span>'
+        + '<span class="tile-status' + (s.varsel ? ' varsel' : '') + '">' + esc(s.txt) + '</span></span></a>';
     }
     return '<div class="app-tile kommer">'
       + '<span class="emoji">' + APP_IKON[a] + '</span>'
-      + '<span class="navn">' + esc(APP_NAVN[a]) + '</span>'
-      + '<span class="badge">kommer</span></div>';
+      + '<span class="tile-tekst"><span class="navn">' + esc(APP_NAVN[a]) + '</span>'
+      + '<span class="tile-status">kommer snart</span></span></div>';
   }).join('') || '<div class="empty-state" style="grid-column:1/-1">Ingen apper er aktivert for husstanden.</div>';
 }
 </script>
