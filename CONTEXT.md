@@ -2,7 +2,7 @@
 
 Husholdningsapper (handleliste, middag, oppgaver, fryser, plikter, søvn, helse)
 som PWA for flere husstander, med Firebase som backend og en admin-side der
-Lars administrerer tilgang. Avlegger av `ha-apper` (Home Assistant-versjonen),
+administratoren administrerer tilgang. Avlegger av `ha-apper` (Home Assistant-versjonen),
 men uten HA-avhengigheter.
 
 ## Language
@@ -17,7 +17,7 @@ En innlogget person (Firebase-uid) knyttet til nøyaktig én husstand.
 _Avoid_: bruker (tvetydig mot admin), profil
 
 **Admin**:
-Lars. Kan administrere alle husstander og medlemmer. Definert i `admins`-noden.
+administratoren. Kan administrere alle husstander og medlemmer. Definert i `admins`-noden.
 _Avoid_: superbruker, eier
 
 **Launcher**:
@@ -50,9 +50,9 @@ _Avoid_: write guard
 
 **De 7 appene**:
 handleliste, middag, oppgaver, fryser, plikter, sovn, helse.
-_Avoid_: chores (heter plikter her), leander (heter sovn her)
+_Avoid_: chores (heter plikter her), og de gamle appnavnene fra ha-apper
 
 **HA-versjonen**:
-Opphavet: `ha-apper`-repoet som kjører hjemme hos Lars på Home Assistant.
+Opphavet: `ha-apper`-repoet som kjører hjemme hos eieren på Home Assistant.
 Lever videre uavhengig; forbedringer porteres manuelt ved behov.
 _Avoid_: gamle versjonen, originalen

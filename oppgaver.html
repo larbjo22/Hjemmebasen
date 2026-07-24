@@ -414,6 +414,7 @@ input:focus-visible,select:focus-visible,button:focus-visible,textarea:focus-vis
 import { requireAuth } from './felles/auth.js';
 import { dbGet, dbSet, dbListen } from './felles/storage.js';
 import { esc, todayStr } from './felles/ui.js';
+import { monterNav } from './felles/nav.js';
 const APP='oppgaver';
 let FAMILIE=null;
 
@@ -501,16 +502,17 @@ async function load(){
       const ctx=await requireAuth();
       if(!ctx.familieId){setStatus('Ingen husstand – kontakt administrator','err');return;}
       FAMILIE=ctx.familieId;
+      monterNav(FAMILIE,APP); // felles app-meny øverst
     }
     // dbGet kaster ved feil og gir null KUN når noden er tom (autoritativt svar,
     // ingen MQTT-tvetydighet). Tom node = ny husstand → trygt å starte blankt.
     const saved=await dbGet(FAMILIE,APP);
     if(saved?.tasks!==undefined)adoptData(saved);
-    // Lazy-seed av personer: mangler lista, hent husstandens voksne –
-    // kun i minnet, lagres først når brukeren selv gjør en endring.
-    if(!data.people||data.people.length===0){
+    // Personregisteret er kilden (ADR-0005): nye voksne flettes ALLTID inn.
+    {
       const p=await dbGet(FAMILIE,'personer');
-      data.people=[...(p?.voksne||[])];
+      if(!Array.isArray(data.people))data.people=[];
+      (p?.voksne||[]).forEach(v=>{if(!data.people.includes(v))data.people.push(v);});
     }
     dataLoaded=true;
     autoTasksFromMaint(); // generer oppgaver for forfalt hus-vedlikehold

@@ -10,7 +10,7 @@ margin, og sanntidslyttere erstatter polling.
 
 - **Supabase**: admin-API krever server-nøkkel (dvs. en server) – forkastet
 - **PocketBase/egen server**: drift, backup og oppetid blir vårt problem – forkastet
-- **Familiekode uten ekte auth**: forkastet av Lars – vil ha ekte innlogging og admin-kontroll
+- **Familiekode uten ekte auth**: forkastet av eieren – vil ha ekte innlogging og admin-kontroll
 
 ## Consequences
 

@@ -1,7 +1,7 @@
-# Lars' husstand forblir på HA-versjonen – to kodebaser
+# eierens husstand forblir på HA-versjonen – to kodebaser
 
-Hjemmebasen kunne erstattet ha-apper også hjemme hos Lars (én kodebase for
-alle). Vi valgte det motsatte: Lars' husstand migreres ikke, og Hjemmebasen har
+Hjemmebasen kunne erstattet ha-apper også hjemme hos eieren (én kodebase for
+alle). Vi valgte det motsatte: eierens husstand migreres ikke, og Hjemmebasen har
 null HA/MQTT-arv i koden. HA-versjonen er dypt integrert hjemme (dashbord-
 iframes, strømsensorer, Elvia) og fungerer; å flytte den gir risiko uten
 gevinst for målgruppen (venner/bekjente uten HA).
