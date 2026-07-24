@@ -14,4 +14,4 @@ litt lengre HTML-filer. Deploy er `git push` til GitHub Pages.
 - Ingen tree-shaking: CDN-modulene er større enn en bundlet build. Akseptert –
   lastes én gang og caches.
 - Delt kode må være disiplinert (felles/-mappen), ellers dupliseres den som i
-  ha-apper (jf. leander-appens innebygde MQTT-kopi – feilen vi ikke gjentar).
+  ha-apper (jf. søvnappens (ha-apper) innebygde MQTT-kopi – feilen vi ikke gjentar).

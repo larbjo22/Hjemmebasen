@@ -310,6 +310,7 @@ input:focus-visible,select:focus-visible,button:focus-visible,[role="button"]:fo
 import { requireAuth } from './felles/auth.js';
 import { dbGet, dbSet, dbListen } from './felles/storage.js';
 import { esc, todayStr } from './felles/ui.js';
+import { monterNav } from './felles/nav.js';
 const APP='plikter';
 let FAMILIE=null;
 
@@ -386,18 +387,23 @@ async function load(){
       const ctx=await requireAuth();
       if(!ctx.familieId){setStatus('Ingen husstand – kontakt administrator','err');return;}
       FAMILIE=ctx.familieId;
+      monterNav(FAMILIE,APP); // felles app-meny øverst
     }
     // dbGet kaster ved feil og gir null KUN når noden er tom (autoritativt svar,
     // ingen MQTT-tvetydighet). Tom node = ny husstand → trygt å starte blankt.
     const saved=await dbGet(FAMILIE,APP);
     if(saved&&saved.kids!==undefined)adoptData(saved);
     dataLoaded=true;
-    // Lat seeding: ingen barn i plikter ennå → hent fra personregisteret
-    // (kun i minnet – lagres først når brukeren selv gjør en endring).
-    if(!data.kids||data.kids.length===0){
+    // Personregisteret er kilden (ADR-0005): barna synkes ALLTID inn –
+    // nye barn legges til, navnebytter følger id. Ekstra felter på
+    // eksisterende kids beholdes. Kun i minnet til neste save().
+    {
       const p=await dbGet(FAMILIE,'personer');
-      data.kids=(p?.barn||[]).map(b=>({id:b.id,name:b.navn}));
-      const kidIds=data.kids.map(k=>k.id).filter(x=>typeof x==='number');
+      const reg=(p?.barn||[]).filter(b=>b.navn);
+      if(reg.length){
+        data.kids=reg.map(b=>{const eks=(data.kids||[]).find(k=>k.id===b.id);return {...(eks||{}),id:b.id,name:b.navn};});
+      }
+      const kidIds=(data.kids||[]).map(k=>k.id).filter(x=>typeof x==='number');
       if(kidIds.length)nextId=Math.max(nextId,Math.max(...kidIds)+1);
     }
     setStatus('');

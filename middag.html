@@ -17,9 +17,6 @@
   --orange:#f97316;--orange-bg:#fff8f5;--orange-light:#fef3e7;
   --accent-bg:#e8f0fe;--accent-border:#a4c2f7;--accent-text:#1a56db;
   --danger:#e53e3e;--green:#16a34a;
-  --cook-lars-bg:#e8f0fe;--cook-lars-fg:#1a56db;
-  --cook-lene-bg:#fce4ec;--cook-lene-fg:#c2185b;
-  --cook-felles-bg:#f3e5f5;--cook-felles-fg:#7b1fa2;
 }
 @media(prefers-color-scheme:dark){:root{
   --bg:#111;--surface:#1c1c1e;--surface2:#2c2c2e;
@@ -28,9 +25,6 @@
   --orange:#f97316;--orange-bg:rgba(249,115,22,.08);--orange-light:rgba(249,115,22,.12);
   --accent-bg:rgba(55,138,221,.15);--accent-border:rgba(55,138,221,.4);--accent-text:#60a5fa;
   --danger:#f87171;--green:#4ade80;
-  --cook-lars-bg:rgba(55,138,221,.15);--cook-lars-fg:#60a5fa;
-  --cook-lene-bg:rgba(194,24,91,.15);--cook-lene-fg:#f48fb1;
-  --cook-felles-bg:rgba(123,31,162,.15);--cook-felles-fg:#ce93d8;
 }}
 [data-theme="dark"]{
   --bg:#111;--surface:#1c1c1e;--surface2:#2c2c2e;
@@ -39,9 +33,6 @@
   --orange:#f97316;--orange-bg:rgba(249,115,22,.08);--orange-light:rgba(249,115,22,.12);
   --accent-bg:rgba(55,138,221,.15);--accent-border:rgba(55,138,221,.4);--accent-text:#60a5fa;
   --danger:#f87171;--green:#4ade80;
-  --cook-lars-bg:rgba(55,138,221,.15);--cook-lars-fg:#60a5fa;
-  --cook-lene-bg:rgba(194,24,91,.15);--cook-lene-fg:#f48fb1;
-  --cook-felles-bg:rgba(123,31,162,.15);--cook-felles-fg:#ce93d8;
 }
 [data-theme="light"]{
   --bg:#f5f5f5;--surface:#fff;--surface2:#f9f9f9;
@@ -50,9 +41,6 @@
   --orange:#f97316;--orange-bg:#fff8f5;--orange-light:#fef3e7;
   --accent-bg:#e8f0fe;--accent-border:#a4c2f7;--accent-text:#1a56db;
   --danger:#e53e3e;--green:#16a34a;
-  --cook-lars-bg:#e8f0fe;--cook-lars-fg:#1a56db;
-  --cook-lene-bg:#fce4ec;--cook-lene-fg:#c2185b;
-  --cook-felles-bg:#f3e5f5;--cook-felles-fg:#7b1fa2;
 }
 body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;background:var(--bg);color:var(--text);font-size:14px}
 /* Synlig fokusmarkør for tastaturbrukere */
@@ -82,9 +70,6 @@ input:focus-visible,select:focus-visible,button:focus-visible,textarea:focus-vis
 .meal-hist{font-size:11px;color:var(--text4)}
 .freezer-badge{font-size:10px;background:#e8f5e9;color:#2e7d32;border-radius:10px;padding:1px 7px;display:flex;align-items:center;gap:3px}
 .cook-badge{font-size:10px;border-radius:10px;padding:1px 8px;font-weight:500}
-.cook-lars{background:#e8f0fe;color:#1a56db}
-.cook-lene{background:#fce4ec;color:#c2185b}
-.cook-felles{background:#f3e5f5;color:#7b1fa2}
 .meal-empty{font-size:13px;color:var(--text5);font-style:italic;cursor:pointer;padding:2px 0}
 .meal-empty:hover{color:var(--orange)}
 .day-actions{display:flex;gap:2px;flex-shrink:0}
@@ -151,9 +136,6 @@ input:focus-visible,select:focus-visible,button:focus-visible,textarea:focus-vis
 .modal input:focus,.modal select:focus,.modal textarea:focus{border-color:var(--orange)}
 .cook-btns{display:flex;gap:6px;margin-top:4px;flex-wrap:wrap}
 .cook-btn{flex:1;padding:7px;font-size:12px;font-weight:500;border-radius:7px;border:1px solid var(--border);background:var(--surface2);cursor:pointer;text-align:center;color:var(--text2);min-width:70px}
-.cook-btn.active-lars{background:#e8f0fe;color:#1a56db;border-color:#a4c2f7}
-.cook-btn.active-lene{background:#fce4ec;color:#c2185b;border-color:#f48fb1}
-.cook-btn.active-felles{background:#f3e5f5;color:#7b1fa2;border-color:#ce93d8}
 .modal-actions{display:flex;gap:7px;margin-top:1rem}
 .btn-primary{flex:1;padding:9px;font-size:13px;font-weight:600;background:var(--orange);border:none;border-radius:7px;cursor:pointer;color:#fff}
 .btn-primary:hover{background:#ea6c0a}
@@ -409,6 +391,7 @@ body.embed .status-bar{display:none}
 import { requireAuth } from './felles/auth.js';
 import { dbGet, dbSet, dbListen } from './felles/storage.js';
 import { esc, todayStr } from './felles/ui.js';
+import { monterNav } from './felles/nav.js';
 const APP='middag';
 let FAMILIE=null;
 
@@ -526,17 +509,20 @@ async function load(){
       const ctx=await requireAuth();
       if(!ctx.familieId){setStatus('Ingen husstand – kontakt administrator','err');return;}
       FAMILIE=ctx.familieId;
+      monterNav(FAMILIE,APP); // felles app-meny øverst
     }
     // dbGet kaster ved feil og gir null KUN når noden er tom (autoritativt svar,
     // ingen MQTT-tvetydighet). Tom node = ny husstand → trygt å starte blankt.
     const saved=await dbGet(FAMILIE,APP);
     if(saved&&saved.meals)adoptData(saved);
     dataLoaded=true;
-    // Lazy-seed av personer fra husstandens 'personer'-node – kun i minnet,
-    // lagres først ved neste save().
-    if(!data.people||data.people.length===0){
+    // Personregisteret er kilden (ADR-0005): nye voksne flettes ALLTID inn,
+    // så endringer i oppsettet speiles i alle appene. Kun i minnet til neste save().
+    {
       const p=await dbGet(FAMILIE,'personer');
-      data.people=[...(p?.voksne||[]),'Felles'];
+      if(!Array.isArray(data.people))data.people=[];
+      (p?.voksne||[]).forEach(v=>{if(!data.people.includes(v))data.people.push(v);});
+      if(!data.people.includes('Felles'))data.people.push('Felles');
     }
     const fryser=await dbGet(FAMILIE,'fryser');
     if(fryser&&fryser.items)fryserData=fryser;
@@ -663,7 +649,7 @@ function personColor(name){
 }
 
 function renderCookButtons(){
-  const people=data.people||['Lars','Lene','Felles'];
+  const people=data.people||[];
   const btns=document.getElementById('cook-buttons');
   if(!btns)return;
   btns.innerHTML=people.map(p=>{
@@ -685,7 +671,7 @@ function addPerson(){
   const inp=document.getElementById('new-person');
   const name=inp.value.trim();
   if(!name)return;
-  if(!data.people)data.people=['Lars','Lene','Felles'];
+  if(!data.people)data.people=[];
   if(data.people.includes(name)){inp.value='';return;}
   data.people.push(name);inp.value='';
   save();renderSettings();
@@ -700,7 +686,7 @@ document.getElementById('new-person').addEventListener('keydown',e=>{if(e.key===
 
 function renderSettings(){
   updateColorPickers();
-  const people=[...(data.people||['Lars','Lene','Felles'])].sort((a,b)=>a.localeCompare(b,'nb'));
+  const people=[...(data.people||[])].sort((a,b)=>a.localeCompare(b,'nb'));
   const el=document.getElementById('people-list');
   if(!el)return;
   el.innerHTML=people.map(p=>{
@@ -741,7 +727,7 @@ function handleModalBg(e){if(e.target===document.getElementById('modal'))hideMod
 
 // ── Drill-down: middager pr. kokk (inkl. «Ukjent») ──
 function openCookMeals(cook){
-  const people=data.people||['Lars','Lene','Felles'];
+  const people=data.people||[];
   const matches=data.meals.filter(m=>{const k=(m.cook&&people.includes(m.cook))?m.cook:'Ukjent';return k===cook;}).sort((a,b)=>b.date.localeCompare(a.date));
   const fd=ds=>new Date(ds+'T12:00:00').toLocaleDateString('nb-NO',{weekday:'short',day:'numeric',month:'short'});
   document.getElementById('cook-modal-title').textContent=(cook==='Ukjent'?'Uten registrert kokk':cook)+' – middager';
@@ -869,13 +855,7 @@ function renderHistory(){
   const stats=getMealStats();
 
   // ── Hvem lager ───────────────────────────────────────────
-  const cookCount={Lars:0,Lene:0,Felles:0,Ukjent:0};
-  const cookRecent={Lars:0,Lene:0,Felles:0,Ukjent:0};
-  data.meals.forEach(m=>{const k=m.cook||'Ukjent';cookCount[k]=(cookCount[k]||0)+1;});
-  recent.forEach(m=>{const k=m.cook||'Ukjent';cookRecent[k]=(cookRecent[k]||0)+1;});
   const totalCook=data.meals.length;
-  const cookColors={Lars:'#1a56db',Lene:'#c2185b',Felles:'#7b1fa2',Ukjent:'#bbb'};
-  const cookBg={Lars:'#e8f0fe',Lene:'#fce4ec',Felles:'#f3e5f5',Ukjent:'#f5f5f5'};
 
   // ── Siste 4 uker vs totalt ───────────────────────────────
   const recentMeals=recent.length;
@@ -919,7 +899,7 @@ function renderHistory(){
   html+='</div>';
 
   // Seksjon: Hvem lager – dynamisk fra people-listen
-  const people=data.people||['Lars','Lene','Felles'];
+  const people=data.people||[];
   const allPeople=[...people,'Ukjent'];
   const dynCookCount={};const dynCookRecent={};
   allPeople.forEach(p=>{dynCookCount[p]=0;dynCookRecent[p]=0;});
@@ -1084,7 +1064,7 @@ function rulettRenderMeta(c){
   metaEl.innerHTML=html;metaEl.style.display='flex';
 }
 function rulettRenderCook(){
-  const people=data.people&&data.people.length?data.people:['Lars','Lene','Felles'];
+  const people=data.people||[];
   document.getElementById('rulett-cook-btns').innerHTML=people.map(p=>{
     const c=personColor(p);const act=rulettCook===p;
     const style=act?'background:'+c.bg+';color:'+c.fg+';border-color:'+c.fg:'';

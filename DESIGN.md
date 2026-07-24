@@ -18,7 +18,7 @@ Status: **godkjent design etter grilling 2026-07-23** · v2
 | Onboarding | Familienavn + voksne, **barn med fødselsdato**, stedsnavn/posisjon (vær), velg apper |
 | Søvnsporing | **Flere barn fra start** – state/økter per barn |
 | Hosting | **Offentlig repo + GitHub Pages** (ingen hemmeligheter i koden) |
-| Lars' familie | **Migreres ikke** – blir på HA-versjonen (ha-apper). Hjemmebasen er for venner/bekjente |
+| eierens familie | **Migreres ikke** – blir på HA-versjonen (ha-apper). Hjemmebasen er for venner/bekjente |
 | Strøm-appen | Utgår i v1 (HA-bundet); spotpris-lite vurderes i v2 |
 | Admin-drift | Uten server: sekundær app-instans for brukeropprettelse, gratisplan hele veien |
 
@@ -30,7 +30,7 @@ Hjemmebasen får ingen HA/MQTT-kode i det hele tatt – ren Firebase.
 ## 1. Mål og rammer
 
 **Mål:** Venner og bekjente uten Home Assistant bruker hele app-pakka på
-mobilen med egne data per husstand. Lars administrerer tilgang.
+mobilen med egne data per husstand. administratoren administrerer tilgang.
 
 **Rammer (arves fra ha-apper):**
 - Vanilla HTML/CSS/JS – ingen rammeverk, npm eller build-steg (Firebase via CDN)
@@ -65,7 +65,7 @@ all sikkerhet ligger i security rules (§7).
 
 ```jsonc
 {
-  "admins": { "<lars-uid>": true },   // settes i Console, kan ikke endres fra klient
+  "admins": { "<admin-uid>": true },   // settes i Console, kan ikke endres fra klient
 
   "brukere": {
     "<uid>": { "familieId": "fam_a1b2c3", "navn": "Kari",
@@ -76,7 +76,7 @@ all sikkerhet ligger i security rules (§7).
     "fam_a1b2c3": {
       "meta": {
         "navn": "Familien Hansen",
-        "opprettet": 0, "opprettetAv": "<lars-uid>",
+        "opprettet": 0, "opprettetAv": "<admin-uid>",
         "onboardet": false,                    // settes true av veiviseren
         "apper": {                             // per husstand (admin + onboarding)
           "handleliste": true, "middag": true, "oppgaver": true,
@@ -116,7 +116,7 @@ all sikkerhet ligger i security rules (§7).
   aldersbaserte våkenvindu-anbefalinger i søvnappen per barn.
 - **Søvn per barn**: `sovn/<barnId>` med egen state/økter/innstillinger.
   Søvnappen får barnevelger-chips øverst (skjules ved ett barn).
-- `chores` er omdøpt til `plikter` og `leander` til `sovn` (nodenavn og filnavn).
+- `chores` er omdøpt til `plikter` og søvnappen til `sovn` (nodenavn og filnavn).
 
 ---
 
@@ -152,7 +152,7 @@ slik ha-apper har i dag – vurderes splittet), alle med:
 - `storage.js` med sanntidslyttere i stedet for MQTT/polling
 - Deaktivert app åpnet direkte via URL → «Appen er slått av for husstanden» + lenke hjem
 
-### 4.5 `admin.html` – kun Lars
+### 4.5 `admin.html` – kun administratoren
 - **Husstander**: opprett (navn → seed §6), se sist aktivitet
 - **Apper per hus**: brytere for de 7 appene (speiler `meta.apper`)
 - **Brukere per hus**: opprett (e-post + startpassord, via sekundær
@@ -216,12 +216,12 @@ les/skriv kun for medlemmer av $id eller admin.
 | **1. Fundament** | Repo, GitHub Pages, firebase-init, auth.js + login, admin.html (hus/brukere/app-brytere/seed), security rules + testplan, launcher-skjelett |
 | **2. Onboarding + kjerneapper** | onboarding.html (6 steg), personregister, handleliste + middag + oppgaver + fryser + plikter på storage.js med sanntid |
 | **3. Søvn + helse** | sovn.html med flere barn (barnevelger, per-barn state/økter/innstillinger), helse mot personregisteret, vær via Met.no |
-| **4. PWA + polish** | Manifest/ikoner, install-flyt, deaktivert-app-håndtering, tom-tilstander, dokumentasjon (README + drift for Lars) |
+| **4. PWA + polish** | Manifest/ikoner, install-flyt, deaktivert-app-håndtering, tom-tilstander, dokumentasjon (README + drift for administratoren) |
 
 Estimat: **6–8 dager kalendertid** (flere-barn-søvn la på ~1 dag), koding i
-økter med Lars' testrunder mellom. Hver etappe = egen PR i `hjemmebasen`.
+økter med eierens testrunder mellom. Hver etappe = egen PR i `hjemmebasen`.
 
-**Lars' manuelle steg før etappe 1:** (guide levert)
+**eierens manuelle steg før etappe 1:** (guide levert)
 1. Opprett offentlig repo `hjemmebasen` på GitHub + legg til i Claude-sesjonen
 2. Firebase: prosjekt + Auth (e-post/passord) + Realtime DB (europe-west1,
    locked mode) → lim `firebaseConfig` til Claude
@@ -236,11 +236,11 @@ Estimat: **6–8 dager kalendertid** (flere-barn-søvn la på ~1 dag), koding i
 |---|---|
 | Rules-feil → datalekkasje mellom familier | Testplan §7 før noen inviteres; rules reviewes som egen PR-del |
 | Helsedata om barn hos bekjente | E-postinnlogging, familie-isolasjon, ingen sporing/analyse i appene |
-| Lars blir «support» | Admin-side for alt vanlig; passord-reset er selvbetjent |
+| Administratoren blir «support» | Admin-side for alt vanlig; passord-reset er selvbetjent |
 | Samtidig redigering (last-write-wins per blob) | Sanntidslyttere krymper vinduet til <1 s; per-felt-skriving i v2 |
 | To kodebaser (ha-apper + hjemmebasen) | Bevisst valgt; forbedringer porteres manuelt ved behov. Revurderes hvis vedlikehold svir |
 | Gratisgrenser | 20–30 familier < 1 % av Spark-grensene |
-| iOS-quirks (PWA) | Lars tester på iPhone per etappe; web-push utsettes til v2 |
+| iOS-quirks (PWA) | administratoren tester på iPhone per etappe; web-push utsettes til v2 |
 
 ## 10. Veikart etter v1
 

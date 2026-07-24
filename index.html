@@ -13,6 +13,10 @@
 .app-tile .navn{display:block}
 .tile-status{display:block;font-size:11.5px;color:var(--text3);margin-top:3px;line-height:1.4;overflow:hidden;text-overflow:ellipsis}
 .tile-status.varsel{color:var(--accent-text);font-weight:600}
+.tile-linje{display:flex;align-items:center;gap:6px;font-size:12px;color:var(--text2);margin-top:4px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.tile-linje.overtid{color:var(--danger)}
+.dash-check{width:20px;height:20px;border-radius:50%;border:1.5px solid var(--border);background:transparent;color:var(--text4);cursor:pointer;font-size:11px;line-height:1;flex-shrink:0;padding:0}
+.dash-check:hover{border-color:var(--accent);color:var(--accent)}
 .app-tile.kommer .tile-status{font-style:italic}
 .admin-lenke{display:block;text-align:center;margin-top:14px;font-size:12px;color:var(--text3);text-decoration:none}
 .admin-lenke:hover{color:var(--accent-text)}
@@ -54,7 +58,7 @@
 import { requireAuth, loggUt, db } from './felles/auth.js';
 import { esc, todayStr, initTheme, toggleTheme } from './felles/ui.js';
 import { APP_NAVN, APP_IKON } from './felles/seed.js';
-import { ref, onValue } from 'https://www.gstatic.com/firebasejs/10.14.1/firebase-database.js';
+import { ref, onValue, set } from 'https://www.gstatic.com/firebasejs/10.14.1/firebase-database.js';
 
 initTheme();
 document.getElementById('theme-btn').addEventListener('click', toggleTheme);
@@ -64,8 +68,8 @@ document.getElementById('meny-btn').addEventListener('click', () => {
 });
 document.getElementById('logg-ut-btn').addEventListener('click', loggUt);
 
-// Appene som er bygget så langt (utvides i etappe 3 med sovn + helse)
-const BYGGET = new Set(['handleliste', 'middag', 'oppgaver', 'fryser', 'plikter']);
+// Alle apper er bygget fra og med etappe 3
+const BYGGET = new Set(['handleliste', 'middag', 'oppgaver', 'fryser', 'plikter', 'sovn', 'helse']);
 
 const { erAdmin, familieId } = await requireAuth();
 if (erAdmin) document.getElementById('admin-lenke').style.display = 'block';
@@ -93,21 +97,38 @@ function appStatus(app, fam) {
   const d = fam[app];
   try {
     if (app === 'handleliste') {
-      const varer = (d?.items || []).filter(i => !i.checked).length;
+      const uavh = (d?.items || []).filter(i => !i.checked);
       const div = (d?.other || []).filter(o => !o.checked).length;
-      if (!varer && !div) return { txt: 'Lista er tom ✓' };
-      return { txt: varer + ' å handle' + (div ? ' · ' + div + ' diverse' : ''), varsel: varer > 0 };
+      if (!uavh.length && !div) return { txt: 'Lista er tom ✓' };
+      return {
+        txt: uavh.length + ' å handle' + (div ? ' · ' + div + ' diverse' : ''), varsel: uavh.length > 0,
+        // Interaktivt: de første varene kan hukes av rett fra forsiden
+        linjer: uavh.slice(0, 3).map(i => ({ id: i.id, tekst: i.name + (i.qty > 1 ? ' ×' + i.qty : ''), handling: 'hl-check' })),
+        flere: Math.max(0, uavh.length - 3),
+      };
     }
     if (app === 'middag') {
-      const idag = (d?.meals || []).find(m => m.date === todayStr());
-      if (idag) return { txt: 'I dag: ' + idag.meal, varsel: true };
-      return { txt: 'Ingen middag planlagt i dag' };
+      const meals = d?.meals || [];
+      const idag = meals.find(m => m.date === todayStr());
+      const imorgenDato = new Date(); imorgenDato.setDate(imorgenDato.getDate() + 1);
+      const iStr = imorgenDato.getFullYear() + '-' + String(imorgenDato.getMonth() + 1).padStart(2, '0') + '-' + String(imorgenDato.getDate()).padStart(2, '0');
+      const imorgen = meals.find(m => m.date === iStr);
+      const linjer = [];
+      if (idag) linjer.push({ tekst: 'I dag: ' + idag.meal });
+      if (imorgen) linjer.push({ tekst: 'I morgen: ' + imorgen.meal });
+      if (!idag) return { txt: 'Ingen middag planlagt i dag', linjer };
+      return { txt: '', varsel: true, linjer };
     }
     if (app === 'oppgaver') {
       const aapne = (d?.tasks || []).filter(t => !t.done);
       const forfalt = aapne.filter(t => t.date && t.date < todayStr()).length;
       if (!aapne.length) return { txt: 'Alt gjort ✓' };
-      return { txt: aapne.length + ' åpne' + (forfalt ? ' · ' + forfalt + ' på overtid' : ''), varsel: forfalt > 0 };
+      const sortert = [...aapne].sort((a, b) => (a.date || '9999') < (b.date || '9999') ? -1 : 1);
+      return {
+        txt: aapne.length + ' åpne' + (forfalt ? ' · ' + forfalt + ' på overtid' : ''), varsel: forfalt > 0,
+        linjer: sortert.slice(0, 3).map(t => ({ id: t.id, tekst: t.title, handling: 'opg-check', overtid: !!(t.date && t.date < todayStr()) })),
+        flere: Math.max(0, aapne.length - 3),
+      };
     }
     if (app === 'fryser') {
       const items = d?.items || [];
@@ -125,20 +146,63 @@ function appStatus(app, fam) {
       if (!barn) return { txt: 'Ingen barn lagt til ennå' };
       return { txt: barn + ' barn · ' + plikter + ' plikter' };
     }
+    if (app === 'sovn') {
+      const barnReg = fam.personer?.barn || [];
+      const navn = id => barnReg.find(b => String(b.id) === String(id))?.navn || 'barnet';
+      const sover = Object.entries(d || {}).filter(([, blob]) => blob?.state === 'sleeping');
+      if (sover.length) {
+        const t = new Date(sover[0][1].since);
+        return { txt: sover.map(([id]) => navn(id)).join(' og ') + ' sover 💤 siden '
+          + String(t.getHours()).padStart(2, '0') + ':' + String(t.getMinutes()).padStart(2, '0'), varsel: true };
+      }
+      if (!barnReg.length) return { txt: 'Ingen barn registrert' };
+      return { txt: 'Alle våkne ☀️' };
+    }
+    if (app === 'helse') {
+      const doser = d?.doser || [];
+      const meds = d?.medisiner || [];
+      const now = Date.now();
+      const barnReg = fam.personer?.barn || [];
+      const navn = id => barnReg.find(b => b.id === id)?.navn || 'barnet';
+      // Nyeste aktive dose (siste 2 døgn): vis når neste kan gis
+      const aktive = doser.filter(x => now - x.ts < 48 * 3600000).sort((a, b) => b.ts - a.ts);
+      if (aktive.length) {
+        const dse = aktive[0];
+        const med = meds.find(m => m.id === dse.med);
+        if (med) {
+          const okAt = dse.ts + med.intervalH * 3600000;
+          const t = new Date(okAt);
+          if (now < okAt) return { txt: navn(dse.barn) + ': neste ' + med.name + ' kl '
+            + String(t.getHours()).padStart(2, '0') + ':' + String(t.getMinutes()).padStart(2, '0'), varsel: true };
+          return { txt: navn(dse.barn) + ': ' + med.name + ' kan gis nå ✓', varsel: true };
+        }
+      }
+      return { txt: 'Ingen aktive medisiner 💚' };
+    }
   } catch (e) { /* defensivt: en rar blob skal aldri velte dashbordet */ }
   return { txt: '' };
 }
 
+let sisteFam = null; // ferske data fra lytteren – brukes av hurtighandlingene
 function tegnDashbord(fam, meta) {
+  sisteFam = fam;
   const apper = meta.apper || {};
   const aktive = Object.keys(APP_NAVN).filter(a => apper[a] !== false);
   document.getElementById('app-grid').innerHTML = aktive.map(a => {
     if (BYGGET.has(a)) {
       const s = appStatus(a, fam);
+      let inner = '';
+      if (s.txt) inner += '<span class="tile-status' + (s.varsel ? ' varsel' : '') + '">' + esc(s.txt) + '</span>';
+      if (s.linjer?.length) {
+        inner += s.linjer.map(l =>
+          '<span class="tile-linje' + (l.overtid ? ' overtid' : '') + '">'
+          + (l.handling ? '<button class="dash-check" data-handling="' + l.handling + '" data-id="' + l.id + '" title="Merk som gjort" aria-label="Merk som gjort">○</button>' : '')
+          + esc(l.tekst) + '</span>').join('');
+        if (s.flere) inner += '<span class="tile-status">+ ' + s.flere + ' til…</span>';
+      }
       return '<a class="app-tile" href="' + a + '.html">'
         + '<span class="emoji">' + APP_IKON[a] + '</span>'
-        + '<span class="tile-tekst"><span class="navn">' + esc(APP_NAVN[a]) + '</span>'
-        + '<span class="tile-status' + (s.varsel ? ' varsel' : '') + '">' + esc(s.txt) + '</span></span></a>';
+        + '<span class="tile-tekst"><span class="navn">' + esc(APP_NAVN[a]) + '</span>' + inner + '</span></a>';
     }
     return '<div class="app-tile kommer">'
       + '<span class="emoji">' + APP_IKON[a] + '</span>'
@@ -146,6 +210,28 @@ function tegnDashbord(fam, meta) {
       + '<span class="tile-status">kommer snart</span></span></div>';
   }).join('') || '<div class="empty-state" style="grid-column:1/-1">Ingen apper er aktivert for husstanden.</div>';
 }
+
+// ── Hurtighandlinger rett fra forsiden ───────────────────────
+// Datasettet kommer ferskt fra onValue-lytteren (autoritativ lesning),
+// så en kirurgisk skriving av items/tasks-arrayen er trygg.
+document.getElementById('app-grid').addEventListener('click', async e => {
+  const btn = e.target.closest('.dash-check');
+  if (!btn || !sisteFam || !familieId) return;
+  e.preventDefault(); e.stopPropagation();
+  btn.textContent = '✓'; btn.disabled = true;
+  try {
+    if (btn.dataset.handling === 'hl-check') {
+      const items = (sisteFam.handleliste?.items || []).map(i =>
+        i.id === parseInt(btn.dataset.id) ? { ...i, checked: true } : i);
+      await set(ref(db, 'familier/' + familieId + '/handleliste/items'), items);
+    } else if (btn.dataset.handling === 'opg-check') {
+      const tasks = (sisteFam.oppgaver?.tasks || []).map(t =>
+        t.id === parseInt(btn.dataset.id) ? { ...t, done: true, doneDate: todayStr() } : t);
+      await set(ref(db, 'familier/' + familieId + '/oppgaver/tasks'), tasks);
+    }
+    // Lytteren tegner dashbordet på nytt når skrivingen lander
+  } catch (err) { btn.textContent = '○'; btn.disabled = false; }
+});
 </script>
 </body>
 </html>
