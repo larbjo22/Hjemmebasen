@@ -16,10 +16,11 @@ export const APP_NAVN = {
   vekst: 'Vekst',
 };
 
+// Tabler-ikonklasser (gran-designet): render som <i class="ti ${APP_IKON[app]}">
 export const APP_IKON = {
-  handleliste: '🛒', middag: '🍽️', oppgaver: '✅', fryser: '🧊',
-  plikter: '⭐', sovn: '😴', helse: '🩹',
-  beskjeder: '📌', pakkelister: '🎒', vekst: '📏',
+  handleliste: 'ti-shopping-cart', middag: 'ti-tools-kitchen-2', oppgaver: 'ti-checkbox', fryser: 'ti-snowflake',
+  plikter: 'ti-star', sovn: 'ti-moon', helse: 'ti-first-aid-kit',
+  beskjeder: 'ti-pin', pakkelister: 'ti-backpack', vekst: 'ti-ruler-2',
 };
 
 export function seedFamilie(navn, opprettetAv) {

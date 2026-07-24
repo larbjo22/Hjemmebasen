@@ -11,8 +11,8 @@ const NAV_STIL = `
 .app-nav{position:sticky;top:0;z-index:90;display:flex;align-items:center;gap:6px;padding:8px 10px;padding-top:calc(8px + env(safe-area-inset-top));background:var(--surface);border-bottom:1px solid var(--border);overflow-x:auto;-webkit-overflow-scrolling:touch;scrollbar-width:none}
 .app-nav::-webkit-scrollbar{display:none}
 .nav-hjem{display:inline-flex;align-items:center;gap:5px;font-size:13px;font-weight:700;padding:7px 14px;border-radius:18px;background:var(--accent,var(--orange,#f97316));color:#fff;text-decoration:none;flex-shrink:0}
-.nav-app{font-size:19px;padding:5px 9px;border-radius:12px;text-decoration:none;flex-shrink:0;line-height:1;border:1px solid transparent}
-.nav-app.on{background:var(--surface2);border-color:var(--border)}
+.nav-app{font-size:19px;padding:5px 9px;border-radius:12px;text-decoration:none;flex-shrink:0;line-height:1;border:1px solid transparent;color:var(--text3);display:inline-flex}
+.nav-app.on{background:var(--accent-bg,var(--surface2));border-color:var(--accent-border,var(--border));color:var(--accent-text,var(--accent))}
 @media(min-width:700px){.app-nav{justify-content:center}}
 `;
 
@@ -34,9 +34,9 @@ export async function monterNav(familieId, aktivApp) {
   const bar = document.createElement('nav');
   bar.className = 'app-nav';
   bar.setAttribute('aria-label', 'Apper');
-  bar.innerHTML = '<a class="nav-hjem" href="index.html">🏠 Hjem</a>'
+  bar.innerHTML = '<a class="nav-hjem" href="index.html"><i class="ti ti-home"></i> Hjem</a>'
     + aktive.map(a =>
         '<a class="nav-app' + (a === aktivApp ? ' on' : '') + '" href="' + a + '.html" title="' + APP_NAVN[a] + '" aria-label="' + APP_NAVN[a] + '">'
-        + APP_IKON[a] + '</a>').join('');
+        + '<i class="ti ' + APP_IKON[a] + '"></i></a>').join('');
   document.body.prepend(bar);
 }

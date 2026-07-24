@@ -3,8 +3,9 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@2.44.0/tabler-icons.min.css">
 <link rel="manifest" href="manifest.webmanifest">
-<meta name="theme-color" content="#f97316">
+<meta name="theme-color" content="#2e5d4f">
 <link rel="apple-touch-icon" href="ikoner/apple-touch-icon.png">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
@@ -20,11 +21,12 @@
 .feil{display:none;font-size:12.5px;color:var(--danger);background:rgba(229,62,62,.08);border:1px solid rgba(229,62,62,.3);border-radius:8px;padding:8px 10px;margin-bottom:10px;line-height:1.4}
 .tilbake{text-align:center;margin-top:12px}
 </style>
+<link rel="stylesheet" href="felles/gran.css">
 </head>
 <body>
 <div class="wrap">
   <div class="logo">
-    <span class="emoji">🏠</span>
+    <span class="emoji" style="color:var(--accent-text)"><i class="ti ti-home"></i></span>
     <h1>Bli med i husstanden</h1>
     <p>Noen har invitert deg til Hjemmebasen – familiens apper samlet på ett sted. Lag din egen innlogging under.</p>
   </div>
@@ -39,7 +41,7 @@
     <label for="kode">Invitasjonskode</label>
     <input class="hinput" id="kode" maxlength="12" autocomplete="off" autocapitalize="characters" style="text-transform:uppercase;letter-spacing:.15em;font-weight:700" />
     <div style="margin-top:14px">
-      <button class="btn-primary" id="bli-med-btn">Bli med 🎉</button>
+      <button class="btn-primary" id="bli-med-btn">Bli med</button>
     </div>
   </div>
   <div class="tilbake"><a href="login.html" class="btn-lenke" style="text-decoration:underline">Har du allerede en konto? Logg inn</a></div>
@@ -114,7 +116,7 @@ document.getElementById('bli-med-btn').addEventListener('click', async () => {
         ? 'Invitasjonskoden stemmer ikke (eller er deaktivert). Sjekk med den som inviterte deg.'
       : 'Noe gikk galt: ' + (e.message || 'prøv igjen');
     visFeil(tekst);
-    btn.disabled = false; btn.textContent = 'Bli med 🎉';
+    btn.disabled = false; btn.textContent = 'Bli med';
   }
 });
 </script>

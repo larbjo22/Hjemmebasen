@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
 <link rel="manifest" href="manifest.webmanifest">
-<meta name="theme-color" content="#f97316">
+<meta name="theme-color" content="#2e5d4f">
 <link rel="apple-touch-icon" href="ikoner/apple-touch-icon.png">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
@@ -155,6 +155,7 @@ input:focus-visible,select:focus-visible,button:focus-visible,[role="button"]:fo
 .sug-item span{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .sug-item .sug-cat{font-size:11px;color:var(--text3);margin-left:auto;flex-shrink:0}
 </style>
+<link rel="stylesheet" href="felles/gran.css">
 </head>
 <body>
 <main class="fw" id="app">
@@ -201,12 +202,12 @@ input:focus-visible,select:focus-visible,button:focus-visible,[role="button"]:fo
     <div id="color-manager" style="display:none;margin-top:10px;padding-top:10px;border-top:1px solid var(--border)">
       <div style="font-size:11px;font-weight:600;color:var(--text2);text-transform:uppercase;letter-spacing:.05em;margin-bottom:8px"><i class="ti ti-palette" style="margin-right:4px"></i>Fargetema</div>
       <div style="display:flex;align-items:center;gap:8px;margin-bottom:8px">
-        <span style="font-size:12px;color:var(--text2);min-width:80px">☀️ Lys modus</span>
+        <span style="font-size:12px;color:var(--text2);min-width:80px">Lys modus</span>
         <input type="color" id="color-light" onchange="setAccentColor('light',this.value)" style="width:36px;height:30px;border:1px solid var(--border);border-radius:6px;cursor:pointer;background:none;padding:2px" />
         <button onclick="resetAccentColor('light')" style="font-size:11px;padding:3px 8px;border:1px solid var(--border);border-radius:6px;background:var(--surface2);color:var(--text2);cursor:pointer">↩ Reset</button>
       </div>
       <div style="display:flex;align-items:center;gap:8px">
-        <span style="font-size:12px;color:var(--text2);min-width:80px">🌙 Mørk modus</span>
+        <span style="font-size:12px;color:var(--text2);min-width:80px">Mørk modus</span>
         <input type="color" id="color-dark" onchange="setAccentColor('dark',this.value)" style="width:36px;height:30px;border:1px solid var(--border);border-radius:6px;cursor:pointer;background:none;padding:2px" />
         <button onclick="resetAccentColor('dark')" style="font-size:11px;padding:3px 8px;border:1px solid var(--border);border-radius:6px;background:var(--surface2);color:var(--text2);cursor:pointer">↩ Reset</button>
       </div>
@@ -735,7 +736,7 @@ function initTheme(){
 function setTheme(theme,save=true){
   document.documentElement.setAttribute('data-theme',theme);
   const btn=document.getElementById('theme-btn');
-  if(btn)btn.textContent=theme==='dark'?'☀️':'🌙';
+  if(btn)btn.innerHTML=theme==='dark'?'<i class="ti ti-sun"></i>':'<i class="ti ti-moon-stars"></i>';
   if(save)localStorage.setItem('hjemmebasen_theme',theme);
 }
 function toggleTheme(){
