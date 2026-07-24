@@ -1,0 +1,346 @@
+<!DOCTYPE html>
+<html lang="no">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<meta name="description" content="Hjemmebasen – familiens apper samlet på ett sted. Handleliste, middagsplan, oppgaver og mer, laget for norske husstander.">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@2.44.0/tabler-icons.min.css">
+<meta name="theme-color" content="#2e5d4f">
+<link rel="apple-touch-icon" href="ikoner/apple-touch-icon.png">
+<title>Hjemmebasen – familiens apper på ett sted</title>
+<link rel="stylesheet" href="felles/stil.css">
+<style>
+/* ── Landingsside-layout (bredere enn appene, samme tokens) ── */
+.lw{max-width:860px;margin:0 auto;padding:0 1rem}
+.topp{display:flex;align-items:center;justify-content:space-between;padding:14px 0}
+.topp .merke{display:flex;align-items:center;gap:8px;font-weight:800;font-size:15px}
+.topp .merke i{color:var(--accent-text);font-size:20px}
+.topp-hoyre{display:flex;align-items:center;gap:8px}
+.btn-liten{display:inline-flex;align-items:center;gap:6px;padding:8px 14px;font-size:13px;font-weight:600;border-radius:8px;text-decoration:none;cursor:pointer}
+.btn-liten.fylt{background:var(--accent);color:#fff;border:none}
+.btn-liten.ramme{background:var(--surface);color:var(--text);border:1px solid var(--border)}
+
+/* Hero */
+.hero{display:flex;align-items:center;gap:2rem;padding:2.5rem 0 2rem;flex-wrap:wrap}
+.hero-tekst{flex:1;min-width:260px}
+.hero h1{font-size:34px;font-weight:800;line-height:1.15;font-family:ui-rounded,'SF Pro Rounded',-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif}
+.hero h1 .gronn{color:var(--accent-text)}
+.hero .ingress{font-size:15px;color:var(--text2);line-height:1.6;margin-top:12px;max-width:46ch}
+.hero-knapper{display:flex;gap:10px;margin-top:20px;flex-wrap:wrap}
+.hero-knapper .btn-liten{padding:11px 20px;font-size:14px}
+
+/* Seksjoner */
+section{padding:2.2rem 0}
+.sek-tittel{font-size:22px;font-weight:800;margin-bottom:6px;font-family:ui-rounded,'SF Pro Rounded',-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;display:flex;align-items:center;gap:9px}
+.sek-tittel i{color:var(--accent-text)}
+.sek-under{font-size:13.5px;color:var(--text2);line-height:1.6;margin-bottom:1.2rem;max-width:60ch}
+
+/* App-oversikten */
+.app-oversikt{display:grid;grid-template-columns:repeat(auto-fill,minmax(230px,1fr));gap:10px}
+.app-kort{background:var(--surface);border:1px solid var(--border);border-radius:14px;padding:14px;display:flex;gap:12px;align-items:flex-start}
+.app-kort .navn{font-size:13.5px;font-weight:700}
+.app-kort .om{font-size:12px;color:var(--text2);line-height:1.5;margin-top:2px}
+
+/* Telefon-mockups (ren CSS, eksempeldata) */
+.mockups{display:flex;gap:1.2rem;overflow-x:auto;padding:6px 2px 14px;-webkit-overflow-scrolling:touch;scroll-snap-type:x mandatory}
+.tlf{flex:0 0 250px;scroll-snap-align:center;background:var(--bg);border:6px solid var(--text);border-radius:28px;padding:14px 12px;box-shadow:0 10px 30px rgba(0,0,0,.12)}
+[data-theme="dark"] .tlf{border-color:#000;box-shadow:0 10px 30px rgba(0,0,0,.5)}
+.tlf-tittel{font-size:12px;font-weight:700;display:flex;align-items:center;gap:5px;margin-bottom:9px}
+.tlf-tittel i{color:var(--accent-text)}
+.tlf .kort{background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:9px;margin-bottom:7px}
+.tlf .kort-lbl{font-size:9px;font-weight:600;color:var(--text2);text-transform:uppercase;letter-spacing:.05em;margin-bottom:6px}
+.tlf .rad{display:flex;align-items:center;gap:7px;padding:4.5px 0;border-bottom:1px solid var(--border2);font-size:10.5px}
+.tlf .rad:last-child{border-bottom:none}
+.tlf .rad .hake{width:13px;height:13px;border:1.5px solid var(--border);border-radius:4px;flex-shrink:0}
+.tlf .rad .hake.ok{background:var(--accent);border-color:var(--accent);position:relative}
+.tlf .rad .hake.ok::after{content:"✓";color:#fff;font-size:9px;position:absolute;inset:0;display:flex;align-items:center;justify-content:center}
+.tlf .rad .navn{flex:1;font-weight:600}
+.tlf .rad .navn.stroket{text-decoration:line-through;color:var(--text3);font-weight:400}
+.tlf .rad .sub{font-size:9px;color:var(--text3)}
+.tlf .chiprad{display:flex;gap:5px;flex-wrap:wrap;margin-bottom:8px}
+.tlf .chip{font-size:9px;padding:3px 8px;border-radius:10px;border:1px solid var(--border);background:var(--surface2);color:var(--text3)}
+.tlf .chip.pa{background:var(--accent-bg);border-color:var(--accent-border);color:var(--accent-text);font-weight:600}
+.tlf .dagbokstav{width:22px;height:22px;border-radius:6px;background:var(--surface2);display:flex;align-items:center;justify-content:center;font-size:9px;font-weight:700;color:var(--text3);flex-shrink:0}
+.tlf .dagbokstav.idag{background:var(--accent-bg);color:var(--accent-text)}
+.tlf .sovn-status{text-align:center;padding:10px 0 4px}
+.tlf .sovn-status .stor{font-size:19px;font-weight:800;color:var(--accent-text);font-family:ui-rounded,'SF Pro Rounded',sans-serif}
+.tlf .sovn-status .lbl{font-size:9.5px;color:var(--text3);margin-top:2px}
+.tlf .mini-flis{display:flex;align-items:center;gap:8px;background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:8px;margin-bottom:6px}
+.tlf .mini-flis .ikon-chip{width:28px;height:28px;font-size:14px;border-radius:8px}
+.tlf .mini-flis .t{font-size:10.5px;font-weight:600}
+.tlf .mini-flis .s{font-size:8.5px;color:var(--text3)}
+.mock-hint{font-size:11px;color:var(--text3);text-align:center;margin-top:2px}
+
+/* Steg-liste */
+.steg{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:10px}
+.steg .kort{background:var(--surface);border:1px solid var(--border);border-radius:14px;padding:16px}
+.steg .nr{width:28px;height:28px;border-radius:50%;background:var(--accent-bg);color:var(--accent-text);font-weight:800;font-size:13px;display:flex;align-items:center;justify-content:center;margin-bottom:10px}
+.steg h3{font-size:14px;font-weight:700;margin-bottom:4px}
+.steg p{font-size:12.5px;color:var(--text2);line-height:1.55}
+
+/* Trygghet */
+.trygg{display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:10px}
+.trygg .punkt{display:flex;gap:11px;background:var(--surface);border:1px solid var(--border);border-radius:14px;padding:14px}
+.trygg .punkt i{color:var(--accent-text);font-size:19px;flex-shrink:0;margin-top:1px}
+.trygg h3{font-size:13.5px;font-weight:700;margin-bottom:3px}
+.trygg p{font-size:12px;color:var(--text2);line-height:1.55}
+
+/* Kontakt */
+.kontakt-kort{max-width:440px}
+.feil{display:none;font-size:12.5px;color:var(--danger);background:rgba(229,62,62,.08);border:1px solid rgba(229,62,62,.3);border-radius:8px;padding:8px 10px;margin-bottom:10px;line-height:1.4}
+textarea.hinput{resize:vertical;min-height:90px;font-family:inherit}
+.takk{display:none;text-align:center;padding:1.4rem 1rem}
+.takk i{font-size:34px;color:var(--green)}
+.takk h3{font-size:15px;font-weight:700;margin-top:8px}
+.takk p{font-size:12.5px;color:var(--text2);margin-top:4px;line-height:1.5}
+
+footer{border-top:1px solid var(--border);margin-top:1.5rem;padding:1.4rem 0 2.2rem;font-size:12px;color:var(--text3);display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap}
+footer a{color:var(--accent-text)}
+@media(max-width:560px){.hero{padding-top:1.4rem}.hero h1{font-size:27px}}
+</style>
+<link rel="stylesheet" href="felles/gran.css">
+</head>
+<body>
+<div class="lw">
+
+  <div class="topp">
+    <span class="merke"><i class="ti ti-home"></i> Hjemmebasen</span>
+    <span class="topp-hoyre">
+      <button class="icon-btn" id="theme-btn" aria-label="Bytt tema"><i class="ti ti-moon-stars"></i></button>
+      <a class="btn-liten ramme" href="login.html"><i class="ti ti-login"></i> Logg inn</a>
+    </span>
+  </div>
+
+  <div class="hero">
+    <div class="hero-tekst">
+      <h1>Familiens hverdag,<br>samlet <span class="gronn">på ett sted</span></h1>
+      <p class="ingress">Hjemmebasen er en app-pakke for husstanden: handleliste, middagsplan,
+        oppgaver, fryseroversikt og mer – laget på norsk, for norske familier.
+        Alle i huset ser det samme, oppdatert i sanntid, rett fra mobilens hjemskjerm.</p>
+      <div class="hero-knapper">
+        <a class="btn-liten fylt" href="#kontakt"><i class="ti ti-mail"></i> Bli med – ta kontakt</a>
+        <a class="btn-liten ramme" href="#appene"><i class="ti ti-apps"></i> Se appene</a>
+      </div>
+    </div>
+    <!-- Launcher-mockup: eksempeldata, ren CSS -->
+    <div class="tlf" aria-hidden="true">
+      <p class="tlf-tittel"><i class="ti ti-home"></i> Familien Hansen</p>
+      <div class="kort">
+        <div class="rad"><i class="ti ti-tools-kitchen-2" style="color:var(--accent-text)"></i><span class="navn">I dag: Tacofredag 🌮</span></div>
+        <div class="rad"><i class="ti ti-zzz" style="color:var(--accent-text)"></i><span class="navn" style="font-weight:400">Emma sover – 1 t 10 min</span></div>
+      </div>
+      <div class="mini-flis"><span class="ikon-chip"><i class="ti ti-shopping-cart"></i></span><span><span class="t">Handleliste</span><br><span class="s">7 varer på lista</span></span></div>
+      <div class="mini-flis"><span class="ikon-chip"><i class="ti ti-checkbox"></i></span><span><span class="t">Oppgaver</span><br><span class="s">2 forfaller i dag</span></span></div>
+      <div class="mini-flis"><span class="ikon-chip"><i class="ti ti-snowflake"></i></span><span><span class="t">Fryser</span><br><span class="s">brukt opp: kjøttdeig</span></span></div>
+      <div class="mini-flis"><span class="ikon-chip"><i class="ti ti-star"></i></span><span><span class="t">Plikter</span><br><span class="s">Jonas: 12 poeng 🎉</span></span></div>
+    </div>
+  </div>
+
+  <section id="appene">
+    <h2 class="sek-tittel"><i class="ti ti-apps"></i> Ti apper – dere velger hvilke</h2>
+    <p class="sek-under">Hver husstand skrur på akkurat de appene dere trenger.
+      Alt deles automatisk mellom alle i huset – ingen sending av skjermbilder
+      eller huskelapper på kjøkkenbenken.</p>
+
+    <div class="mockups" aria-hidden="true">
+      <div class="tlf">
+        <p class="tlf-tittel"><i class="ti ti-shopping-cart"></i> Handleliste</p>
+        <div class="chiprad"><span class="chip pa">Butikken</span><span class="chip">Diverse</span><span class="chip">Maler</span></div>
+        <div class="kort">
+          <div class="kort-lbl">Frukt og grønt</div>
+          <div class="rad"><span class="hake ok"></span><span class="navn stroket">Bananer</span></div>
+          <div class="rad"><span class="hake"></span><span class="navn">Paprika</span><span class="sub">2 stk</span></div>
+        </div>
+        <div class="kort">
+          <div class="kort-lbl">Meieri</div>
+          <div class="rad"><span class="hake"></span><span class="navn">Melk</span><span class="sub">lettmelk</span></div>
+          <div class="rad"><span class="hake"></span><span class="navn">Norvegia</span></div>
+          <div class="rad"><span class="hake"></span><span class="navn">Yoghurt</span><span class="sub">4 pk</span></div>
+        </div>
+      </div>
+      <div class="tlf">
+        <p class="tlf-tittel"><i class="ti ti-tools-kitchen-2"></i> Middag</p>
+        <div class="kort">
+          <div class="kort-lbl">Uke 30</div>
+          <div class="rad"><span class="dagbokstav">Ma</span><span class="navn">Laks med grønnsaker</span></div>
+          <div class="rad"><span class="dagbokstav">Ti</span><span class="navn">Kyllingwok</span></div>
+          <div class="rad"><span class="dagbokstav idag">On</span><span class="navn">Pasta bolognese</span></div>
+          <div class="rad"><span class="dagbokstav">To</span><span class="navn" style="color:var(--text3);font-weight:400">🎲 Spinn ruletten?</span></div>
+          <div class="rad"><span class="dagbokstav">Fr</span><span class="navn">Tacofredag 🌮</span></div>
+        </div>
+        <div class="kort"><div class="rad"><i class="ti ti-shopping-cart" style="color:var(--accent-text)"></i><span class="navn" style="font-weight:400">Send uka til handlelista →</span></div></div>
+      </div>
+      <div class="tlf">
+        <p class="tlf-tittel"><i class="ti ti-moon"></i> Søvn</p>
+        <div class="chiprad"><span class="chip pa">Emma</span><span class="chip">Sofie</span></div>
+        <div class="kort">
+          <div class="sovn-status">
+            <div class="stor">😴 1 t 10 min</div>
+            <div class="lbl">Emma sover – lagt 12:45</div>
+          </div>
+        </div>
+        <div class="kort">
+          <div class="kort-lbl">I dag</div>
+          <div class="rad"><span class="navn" style="font-weight:400">Natt</span><span class="sub">19:30–06:10 · 2 oppvåkninger</span></div>
+          <div class="rad"><span class="navn" style="font-weight:400">Lur 1</span><span class="sub">09:05–10:00</span></div>
+        </div>
+      </div>
+      <div class="tlf">
+        <p class="tlf-tittel"><i class="ti ti-star"></i> Plikter</p>
+        <div class="chiprad"><span class="chip pa">Jonas · 12 ⭐</span><span class="chip">Mia · 8 ⭐</span></div>
+        <div class="kort">
+          <div class="kort-lbl">Denne uka</div>
+          <div class="rad"><span class="hake ok"></span><span class="navn stroket">Rydde rommet</span><span class="sub">+2 ⭐</span></div>
+          <div class="rad"><span class="hake ok"></span><span class="navn stroket">Tømme oppvaskmaskin</span><span class="sub">+1 ⭐</span></div>
+          <div class="rad"><span class="hake"></span><span class="navn">Støvsuge stua</span><span class="sub">+3 ⭐</span></div>
+        </div>
+        <div class="kort"><div class="rad"><i class="ti ti-gift" style="color:var(--accent-text)"></i><span class="navn" style="font-weight:400">Kinotur · 15 ⭐ – snart i mål!</span></div></div>
+      </div>
+    </div>
+    <p class="mock-hint">Eksempler med fiktive data – slik ser appene ut på mobilen.</p>
+
+    <div class="app-oversikt" style="margin-top:1.2rem">
+      <div class="app-kort"><span class="ikon-chip"><i class="ti ti-shopping-cart"></i></span><span><span class="navn">Handleliste</span><p class="om">Felles liste sortert etter butikkens kategorier, med autofullfør fra egen historikk og gjenbrukbare maler.</p></span></div>
+      <div class="app-kort"><span class="ikon-chip"><i class="ti ti-tools-kitchen-2"></i></span><span><span class="navn">Middag</span><p class="om">Ukesplanlegger med idébank og middagsrulett. Hele uka kan sendes rett til handlelista.</p></span></div>
+      <div class="app-kort"><span class="ikon-chip"><i class="ti ti-checkbox"></i></span><span><span class="navn">Oppgaver</span><p class="om">Gjøremål og gjentagende hus-vedlikehold, fordelt på husets voksne – med litt konkurranse på toppen.</p></span></div>
+      <div class="app-kort"><span class="ikon-chip"><i class="ti ti-snowflake"></i></span><span><span class="navn">Fryser</span><p class="om">Oversikt over hva som faktisk ligger i fryseren, og hva som bør brukes opp først.</p></span></div>
+      <div class="app-kort"><span class="ikon-chip"><i class="ti ti-star"></i></span><span><span class="navn">Plikter</span><p class="om">Barnas plikter med poeng og belønninger de selv velger å spare til.</p></span></div>
+      <div class="app-kort"><span class="ikon-chip"><i class="ti ti-moon"></i></span><span><span class="navn">Søvn</span><p class="om">Søvnsporing for de minste, per barn, med anbefalte våkenvinduer ut fra alder.</p></span></div>
+      <div class="app-kort"><span class="ikon-chip"><i class="ti ti-first-aid-kit"></i></span><span><span class="navn">Helse</span><p class="om">Medisindoser med tid-til-neste, vaksiner og sykdomslogg – slutt på «når fikk hun paracet sist?».</p></span></div>
+      <div class="app-kort"><span class="ikon-chip"><i class="ti ti-pin"></i></span><span><span class="navn">Beskjeder</span><p class="om">Husstandens oppslagstavle: korte lapper alle ser på forsiden.</p></span></div>
+      <div class="app-kort"><span class="ikon-chip"><i class="ti ti-backpack"></i></span><span><span class="navn">Pakkelister</span><p class="om">Gjenbrukbare pakkelister til hytta, treninga og ferien – nullstill hakene før neste tur.</p></span></div>
+      <div class="app-kort"><span class="ikon-chip"><i class="ti ti-ruler-2"></i></span><span><span class="navn">Vekst</span><p class="om">Høyde og vekt for barna over tid, med alder ved hver måling.</p></span></div>
+    </div>
+  </section>
+
+  <section id="bli-med">
+    <h2 class="sek-tittel"><i class="ti ti-door-enter"></i> Slik blir dere med</h2>
+    <p class="sek-under">Hjemmebasen er ikke en åpen tjeneste med selvregistrering –
+      husstander opprettes personlig. Det holder terskelen lav og tjenesten trygg.</p>
+    <div class="steg">
+      <div class="kort">
+        <div class="nr">1</div>
+        <h3>Ta kontakt</h3>
+        <p>Send en melding via skjemaet nederst. Jeg oppretter husstanden deres og
+          sender en invitasjonslenke med kode.</p>
+      </div>
+      <div class="kort">
+        <div class="nr">2</div>
+        <h3>Svar på noen spørsmål</h3>
+        <p>Første innlogging starter en kort veiviser: hvem bor i huset, hvor bor dere,
+          og hvilke apper dere vil bruke. Appene starter ferdig utfylt med fornuftige
+          norske standarddata – aldri tomme.</p>
+      </div>
+      <div class="kort">
+        <div class="nr">3</div>
+        <h3>Legg til på hjemskjermen</h3>
+        <p>Hjemmebasen er en web-app (PWA): «Legg til på Hjem-skjerm» på mobilen,
+          så ligger den der som en vanlig app – uten App Store og uten oppdateringsmas.</p>
+      </div>
+    </div>
+  </section>
+
+  <section id="trygghet">
+    <h2 class="sek-tittel"><i class="ti ti-shield-check"></i> Trygt og privat</h2>
+    <div class="trygg">
+      <div class="punkt"><i class="ti ti-lock"></i><span>
+        <h3>Husstanden er en lukket boks</h3>
+        <p>Hver husstand har sitt eget, isolerte dataområde. Tilgangsreglene håndheves
+          på serversiden – ingen andre husstander kan se deres data, uansett.</p></span></div>
+      <div class="punkt"><i class="ti ti-eye-off"></i><span>
+        <h3>Ingen sporing, ingen reklame</h3>
+        <p>Ingen analyseverktøy, ingen annonser, ingen videresalg. Dette er et
+          hobbyprosjekt laget for familien og folk vi kjenner – ikke en forretningsmodell.</p></span></div>
+      <div class="punkt"><i class="ti ti-database"></i><span>
+        <h3>Data lagres i Europa</h3>
+        <p>Alt ligger i en europeisk database (Belgia) hos Google Firebase, med
+          kryptert nattlig sikkerhetskopi.</p></span></div>
+      <div class="punkt"><i class="ti ti-user-check"></i><span>
+        <h3>Egen innlogging per person</h3>
+        <p>Hver voksen får egen bruker med e-post og passord. Glemt passord ordner
+          du selv med tilbakestilling på e-post.</p></span></div>
+    </div>
+  </section>
+
+  <section id="kontakt">
+    <h2 class="sek-tittel"><i class="ti ti-mail"></i> Interessert? Ta kontakt</h2>
+    <p class="sek-under">Skriv noen ord, så tar jeg kontakt og setter opp husstanden deres.
+      Tjenesten er gratis og først og fremst for venner og bekjente.</p>
+    <div class="card kontakt-kort" id="skjema-kort">
+      <p class="feil" id="feil"></p>
+      <label for="k-navn">Navnet ditt</label>
+      <input class="hinput" id="k-navn" maxlength="60" placeholder="F.eks. Kari Nordmann" autocomplete="name">
+      <label for="k-epost">E-posten din</label>
+      <input class="hinput" id="k-epost" type="email" autocomplete="email" inputmode="email">
+      <label for="k-melding">Melding</label>
+      <textarea class="hinput" id="k-melding" maxlength="1000" placeholder="Hei! Vi er en familie på fire som gjerne vil prøve Hjemmebasen …"></textarea>
+      <!-- Honningkrukke mot roboter: skjult felt som mennesker aldri fyller ut -->
+      <input class="hinput" id="k-adresse" tabindex="-1" autocomplete="off" style="position:absolute;left:-9999px" aria-hidden="true">
+      <div style="margin-top:14px">
+        <button class="btn-primary" id="send-btn"><i class="ti ti-send"></i> Send melding</button>
+      </div>
+    </div>
+    <div class="card kontakt-kort takk" id="takk-kort">
+      <i class="ti ti-circle-check"></i>
+      <h3>Takk for meldingen!</h3>
+      <p>Jeg svarer på e-posten du oppga – som regel i løpet av et par dager.</p>
+    </div>
+  </section>
+
+  <footer>
+    <span><i class="ti ti-home" style="color:var(--accent-text)"></i> Hjemmebasen · et hobbyprosjekt, laget i Norge</span>
+    <span><a href="login.html">Logg inn</a> · <a href="#kontakt">Kontakt</a></span>
+  </footer>
+
+</div>
+
+<script type="module">
+import { initTheme, toggleTheme } from './felles/ui.js';
+
+initTheme();
+document.getElementById('theme-btn').addEventListener('click', toggleTheme);
+
+// ── Kontaktskjema via FormSubmit (gratis videresending til e-post) ──
+// Adressen er base64-kodet så den ikke ligger i klartekst for spam-høstere.
+const MOTTAKER = atob('bGFyc0Bxb25kb3IuY29t');
+
+const feilEl = document.getElementById('feil');
+function visFeil(msg) { feilEl.textContent = msg; feilEl.style.display = 'block'; }
+
+document.getElementById('send-btn').addEventListener('click', async () => {
+  const navn = document.getElementById('k-navn').value.trim();
+  const epost = document.getElementById('k-epost').value.trim();
+  const melding = document.getElementById('k-melding').value.trim();
+  // Robot som fylte honningkrukka? Lat som alt gikk bra, uten å sende.
+  if (document.getElementById('k-adresse').value) {
+    document.getElementById('skjema-kort').style.display = 'none';
+    document.getElementById('takk-kort').style.display = 'block';
+    return;
+  }
+  if (!navn || !epost || !melding) { visFeil('Fyll inn navn, e-post og melding.'); return; }
+  if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(epost)) { visFeil('E-postadressen ser ikke riktig ut.'); return; }
+  const btn = document.getElementById('send-btn');
+  btn.disabled = true; btn.textContent = 'Sender …';
+  feilEl.style.display = 'none';
+  try {
+    const res = await fetch('https://formsubmit.co/ajax/' + MOTTAKER, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'Accept': 'application/json' },
+      body: JSON.stringify({
+        navn, epost, melding,
+        _subject: 'Hjemmebasen: henvendelse fra ' + navn,
+        _replyto: epost,
+        _template: 'table',
+      }),
+    });
+    if (!res.ok) throw new Error('HTTP ' + res.status);
+    document.getElementById('skjema-kort').style.display = 'none';
+    document.getElementById('takk-kort').style.display = 'block';
+  } catch (e) {
+    visFeil('Fikk ikke sendt meldingen. Prøv igjen – eller kontakt meg direkte hvis det ikke løser seg.');
+    btn.disabled = false; btn.innerHTML = '<i class="ti ti-send"></i> Send melding';
+  }
+});
+</script>
+</body>
+</html>
