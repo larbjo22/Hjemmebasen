@@ -11,6 +11,7 @@ import {
 } from 'https://www.gstatic.com/firebasejs/10.14.1/firebase-database.js';
 
 export const auth = getAuth(app);
+auth.languageCode = 'nb'; // Firebase-e-poster (passord-reset) sendes på norsk
 export const db = getDatabase(app);
 
 // Venter på at Firebase har avgjort innloggingsstatus (én gang).
