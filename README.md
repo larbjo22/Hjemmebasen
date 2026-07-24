@@ -14,6 +14,7 @@ for beslutningsloggen.
 
 ```
 index.html        Dashbord/launcher – status per aktiv app, responsiv (mobil + PC)
+om.html           Offentlig presentasjonsside – appene, bli-med-flyt og kontaktskjema
 login.html        Innlogging (e-post/passord, opprettes av admin)
 onboarding.html   Veiviser ved første innlogging: navn, voksne, barn, sted, appvalg
 admin.html        Admin: husstander, medlemmer, app-brytere
