@@ -67,6 +67,8 @@
       <button class="icon-btn" id="theme-btn"></button>
       <button class="icon-btn" id="meny-btn">⚙️</button>
       <div id="meny" style="display:none">
+        <button id="meny-inviter">Inviter til husstanden</button>
+        <button id="meny-tilpass">Tilpass forsiden</button>
         <a href="onboarding.html" id="meny-oppsett">Endre oppsett</a>
         <button id="logg-ut-btn">Logg ut</button>
       </div>
@@ -92,6 +94,36 @@
   <div class="status-bar" id="status-bar"></div>
 </div>
 
+<!-- Inviter til husstanden -->
+<div class="modal-bg" id="inviter-modal" style="display:none">
+  <div class="modal">
+    <p class="modal-title">📨 Inviter til husstanden</p>
+    <p style="font-size:12.5px;color:var(--text2);line-height:1.5;margin-bottom:10px">
+      Del lenken under – den nye lager sin egen innlogging og havner rett i husstanden deres.
+      Koden kan når som helst byttes eller deaktiveres.</p>
+    <div id="inviter-innhold"></div>
+    <div class="modal-actions">
+      <button class="btn-ghost" id="inviter-lukk">Lukk</button>
+    </div>
+  </div>
+</div>
+
+<!-- Tilpass forsiden -->
+<div class="modal-bg" id="tilpass-modal" style="display:none">
+  <div class="modal">
+    <p class="modal-title">🎛️ Tilpass forsiden</p>
+    <p style="font-size:11.5px;color:var(--text3);margin-bottom:8px">Gjelder bare deg – rekkefølge på appene og hvilke varsler du vil se.</p>
+    <div style="font-size:11px;font-weight:600;color:var(--text2);text-transform:uppercase;letter-spacing:.05em;margin-bottom:4px">Apprekkefølge</div>
+    <div id="tilpass-apper"></div>
+    <div style="font-size:11px;font-weight:600;color:var(--text2);text-transform:uppercase;letter-spacing:.05em;margin:12px 0 4px">Varsler på forsiden</div>
+    <div id="tilpass-varsler"></div>
+    <div class="modal-actions">
+      <button class="btn-ghost" id="tilpass-avbryt">Avbryt</button>
+      <button class="btn-primary" id="tilpass-lagre">Lagre</button>
+    </div>
+  </div>
+</div>
+
 <script type="module">
 import { requireAuth, loggUt, db } from './felles/auth.js';
 import { esc, todayStr, initTheme, toggleTheme } from './felles/ui.js';
@@ -109,7 +141,8 @@ document.getElementById('logg-ut-btn').addEventListener('click', loggUt);
 const BYGGET = new Set(['handleliste', 'middag', 'oppgaver', 'fryser', 'plikter', 'sovn', 'helse', 'beskjeder', 'pakkelister', 'vekst']);
 const UKEDAG = ['søndag', 'mandag', 'tirsdag', 'onsdag', 'torsdag', 'fredag', 'lørdag'];
 
-const { erAdmin, familieId, medlem } = await requireAuth();
+const { user, erAdmin, familieId, medlem } = await requireAuth();
+let innst = medlem?.innstillinger || {}; // per-bruker: rekkefolge + varselAv
 if (erAdmin) document.getElementById('admin-lenke').style.display = 'block';
 
 // ── Personlig hilsen ──
@@ -176,7 +209,7 @@ function fristTekst(dato) {
 // ── Varslingsfeed: «hva trenger deg nå?» ─────────────────────
 function tegnVarsler(fam, meta) {
   const apper = meta.apper || {};
-  const aktiv = a => apper[a] !== false;
+  const aktiv = a => apper[a] !== false && !(innst.varselAv || {})[a];
   const v = []; // {prio: 1 rød, 2 oransje, 3 info/grønn, ikon, tekst, href}
 
   try {
@@ -365,7 +398,11 @@ let sisteFam = null;
 function tegnDashbord(fam, meta) {
   sisteFam = fam;
   const apper = meta.apper || {};
-  const aktive = Object.keys(APP_NAVN).filter(a => apper[a] !== false);
+  let aktive = Object.keys(APP_NAVN).filter(a => apper[a] !== false);
+  if (Array.isArray(innst.rekkefolge) && innst.rekkefolge.length) {
+    const idx = a => { const i = innst.rekkefolge.indexOf(a); return i === -1 ? 999 : i; };
+    aktive = [...aktive].sort((a, b) => idx(a) - idx(b));
+  }
   document.getElementById('app-grid').innerHTML = aktive.map(a => {
     if (BYGGET.has(a)) {
       const s = appStatus(a, fam);
@@ -414,6 +451,107 @@ document.getElementById('app-grid').addEventListener('click', async e => {
       }
     }
   } catch (err) { btn.textContent = '○'; btn.disabled = false; }
+});
+
+// ── Inviter til husstanden ───────────────────────────────────
+function lagKode() {
+  const tegn = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789'; // uten lett-forvekslbare
+  return Array.from({ length: 6 }, () => tegn[Math.floor(Math.random() * tegn.length)]).join('');
+}
+function inviterLenke(kode) {
+  return location.origin + location.pathname.replace(/index\.html$/, '').replace(/\/$/, '') + '/bli-med.html?f=' + familieId + '&k=' + kode;
+}
+function tegnInviter() {
+  const kode = sisteFam?.meta?.invitasjonskode || null;
+  const el = document.getElementById('inviter-innhold');
+  if (!kode) {
+    el.innerHTML = '<button class="btn-primary" id="inv-lag">Lag invitasjonskode</button>';
+  } else {
+    const lenke = inviterLenke(kode);
+    el.innerHTML =
+      '<div style="text-align:center;font-size:24px;font-weight:800;letter-spacing:.2em;padding:10px;background:var(--surface2);border-radius:10px;margin-bottom:8px">' + esc(kode) + '</div>'
+      + '<input class="hinput" readonly value="' + esc(lenke) + '" style="font-size:11px" onclick="this.select()" />'
+      + '<div style="display:flex;gap:6px;margin-top:8px">'
+      + '<button class="btn-ghost" style="flex:1" id="inv-kopier">📋 Kopier lenke</button>'
+      + (navigator.share ? '<button class="btn-ghost" style="flex:1" id="inv-del">📤 Del</button>' : '')
+      + '</div>'
+      + '<div style="display:flex;gap:6px;margin-top:6px">'
+      + '<button class="btn-lenke" id="inv-ny">Lag ny kode</button>'
+      + '<button class="btn-lenke" id="inv-slett" style="margin-left:auto;color:var(--danger)">Deaktiver invitasjon</button>'
+      + '</div>';
+  }
+  el.querySelector('#inv-lag')?.addEventListener('click', () => settKode(lagKode()));
+  el.querySelector('#inv-ny')?.addEventListener('click', () => settKode(lagKode()));
+  el.querySelector('#inv-slett')?.addEventListener('click', () => settKode(null));
+  el.querySelector('#inv-kopier')?.addEventListener('click', async () => {
+    await navigator.clipboard.writeText(inviterLenke(sisteFam.meta.invitasjonskode));
+    el.querySelector('#inv-kopier').textContent = '✓ Kopiert';
+  });
+  el.querySelector('#inv-del')?.addEventListener('click', () => navigator.share({
+    title: 'Bli med i ' + (sisteFam?.meta?.navn || 'husstanden vår'),
+    text: 'Bli med i husstanden vår på Hjemmebasen 🏠',
+    url: inviterLenke(sisteFam.meta.invitasjonskode),
+  }).catch(() => {}));
+}
+async function settKode(kode) {
+  await set(ref(db, 'familier/' + familieId + '/meta/invitasjonskode'), kode);
+  if (sisteFam?.meta) sisteFam.meta.invitasjonskode = kode;
+  tegnInviter();
+}
+document.getElementById('meny-inviter').addEventListener('click', () => {
+  document.getElementById('meny').style.display = 'none';
+  tegnInviter();
+  document.getElementById('inviter-modal').style.display = 'flex';
+});
+document.getElementById('inviter-lukk').addEventListener('click', () => {
+  document.getElementById('inviter-modal').style.display = 'none';
+});
+
+// ── Tilpass forsiden (per bruker) ────────────────────────────
+let tilpassOrden = [];
+function tegnTilpass() {
+  const apper = sisteFam?.meta?.apper || {};
+  const aktive = Object.keys(APP_NAVN).filter(a => apper[a] !== false);
+  if (!tilpassOrden.length) {
+    const idx = a => { const i = (innst.rekkefolge || []).indexOf(a); return i === -1 ? 999 : i; };
+    tilpassOrden = [...aktive].sort((a, b) => idx(a) - idx(b));
+  }
+  document.getElementById('tilpass-apper').innerHTML = tilpassOrden.map((a, i) =>
+    '<div class="hrow"><span style="font-size:17px">' + APP_IKON[a] + '</span>'
+    + '<div class="hrow-main"><div class="hrow-title" style="font-weight:500">' + esc(APP_NAVN[a]) + '</div></div>'
+    + '<button class="icon-btn" data-flytt="' + i + ':-1"' + (i === 0 ? ' disabled style="opacity:.3"' : '') + ' aria-label="Flytt opp">↑</button>'
+    + '<button class="icon-btn" data-flytt="' + i + ':1"' + (i === tilpassOrden.length - 1 ? ' disabled style="opacity:.3"' : '') + ' aria-label="Flytt ned">↓</button></div>').join('');
+  const av = innst.varselAv || {};
+  document.getElementById('tilpass-varsler').innerHTML = ['oppgaver', 'middag', 'sovn', 'helse', 'fryser', 'beskjeder']
+    .filter(a => apper[a] !== false)
+    .map(a => '<label class="hrow" style="cursor:pointer"><span style="font-size:17px">' + APP_IKON[a] + '</span>'
+      + '<div class="hrow-main"><div class="hrow-title" style="font-weight:500">' + esc(APP_NAVN[a]) + '-varsler</div></div>'
+      + '<input type="checkbox" data-varsel="' + a + '"' + (av[a] ? '' : ' checked') + ' style="width:19px;height:19px;accent-color:var(--accent)"></label>').join('');
+}
+document.getElementById('tilpass-apper').addEventListener('click', e => {
+  const b = e.target.closest('[data-flytt]');
+  if (!b || b.disabled) return;
+  const [i, retning] = b.dataset.flytt.split(':').map(Number);
+  const j = i + retning;
+  [tilpassOrden[i], tilpassOrden[j]] = [tilpassOrden[j], tilpassOrden[i]];
+  tegnTilpass();
+});
+document.getElementById('meny-tilpass').addEventListener('click', () => {
+  document.getElementById('meny').style.display = 'none';
+  tilpassOrden = [];
+  tegnTilpass();
+  document.getElementById('tilpass-modal').style.display = 'flex';
+});
+document.getElementById('tilpass-avbryt').addEventListener('click', () => {
+  document.getElementById('tilpass-modal').style.display = 'none';
+});
+document.getElementById('tilpass-lagre').addEventListener('click', async () => {
+  const varselAv = {};
+  document.querySelectorAll('[data-varsel]').forEach(c => { if (!c.checked) varselAv[c.dataset.varsel] = true; });
+  innst = { rekkefolge: tilpassOrden, varselAv };
+  await set(ref(db, 'brukere/' + user.uid + '/innstillinger'), innst);
+  document.getElementById('tilpass-modal').style.display = 'none';
+  if (sisteFam) { tegnVarsler(sisteFam, sisteFam.meta || {}); tegnDashbord(sisteFam, sisteFam.meta || {}); }
 });
 
 // Nedtellinger, «våken i X» og datobaserte fliser holder seg ferske
