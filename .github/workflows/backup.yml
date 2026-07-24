@@ -1,0 +1,62 @@
+# Nattlig backup av hele Realtime Database.
+#
+# Dumpen KRYPTERES (AES-256) før den lastes opp som artifact, siden repoet
+# er offentlig og artifacts kan lastes ned av innloggede GitHub-brukere.
+#
+# Oppsett (én gang, i repoets Settings → Secrets and variables → Actions):
+#   FIREBASE_DB_URL     = https://hjemmebasen-12fc3-default-rtdb.europe-west1.firebasedatabase.app
+#   FIREBASE_DB_SECRET  = database-hemmeligheten (Firebase Console → Project settings
+#                         → Service accounts → Database secrets → Show)
+#   BACKUP_PASSORD      = et langt passord du velger selv (til krypteringen)
+#
+# Gjenoppretting (lokalt):
+#   openssl enc -d -aes-256-cbc -pbkdf2 -in backup.json.enc -out backup.json \
+#     -pass pass:<BACKUP_PASSORD>
+#   → innholdet kan limes inn igjen i Realtime Database → Data → Import JSON.
+
+name: Nattlig database-backup
+
+on:
+  schedule:
+    - cron: '0 3 * * *'   # hver natt kl. 03:00 UTC (04/05 norsk tid)
+  workflow_dispatch: {}    # og manuelt fra Actions-fanen
+
+jobs:
+  backup:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Hent hele databasen
+        env:
+          DB_URL: ${{ secrets.FIREBASE_DB_URL }}
+          DB_SECRET: ${{ secrets.FIREBASE_DB_SECRET }}
+        run: |
+          set -euo pipefail
+          if [ -z "$DB_URL" ] || [ -z "$DB_SECRET" ]; then
+            echo "::error::Secrets FIREBASE_DB_URL/FIREBASE_DB_SECRET mangler – se kommentaren øverst i workflow-fila."
+            exit 1
+          fi
+          curl -sSf "$DB_URL/.json?auth=$DB_SECRET&format=export" -o backup.json
+          # Tom database gir "null" – det er også et gyldig svar, men flagg det
+          [ "$(cat backup.json)" = "null" ] && echo "::warning::Databasen er tom."
+          echo "Størrelse: $(wc -c < backup.json) bytes"
+
+      - name: Krypter dumpen
+        env:
+          PASSORD: ${{ secrets.BACKUP_PASSORD }}
+        run: |
+          set -euo pipefail
+          if [ -z "$PASSORD" ]; then
+            echo "::error::Secret BACKUP_PASSORD mangler."
+            exit 1
+          fi
+          gzip backup.json
+          openssl enc -aes-256-cbc -pbkdf2 -in backup.json.gz \
+            -out "hjemmebasen-backup-$(date +%F).json.gz.enc" -pass env:PASSORD
+          rm backup.json.gz
+
+      - name: Last opp som artifact (30 dagers oppbevaring)
+        uses: actions/upload-artifact@v4
+        with:
+          name: hjemmebasen-backup-${{ github.run_id }}
+          path: hjemmebasen-backup-*.json.gz.enc
+          retention-days: 30

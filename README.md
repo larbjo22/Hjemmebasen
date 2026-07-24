@@ -55,6 +55,13 @@ Hver push til `main` deployer automatisk.
    (Denne noden kan med vilje ikke skrives fra klienten.)
 5. Logg inn på `admin.html` og opprett første husstand + medlemmer
 
+## Backup
+
+`.github/workflows/backup.yml` tar kryptert nattlig dump av hele databasen
+(artifact, 30 dagers oppbevaring). Krever tre Actions-secrets — se kommentaren
+øverst i workflow-fila: `FIREBASE_DB_URL`, `FIREBASE_DB_SECRET`, `BACKUP_PASSORD`.
+Enkelthusstander kan i tillegg eksporteres som JSON fra admin-siden.
+
 ## Regler for koden
 
 - Vanilla HTML/CSS/JS – ingen rammeverk, npm eller build (ADR-0004)

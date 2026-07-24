@@ -121,7 +121,8 @@ function render() {
     ).join('');
 
     return '<div class="fam-kort">'
-      + '<div class="fam-navn">🏠 ' + esc(meta.navn || fid) + '</div>'
+      + '<div class="fam-navn">🏠 ' + esc(meta.navn || fid)
+      + '<button class="btn-lenke" style="margin-left:auto" data-eksport="' + fid + '">⬇️ eksport</button></div>'
       + '<div class="fam-meta">' + medlemmer.length + ' medlem' + (medlemmer.length === 1 ? '' : 'mer')
       + (meta.onboardet ? ' · onboardet ✓' : ' · venter på onboarding') + '</div>'
       + '<div class="appbryter-rad">' + bryterHtml + '</div>'
@@ -135,6 +136,22 @@ function render() {
   el.querySelectorAll('[data-nybruker]').forEach(b => b.addEventListener('click', () => aapneBrukerModal(b.dataset.nybruker)));
   el.querySelectorAll('[data-reset]').forEach(b => b.addEventListener('click', () => sendReset(b.dataset.reset)));
   el.querySelectorAll('[data-fjern]').forEach(b => b.addEventListener('click', () => fjernTilgang(b.dataset.fjern, b.dataset.navn)));
+  el.querySelectorAll('[data-eksport]').forEach(b => b.addEventListener('click', () => eksporterHusstand(b.dataset.eksport)));
+}
+
+// Dataeksport: hele husstanden som nedlastbar JSON (GDPR-/exit-vennlig)
+function eksporterHusstand(fid) {
+  const fam = familier[fid];
+  if (!fam) return;
+  const navn = (fam.meta?.navn || fid).toLowerCase().replace(/[^a-z0-9æøå]+/gi, '-');
+  const dato = new Date().toISOString().slice(0, 10);
+  const blob = new Blob([JSON.stringify(fam, null, 2)], { type: 'application/json' });
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = 'hjemmebasen-' + navn + '-' + dato + '.json';
+  a.click();
+  URL.revokeObjectURL(a.href);
+  setStatus('Eksport lastet ned ✓', 'ok');
 }
 
 // ── Husstander ──
