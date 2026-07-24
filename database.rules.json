@@ -27,7 +27,12 @@
       ".write": "auth != null && root.child('admins').child(auth.uid).val() === true",
       "$familieId": {
         ".read": "auth != null && root.child('brukere').child(auth.uid).child('familieId').val() === $familieId",
-        ".write": "auth != null && root.child('brukere').child(auth.uid).child('familieId').val() === $familieId"
+        ".write": "auth != null && root.child('brukere').child(auth.uid).child('familieId').val() === $familieId",
+        "avatarer": {
+          "$navn": {
+            ".validate": "!newData.exists() || (newData.isString() && newData.val().length < 80000)"
+          }
+        }
       }
     }
   }

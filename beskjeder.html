@@ -57,14 +57,14 @@
 <script type="module">
 import { requireAuth } from './felles/auth.js';
 import { dbGet, dbSet, dbListen } from './felles/storage.js';
-import { esc, initTheme, toggleTheme, setStatus, personFarge } from './felles/ui.js';
+import { esc, initTheme, toggleTheme, setStatus, personFarge, avatarHtml, finnAvatar } from './felles/ui.js';
 import { monterNav } from './felles/nav.js';
 
 initTheme();
 document.getElementById('theme-btn').addEventListener('click', toggleTheme);
 
 const APP='beskjeder';
-let FAMILIE=null, mittNavn='', data=null, dataLoaded=false, sistSkrevet='';
+let FAMILIE=null, mittNavn='', data=null, dataLoaded=false, sistSkrevet='', AVA={};
 
 // Normaliser-mønsteret: adopter enhver ikke-null node, default alle felter
 // (Firebase stripper tomme arrays – aldri gate på enkeltfelter).
@@ -83,6 +83,7 @@ async function load(){
     if(!ctx.familieId){setStatus('Ingen husstand – kontakt administrator','err');return;}
     FAMILIE=ctx.familieId;
     mittNavn=(ctx.medlem?.navn||'').split(' ')[0]||'Ukjent';
+    AVA=await dbGet(FAMILIE,'avatarer')||{};
     monterNav(FAMILIE,APP);
     data=normaliser(await dbGet(FAMILIE,APP));
     dataLoaded=true;
@@ -131,8 +132,7 @@ function render(){
   el.innerHTML=lapper.map(l=>
     '<div class="lapp'+(Date.now()-l.ts<3600000?' ny':'')+'" style="border-left-color:'+personFarge(l.fra)+'">'
     +'<div class="lapp-tekst">'+esc(l.tekst)+'</div>'
-    +'<div class="lapp-meta"><span class="pfarge" style="width:9px;height:9px;border-radius:50%;display:inline-block;background:'+personFarge(l.fra)+'"></span>'
-    +esc(l.fra)+' · '+esc(tidTxt(l.ts))+(l.utlop?' · til '+new Date(l.utlop).toLocaleDateString('nb-NO',{day:'numeric',month:'short'}):'')
+    +'<div class="lapp-meta">'+avatarHtml(l.fra,finnAvatar(AVA,l.fra),18)+esc(l.fra)+' · '+esc(tidTxt(l.ts))+(l.utlop?' · til '+new Date(l.utlop).toLocaleDateString('nb-NO',{day:'numeric',month:'short'}):'')
     +'<button class="hrow-del" data-slett="'+l.id+'" title="Ta ned lappen">×</button></div></div>').join('')
     ||'<div class="empty-state">Tavla er tom – heng opp den første beskjeden.</div>';
 }

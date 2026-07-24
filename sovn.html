@@ -450,7 +450,7 @@ body.embed .info-row{padding:10px 14px}
 // og `data` peker alltid på bloben til det aktive barnet (alle[aktivBarn.id]).
 import { requireAuth } from './felles/auth.js';
 import { dbGet, dbSet, dbSetSub, dbListen } from './felles/storage.js';
-import { esc , personFarge } from './felles/ui.js';
+import { esc, avatarHtml, finnAvatar } from './felles/ui.js';
 import { monterNav } from './felles/nav.js';
 
 const APP='sovn';
@@ -462,6 +462,7 @@ function nyBlob(){return {state:'awake',since:Date.now(),sessions:[],nextSid:1,s
 
 let alle={};              // hele app-noden: { "<barnId>": {state,since,sessions,nextSid,settings} }
 let barnListe=[];         // fra personregisteret: [{id,navn,fodt}]
+let AVA={};               // avatarer (bilder), delt i husstanden
 let aktivBarn=null;       // valgt barn
 let data=null;            // peker på alle[aktivBarn.id] – all eksisterende logikk mutrer denne
 let currentView='home';
@@ -598,6 +599,7 @@ async function load(){
     // Barn hentes fra husstandens personregister
     const personer=await dbGet(FAMILIE,'personer');
     barnListe=((personer&&personer.barn)||[]).filter(b=>b&&b.navn);
+    AVA=await dbGet(FAMILIE,'avatarer')||{};
     // Sted (for værbaserte råd) caches herfra
     meta=(await dbGet(FAMILIE,'meta'))||{};
     // dbGet gir null KUN når noden er tom (autoritativt svar) → trygt å starte blankt
@@ -768,7 +770,7 @@ function renderBarnChips(){
   if(barnListe.length<2){el.style.display='none';el.innerHTML='';return;}
   el.style.display=currentView==='vaer'?'none':'flex';
   el.innerHTML=barnListe.map(b=>
-    '<button class="barn-chip'+(aktivBarn&&b.id===aktivBarn.id?' on':'')+'" data-barn-id="'+esc(String(b.id))+'"><span style="width:9px;height:9px;border-radius:50%;display:inline-block;margin-right:6px;background:'+personFarge(b.navn)+'"></span>'+esc(b.navn)+'</button>'
+    '<button class="barn-chip'+(aktivBarn&&b.id===aktivBarn.id?' on':'')+'" data-barn-id="'+esc(String(b.id))+'"><span style="margin-right:6px">'+avatarHtml(b.navn,finnAvatar(AVA,b.navn),20)+'</span>'+esc(b.navn)+'</button>'
   ).join('');
 }
 // Delegert lytter – ingen brukerdata i inline-onclick
