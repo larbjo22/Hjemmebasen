@@ -41,3 +41,12 @@ export function setTheme(t, lagre = true) {
 export function toggleTheme() {
   setTheme(document.documentElement.getAttribute('data-theme') === 'dark' ? 'light' : 'dark');
 }
+
+// ── Profilfarge: deterministisk farge fra navn ───────────────
+// Samme navn gir samme farge overalt (plikter, helse, søvn, middag).
+const PERSONFARGER = ['#1a56db', '#c2185b', '#7b1fa2', '#2e7d32', '#e65100', '#00838f', '#5d4037', '#c62828'];
+export function personFarge(navn) {
+  let h = 0;
+  for (let i = 0; i < (navn || '').length; i++) h = (h + navn.charCodeAt(i)) % PERSONFARGER.length;
+  return PERSONFARGER[h];
+}

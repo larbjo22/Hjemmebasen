@@ -14,6 +14,7 @@
 <style>
 .hchip{font-size:13px;padding:7px 13px;border-radius:16px;border:1px solid var(--border);background:var(--surface2);color:var(--text2);cursor:pointer;display:inline-block;user-select:none}
 .hchip.on{background:var(--accent-bg);border-color:var(--accent-border);color:var(--accent-text);font-weight:600}
+.pfarge{width:9px;height:9px;border-radius:50%;display:inline-block;margin-right:5px;vertical-align:baseline}
 .chiprad{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:8px}
 .h-ok{color:var(--green);font-weight:700}
 .h-wait{color:var(--danger);font-weight:700}
@@ -115,7 +116,7 @@
 <script type="module">
 import { requireAuth } from './felles/auth.js';
 import { dbGet, dbSet, dbListen } from './felles/storage.js';
-import { esc, initTheme, toggleTheme, setStatus } from './felles/ui.js';
+import { esc, initTheme, toggleTheme, setStatus, personFarge } from './felles/ui.js';
 import { monterNav } from './felles/nav.js';
 
 initTheme();
@@ -244,7 +245,7 @@ function renderStatus(){
 
 function renderChips(){
   document.getElementById('hd-barn-chips').innerHTML=barn.map(b=>
-    '<span class="hchip'+(b.id===hdBarnId?' on':'')+'" data-velg-barn="'+b.id+'">'+esc(b.navn)+'</span>').join('');
+    '<span class="hchip'+(b.id===hdBarnId?' on':'')+'" data-velg-barn="'+b.id+'"><span class="pfarge" style="background:'+personFarge(b.navn)+'"></span>'+esc(b.navn)+'</span>').join('');
   document.getElementById('hd-med-chips').innerHTML=helse.medisiner.map(m=>
     '<span class="hchip'+(m.id===hdMedId?' on':'')+'" data-velg-med="'+m.id+'">'+esc(m.name)+' <span style="opacity:.6;font-size:10px">'+m.intervalH+'t</span></span>').join('')
     ||'<span style="font-size:12px;color:var(--text4)">Legg til medisin nederst</span>';

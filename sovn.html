@@ -468,7 +468,7 @@ body.embed .info-row{padding:10px 14px}
 // og `data` peker alltid på bloben til det aktive barnet (alle[aktivBarn.id]).
 import { requireAuth } from './felles/auth.js';
 import { dbGet, dbSet, dbSetSub, dbListen } from './felles/storage.js';
-import { esc } from './felles/ui.js';
+import { esc , personFarge } from './felles/ui.js';
 import { monterNav } from './felles/nav.js';
 
 const APP='sovn';
@@ -819,7 +819,7 @@ function renderBarnChips(){
   if(barnListe.length<2){el.style.display='none';el.innerHTML='';return;}
   el.style.display=currentView==='vaer'?'none':'flex';
   el.innerHTML=barnListe.map(b=>
-    '<button class="barn-chip'+(aktivBarn&&b.id===aktivBarn.id?' on':'')+'" data-barn-id="'+esc(String(b.id))+'">'+esc(b.navn)+'</button>'
+    '<button class="barn-chip'+(aktivBarn&&b.id===aktivBarn.id?' on':'')+'" data-barn-id="'+esc(String(b.id))+'"><span style="width:9px;height:9px;border-radius:50%;display:inline-block;margin-right:6px;background:'+personFarge(b.navn)+'"></span>'+esc(b.navn)+'</button>'
   ).join('');
 }
 // Delegert lytter – ingen brukerdata i inline-onclick
