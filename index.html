@@ -3,8 +3,9 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@2.44.0/tabler-icons.min.css">
 <link rel="manifest" href="manifest.webmanifest">
-<meta name="theme-color" content="#f97316">
+<meta name="theme-color" content="#2e5d4f">
 <link rel="apple-touch-icon" href="ikoner/apple-touch-icon.png">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
@@ -20,7 +21,9 @@
 /* Varslingsfeed */
 .varsler{margin-bottom:14px;display:flex;flex-direction:column;gap:6px}
 .varsel{display:flex;align-items:center;gap:10px;padding:10px 12px;border-radius:12px;border:1px solid var(--border);background:var(--surface);text-decoration:none;color:var(--text);font-size:13px;line-height:1.4}
-.varsel .v-ikon{font-size:18px;flex-shrink:0}
+.varsel .v-ikon{font-size:18px;flex-shrink:0;color:var(--accent-text)}
+.varsel.rod .v-ikon{color:var(--danger)}
+.varsel.oransje .v-ikon{color:var(--varsle,var(--accent-text))}
 .varsel .v-tekst{flex:1;min-width:0}
 .varsel .v-pil{color:var(--text4);flex-shrink:0}
 .varsel.rod{border-color:rgba(229,62,62,.45);background:rgba(229,62,62,.07)}
@@ -33,7 +36,7 @@
 
 /* Dashbord-fliser med statuslinje */
 .app-tile{text-align:left;padding:14px;display:flex;align-items:center;gap:12px}
-.app-tile .emoji{font-size:30px;display:block;margin-bottom:0;flex-shrink:0}
+.app-tile .ikon-chip{width:44px;height:44px;font-size:22px}
 .tile-tekst{flex:1;min-width:0}
 .app-tile .navn{display:block}
 .tile-status{display:block;font-size:11.5px;color:var(--text3);margin-top:3px;line-height:1.4;overflow:hidden;text-overflow:ellipsis}
@@ -58,14 +61,15 @@
   .app-grid{grid-template-columns:repeat(4,1fr)}
 }
 </style>
+<link rel="stylesheet" href="felles/gran.css">
 </head>
 <body>
 <div class="fw">
   <div class="top-bar" style="position:relative">
-    <p class="app-title">🏠 <span id="fam-navn">Hjemmebasen</span></p>
+    <p class="app-title"><i class="ti ti-home"></i> <span id="fam-navn">Hjemmebasen</span></p>
     <div class="top-right">
       <button class="icon-btn" id="theme-btn"></button>
-      <button class="icon-btn" id="meny-btn">⚙️</button>
+      <button class="icon-btn" id="meny-btn" aria-label="Meny"><i class="ti ti-settings"></i></button>
       <div id="meny" style="display:none">
         <button id="meny-inviter">Inviter til husstanden</button>
         <button id="meny-tilpass">Tilpass forsiden</button>
@@ -81,7 +85,7 @@
   </div>
 
   <div class="hint-banner" id="install-hint">
-    <span style="font-size:18px">📲</span>
+    <i class="ti ti-device-mobile" style="font-size:18px;color:var(--accent-text)"></i>
     <span id="install-hint-tekst">Legg Hjemmebasen på Hjem-skjermen for ekte app-følelse.</span>
     <button id="install-hint-lukk" aria-label="Lukk">×</button>
   </div>
@@ -90,14 +94,14 @@
 
   <div class="app-grid" id="app-grid"></div>
 
-  <a class="admin-lenke" id="admin-lenke" href="admin.html" style="display:none">🔧 Administrer husstander</a>
+  <a class="admin-lenke" id="admin-lenke" href="admin.html" style="display:none"><i class="ti ti-tool"></i> Administrer husstander</a>
   <div class="status-bar" id="status-bar"></div>
 </div>
 
 <!-- Inviter til husstanden -->
 <div class="modal-bg" id="inviter-modal" style="display:none">
   <div class="modal">
-    <p class="modal-title">📨 Inviter til husstanden</p>
+    <p class="modal-title"><i class="ti ti-mail-forward" style="color:var(--accent-text)"></i> Inviter til husstanden</p>
     <p style="font-size:12.5px;color:var(--text2);line-height:1.5;margin-bottom:10px">
       Del lenken under – den nye lager sin egen innlogging og havner rett i husstanden deres.
       Koden kan når som helst byttes eller deaktiveres.</p>
@@ -111,7 +115,7 @@
 <!-- Tilpass forsiden -->
 <div class="modal-bg" id="tilpass-modal" style="display:none">
   <div class="modal">
-    <p class="modal-title">🎛️ Tilpass forsiden</p>
+    <p class="modal-title"><i class="ti ti-adjustments" style="color:var(--accent-text)"></i> Tilpass forsiden</p>
     <p style="font-size:11.5px;color:var(--text3);margin-bottom:8px">Gjelder bare deg – rekkefølge på appene og hvilke varsler du vil se.</p>
     <div style="font-size:11px;font-weight:600;color:var(--text2);text-transform:uppercase;letter-spacing:.05em;margin-bottom:4px">Apprekkefølge</div>
     <div id="tilpass-apper"></div>
@@ -150,7 +154,7 @@ function visHilsen() {
   const navn = (medlem?.navn || '').split(' ')[0];
   const t = new Date().getHours();
   const frase = t < 5 ? 'God natt' : t < 10 ? 'God morgen' : t < 18 ? 'Hei' : 'God kveld';
-  document.getElementById('hilsen-tittel').textContent = frase + (navn ? ', ' + navn : '') + ' 👋';
+  document.getElementById('hilsen-tittel').textContent = frase + (navn ? ', ' + navn : '');
   const d = new Date();
   document.getElementById('hilsen-dato').textContent =
     UKEDAG[d.getDay()].charAt(0).toUpperCase() + UKEDAG[d.getDay()].slice(1) + ' '
@@ -217,12 +221,12 @@ function tegnVarsler(fam, meta) {
     if (aktiv('oppgaver')) {
       const aapne = (fam.oppgaver?.tasks || []).filter(t => !t.done && t.date);
       const overtid = aapne.filter(t => t.date < todayStr());
-      if (overtid.length) v.push({ prio: 1, ikon: '⚠️', href: 'oppgaver.html',
+      if (overtid.length) v.push({ prio: 1, ikon: 'ti-alert-triangle', href: 'oppgaver.html',
         tekst: overtid.length === 1 ? '1 oppgave er på overtid: «' + overtid[0].title + '»' : overtid.length + ' oppgaver er på overtid' });
       const snart = aapne.filter(t => t.date >= todayStr() && dagerMellom(t.date, todayStr()) <= 6);
       if (snart.length) {
         const seneste = snart.map(t => t.date).sort().pop();
-        v.push({ prio: 2, ikon: '✅', href: 'oppgaver.html',
+        v.push({ prio: 2, ikon: 'ti-circle-check', href: 'oppgaver.html',
           tekst: snart.length === 1 ? '«' + snart[0].title + '» har frist ' + fristTekst(snart[0].date)
             : snart.length + ' oppgaver må gjøres innen ' + fristTekst(seneste) });
       }
@@ -232,9 +236,9 @@ function tegnVarsler(fam, meta) {
       Object.entries(fam.sovn || {}).forEach(([id, blob]) => {
         if (!blob || !blob.since) return;
         const navn = barnNavn(fam, id);
-        if (blob.state === 'sleeping') v.push({ prio: 3, ikon: '💤', href: 'sovn.html',
+        if (blob.state === 'sleeping') v.push({ prio: 3, ikon: 'ti-zzz', href: 'sovn.html',
           tekst: navn + ' sover nå – har sovet i ' + varighet(Date.now() - blob.since) + ' (siden ' + klokke(blob.since) + ')' });
-        else if (blob.sessions?.length) v.push({ prio: 3, ikon: '☀️', href: 'sovn.html',
+        else if (blob.sessions?.length) v.push({ prio: 3, ikon: 'ti-sun', href: 'sovn.html',
           tekst: navn + ' er våken – våken i ' + varighet(Date.now() - blob.since) });
       });
     }
@@ -242,24 +246,24 @@ function tegnVarsler(fam, meta) {
     if (aktiv('fryser')) {
       const items = fam.fryser?.items || [];
       const utlop = items.filter(i => i.expiry && dagerMellom(i.expiry, todayStr()) <= 14 && dagerMellom(i.expiry, todayStr()) >= -30);
-      if (utlop.length) v.push({ prio: 2, ikon: '🧊', href: 'fryser.html',
+      if (utlop.length) v.push({ prio: 2, ikon: 'ti-snowflake', href: 'fryser.html',
         tekst: (utlop.length === 1 ? '«' + utlop[0].name + '» går ut snart' : utlop.length + ' fryservarer går ut snart: '
           + utlop.slice(0, 3).map(i => i.name).join(', ') + (utlop.length > 3 ? '…' : '')) });
       const gamle = items.filter(i => !i.expiry && i.added && dagerMellom(todayStr(), i.added) >= 90);
-      if (gamle.length) v.push({ prio: 3, ikon: '🧊', href: 'fryser.html',
+      if (gamle.length) v.push({ prio: 3, ikon: 'ti-snowflake', href: 'fryser.html',
         tekst: gamle.length + (gamle.length === 1 ? ' fryservare' : ' fryservarer') + ' bør brukes opp (over 90 dager)' });
     }
     // Middag i dag
     if (aktiv('middag')) {
       const idag = (fam.middag?.meals || []).find(m => m.date === todayStr());
-      if (idag) v.push({ prio: 3, ikon: '🍽️', href: 'middag.html',
+      if (idag) v.push({ prio: 3, ikon: 'ti-tools-kitchen-2', href: 'middag.html',
         tekst: 'I dag til middag: ' + idag.meal + (idag.cook ? ' (' + idag.cook + ' lager)' : '') });
-      else v.push({ prio: 3, ikon: '🍽️', href: 'middag.html', tekst: 'Ingen middag planlagt i dag – spinn ruletten?' });
+      else v.push({ prio: 3, ikon: 'ti-tools-kitchen-2', href: 'middag.html', tekst: 'Ingen middag planlagt i dag – spinn ruletten?' });
     }
     // Ferske beskjeder på tavla (siste 24 t)
     if (aktiv('beskjeder')) {
       const lapper = (fam.beskjeder?.lapper || []).filter(l => Date.now() - l.ts < 86400000).sort((a, b) => b.ts - a.ts);
-      if (lapper.length) v.push({ prio: 3, ikon: '📌', href: 'beskjeder.html',
+      if (lapper.length) v.push({ prio: 3, ikon: 'ti-pin', href: 'beskjeder.html',
         tekst: lapper[0].fra + ': «' + lapper[0].tekst + '»' + (lapper.length > 1 ? ' (+' + (lapper.length - 1) + ' til)' : '') });
     }
     // Helse: neste dose
@@ -275,9 +279,9 @@ function tegnVarsler(fam, meta) {
       Object.values(sist).forEach(x => {
         const med = meds.find(m => m.id === x.med); if (!med) return;
         const okAt = x.ts + med.intervalH * 3600000;
-        if (now < okAt) v.push({ prio: 2, ikon: '💊', href: 'helse.html',
+        if (now < okAt) v.push({ prio: 2, ikon: 'ti-pill', href: 'helse.html',
           tekst: barnNavn(fam, x.barn) + ': neste ' + med.name + ' kan gis kl ' + klokke(okAt) + ' (om ' + varighet(okAt - now) + ')' });
-        else if (now - x.ts < 24 * 3600000) v.push({ prio: 2, ikon: '💊', href: 'helse.html',
+        else if (now - x.ts < 24 * 3600000) v.push({ prio: 2, ikon: 'ti-pill', href: 'helse.html',
           tekst: barnNavn(fam, x.barn) + ': ' + med.name + ' kan gis nå ✓' });
       });
     }
@@ -286,7 +290,7 @@ function tegnVarsler(fam, meta) {
   v.sort((a, b) => a.prio - b.prio);
   document.getElementById('varsler').innerHTML = v.map(x =>
     '<a class="varsel ' + (x.prio === 1 ? 'rod' : x.prio === 2 ? 'oransje' : 'gronn') + '" href="' + x.href + '">'
-    + '<span class="v-ikon">' + x.ikon + '</span><span class="v-tekst">' + esc(x.tekst) + '</span><span class="v-pil">›</span></a>').join('');
+    + '<span class="v-ikon"><i class="ti ' + x.ikon + '"></i></span><span class="v-tekst">' + esc(x.tekst) + '</span><span class="v-pil">›</span></a>').join('');
 }
 
 // ── Status per app-flis ──
@@ -416,11 +420,11 @@ function tegnDashbord(fam, meta) {
         if (s.flere) inner += '<span class="tile-status">+ ' + s.flere + ' til…</span>';
       }
       return '<a class="app-tile" href="' + a + '.html">'
-        + '<span class="emoji">' + APP_IKON[a] + '</span>'
+        + '<span class="ikon-chip"><i class="ti ' + APP_IKON[a] + '"></i></span>'
         + '<span class="tile-tekst"><span class="navn">' + esc(APP_NAVN[a]) + '</span>' + inner + '</span></a>';
     }
     return '<div class="app-tile kommer">'
-      + '<span class="emoji">' + APP_IKON[a] + '</span>'
+      + '<span class="ikon-chip"><i class="ti ' + APP_IKON[a] + '"></i></span>'
       + '<span class="tile-tekst"><span class="navn">' + esc(APP_NAVN[a]) + '</span>'
       + '<span class="tile-status">kommer snart</span></span></div>';
   }).join('') || '<div class="empty-state" style="grid-column:1/-1">Ingen apper er aktivert for husstanden.</div>';
@@ -472,8 +476,8 @@ function tegnInviter() {
       '<div style="text-align:center;font-size:24px;font-weight:800;letter-spacing:.2em;padding:10px;background:var(--surface2);border-radius:10px;margin-bottom:8px">' + esc(kode) + '</div>'
       + '<input class="hinput" readonly value="' + esc(lenke) + '" style="font-size:11px" onclick="this.select()" />'
       + '<div style="display:flex;gap:6px;margin-top:8px">'
-      + '<button class="btn-ghost" style="flex:1" id="inv-kopier">📋 Kopier lenke</button>'
-      + (navigator.share ? '<button class="btn-ghost" style="flex:1" id="inv-del">📤 Del</button>' : '')
+      + '<button class="btn-ghost" style="flex:1" id="inv-kopier"><i class="ti ti-copy"></i> Kopier lenke</button>'
+      + (navigator.share ? '<button class="btn-ghost" style="flex:1" id="inv-del"><i class="ti ti-share"></i> Del</button>' : '')
       + '</div>'
       + '<div style="display:flex;gap:6px;margin-top:6px">'
       + '<button class="btn-lenke" id="inv-ny">Lag ny kode</button>'
@@ -489,7 +493,7 @@ function tegnInviter() {
   });
   el.querySelector('#inv-del')?.addEventListener('click', () => navigator.share({
     title: 'Bli med i ' + (sisteFam?.meta?.navn || 'husstanden vår'),
-    text: 'Bli med i husstanden vår på Hjemmebasen 🏠',
+    text: 'Bli med i husstanden vår på Hjemmebasen.',
     url: inviterLenke(sisteFam.meta.invitasjonskode),
   }).catch(() => {}));
 }
@@ -517,14 +521,14 @@ function tegnTilpass() {
     tilpassOrden = [...aktive].sort((a, b) => idx(a) - idx(b));
   }
   document.getElementById('tilpass-apper').innerHTML = tilpassOrden.map((a, i) =>
-    '<div class="hrow"><span style="font-size:17px">' + APP_IKON[a] + '</span>'
+    '<div class="hrow"><i class="ti ' + APP_IKON[a] + '" style="font-size:17px;color:var(--accent-text)"></i>'
     + '<div class="hrow-main"><div class="hrow-title" style="font-weight:500">' + esc(APP_NAVN[a]) + '</div></div>'
     + '<button class="icon-btn" data-flytt="' + i + ':-1"' + (i === 0 ? ' disabled style="opacity:.3"' : '') + ' aria-label="Flytt opp">↑</button>'
     + '<button class="icon-btn" data-flytt="' + i + ':1"' + (i === tilpassOrden.length - 1 ? ' disabled style="opacity:.3"' : '') + ' aria-label="Flytt ned">↓</button></div>').join('');
   const av = innst.varselAv || {};
   document.getElementById('tilpass-varsler').innerHTML = ['oppgaver', 'middag', 'sovn', 'helse', 'fryser', 'beskjeder']
     .filter(a => apper[a] !== false)
-    .map(a => '<label class="hrow" style="cursor:pointer"><span style="font-size:17px">' + APP_IKON[a] + '</span>'
+    .map(a => '<label class="hrow" style="cursor:pointer"><i class="ti ' + APP_IKON[a] + '" style="font-size:17px;color:var(--accent-text)"></i>'
       + '<div class="hrow-main"><div class="hrow-title" style="font-weight:500">' + esc(APP_NAVN[a]) + '-varsler</div></div>'
       + '<input type="checkbox" data-varsel="' + a + '"' + (av[a] ? '' : ' checked') + ' style="width:19px;height:19px;accent-color:var(--accent)"></label>').join('');
 }

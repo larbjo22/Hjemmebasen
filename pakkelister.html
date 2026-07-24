@@ -3,8 +3,9 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@2.44.0/tabler-icons.min.css">
 <link rel="manifest" href="manifest.webmanifest">
-<meta name="theme-color" content="#f97316">
+<meta name="theme-color" content="#2e5d4f">
 <link rel="apple-touch-icon" href="ikoner/apple-touch-icon.png">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
@@ -32,11 +33,12 @@
 .verktoy .btn-ghost{flex:1}
 @media(min-width:700px){.fw{max-width:560px}}
 </style>
+<link rel="stylesheet" href="felles/gran.css">
 </head>
 <body>
 <div class="fw">
   <div class="top-bar">
-    <p class="app-title">🎒 Pakkelister</p>
+    <p class="app-title"><i class="ti ti-backpack"></i> Pakkelister</p>
     <div class="top-right">
       <button class="icon-btn" id="theme-btn"></button>
     </div>
@@ -45,7 +47,7 @@
   <!-- Oversikt over listene -->
   <div id="visning-oversikt">
     <div class="card">
-      <div class="card-title">➕ Ny pakkeliste</div>
+      <div class="card-title">Ny pakkeliste</div>
       <div style="display:flex;gap:6px">
         <input type="text" id="ny-liste-navn" class="hinput" maxlength="40" placeholder="F.eks. Hytta, Barnehagen, Ferie..." style="flex:1;min-width:0" />
         <button class="btn-ghost" id="ny-liste-btn">Opprett</button>
@@ -164,7 +166,7 @@ function renderOversikt(){
       +'<span class="liste-navn">'+esc(l.navn)+'</span>'
       +'<span class="fremdrift'+(ferdig?' ferdig':'')+'">'+(alt?pakket+'/'+alt+(ferdig?' ✓':''):'tom')+'</span></div>'
       +'<div class="bar'+(ferdig?' ferdig':'')+'"><div style="width:'+pct+'%"></div></div></div>';
-  }).join('')||'<div class="empty-state">Ingen pakkelister ennå.<br>Lag den første – f.eks. «Hytta» eller «Barnehagen» 🎒</div>';
+  }).join('')||'<div class="empty-state">Ingen pakkelister ennå.<br>Lag den første – f.eks. «Hytta» eller «Barnehagen».</div>';
 }
 
 function renderListe(l){
@@ -182,7 +184,7 @@ function renderListe(l){
     +'<button class="pk-check'+(i.pakket?' pakket':'')+'" data-toggle="'+i.id+'" aria-label="'+(i.pakket?'Pakk ut':'Pakk')+'">'+(i.pakket?'✓':'')+'</button>'
     +'<span class="pk-navn'+(i.pakket?' pakket':'')+'">'+esc(i.navn)+'</span>'
     +'<button class="hrow-del" data-fjern="'+i.id+'" title="Fjern">×</button></div>').join('')
-    ||'<div class="empty-state" style="padding:.8rem">Tom liste – legg til ting under 👇</div>';
+    ||'<div class="empty-state" style="padding:.8rem">Tom liste – legg til ting under.</div>';
 }
 
 // ── Hendelser ──

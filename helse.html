@@ -3,8 +3,9 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@2.44.0/tabler-icons.min.css">
 <link rel="manifest" href="manifest.webmanifest">
-<meta name="theme-color" content="#f97316">
+<meta name="theme-color" content="#2e5d4f">
 <link rel="apple-touch-icon" href="ikoner/apple-touch-icon.png">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
@@ -28,11 +29,12 @@
 .med-admin-rad .enh{font-size:11px;color:var(--text3)}
 @media(min-width:700px){.fw{max-width:560px}}
 </style>
+<link rel="stylesheet" href="felles/gran.css">
 </head>
 <body>
 <div class="fw">
   <div class="top-bar">
-    <p class="app-title">🩹 Helse</p>
+    <p class="app-title"><i class="ti ti-first-aid-kit"></i> Helse</p>
     <div class="top-right">
       <button class="icon-btn" id="theme-btn"></button>
     </div>
@@ -45,12 +47,12 @@
 
   <div id="hoved" style="display:none">
     <div class="card">
-      <div class="card-title">💊 Medisin – neste dose</div>
+      <div class="card-title">Medisin – neste dose</div>
       <div id="helse-status"></div>
     </div>
 
     <div class="card">
-      <div class="card-title">➕ Logg dose</div>
+      <div class="card-title">Logg dose</div>
       <div class="felt-lbl">Barn</div>
       <div class="chiprad" id="hd-barn-chips"></div>
       <div class="felt-lbl">Medisin</div>
@@ -69,24 +71,24 @@
     </div>
 
     <div class="card">
-      <div class="card-title">🕐 Siste doser</div>
+      <div class="card-title">Siste doser</div>
       <div id="helse-doser"></div>
     </div>
 
     <div class="card">
-      <div class="card-title">💉 Vaksiner</div>
+      <div class="card-title">Vaksiner</div>
       <div id="helse-vaksiner"></div>
       <button class="btn-ghost" style="width:100%;margin-top:8px" id="ny-vaksine-btn">+ Legg til vaksine</button>
     </div>
 
     <div class="card">
-      <div class="card-title">🤒 Sykedager</div>
+      <div class="card-title">Sykedager</div>
       <div id="helse-syk"></div>
       <button class="btn-ghost" style="width:100%;margin-top:8px" id="ny-syk-btn">+ Registrer sykedag</button>
     </div>
 
     <div class="card">
-      <div class="card-title">⚙️ Medisiner · minste intervall (timer) og maks per døgn</div>
+      <div class="card-title">Medisiner · minste intervall (timer) og maks per døgn</div>
       <div id="helse-med-admin"></div>
       <div style="display:flex;gap:6px;margin-top:8px">
         <input type="text" id="hm-new-name" class="hinput" placeholder="Medisin..." style="flex:1;min-width:0" />
@@ -240,7 +242,7 @@ function renderStatus(){
       +(now<st.okAt?' · om '+fmtVarighet(st.okAt-now):'');
     rows.push('<div class="hrow"><div class="hrow-main"><div class="hrow-title">'+esc(b.navn)+' · '+esc(st.med.name)+'</div><div class="hrow-sub">'+sub+'</div></div><div class="hrow-val">'+val+'</div></div>');
   }));
-  el.innerHTML=rows.join('')||'<div class="empty-state" style="padding:.6rem">Ingen doser siste 2 døgn 💚</div>';
+  el.innerHTML=rows.join('')||'<div class="empty-state" style="padding:.6rem">Ingen doser siste 2 døgn</div>';
 }
 
 function renderChips(){
@@ -277,7 +279,7 @@ function renderSyk(){
   document.getElementById('helse-syk').innerHTML=
     (perBarn.length?'<div style="font-size:11px;color:var(--text3);margin-bottom:6px">Sykedager i '+year+' – '+perBarn.join(' · ')+'</div>':'')
     +(ss.map(s=>'<div class="hrow"><div class="hrow-main"><div class="hrow-title">'+esc(barnNavn(s.barn))+'</div><div class="hrow-sub">'+fmtDatoNo(s.date)+(s.note?' · '+esc(s.note):'')+'</div></div><button class="hrow-del" data-slett="syk:'+s.id+'" title="Slett">×</button></div>').join('')
-    ||'<div class="empty-state" style="padding:.6rem">Ingen sykedager registrert 💚</div>');
+    ||'<div class="empty-state" style="padding:.6rem">Ingen sykedager registrert</div>');
 }
 
 function renderMedAdmin(){

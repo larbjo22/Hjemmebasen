@@ -3,8 +3,9 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@2.44.0/tabler-icons.min.css">
 <link rel="manifest" href="manifest.webmanifest">
-<meta name="theme-color" content="#f97316">
+<meta name="theme-color" content="#2e5d4f">
 <link rel="apple-touch-icon" href="ikoner/apple-touch-icon.png">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
@@ -26,11 +27,12 @@
 .alder-lbl{font-size:11px;color:var(--text3);margin-top:4px}
 @media(min-width:700px){.fw{max-width:560px}}
 </style>
+<link rel="stylesheet" href="felles/gran.css">
 </head>
 <body>
 <div class="fw">
   <div class="top-bar">
-    <p class="app-title">📏 Vekst</p>
+    <p class="app-title"><i class="ti ti-ruler-2"></i> Vekst</p>
     <div class="top-right">
       <button class="icon-btn" id="theme-btn"></button>
     </div>
@@ -45,13 +47,13 @@
     <div class="chiprad" id="barn-chips"></div>
 
     <div class="card">
-      <div class="card-title">📊 Sist målt</div>
+      <div class="card-title">Sist målt</div>
       <div class="status-grid" id="status-grid"></div>
       <p class="alder-lbl" id="alder-lbl"></p>
     </div>
 
     <div class="card">
-      <div class="card-title">➕ Ny måling <span style="text-transform:none;letter-spacing:0;font-weight:400">(fyll det du har)</span></div>
+      <div class="card-title">Ny måling <span style="text-transform:none;letter-spacing:0;font-weight:400">(fyll det du har)</span></div>
       <div class="logg-rad">
         <input type="number" step="0.1" inputmode="decimal" id="ny-hoyde" class="hinput" placeholder="Høyde cm" />
         <input type="number" step="0.1" inputmode="decimal" id="ny-vekt" class="hinput" placeholder="Vekt kg" />
@@ -63,7 +65,7 @@
     </div>
 
     <div class="card">
-      <div class="card-title">🕐 Historikk</div>
+      <div class="card-title">Historikk</div>
       <div id="historikk"></div>
     </div>
   </div>
@@ -181,7 +183,7 @@ function render(){
     +[m.hoyde?m.hoyde+' cm':null,m.vekt?m.vekt+' kg':null,m.sko?'sko '+m.sko:null].filter(Boolean).join(' · ')
     +'</div><div class="hrow-sub">'+fmtDato(m.dato)+(b.fodt?' · '+alderTxt(b.fodt,m.dato):'')+'</div></div>'
     +'<button class="hrow-del" data-slett="'+m.id+'" title="Slett">×</button></div>').join('')
-    ||'<div class="empty-state" style="padding:.8rem">Ingen målinger ennå – loggfør den første over 📏</div>';
+    ||'<div class="empty-state" style="padding:.8rem">Ingen målinger ennå – loggfør den første over.</div>';
 }
 function boks(tall,lbl,delta,dato){
   return '<div class="status-boks"><div class="status-tall">'+esc(String(tall))+'</div><div class="status-lbl">'+lbl+(dato?' · '+esc(dato):'')+'</div>'

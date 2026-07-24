@@ -34,7 +34,7 @@ export function initTheme() {
 export function setTheme(t, lagre = true) {
   document.documentElement.setAttribute('data-theme', t);
   const b = document.getElementById('theme-btn');
-  if (b) b.textContent = t === 'dark' ? '☀️' : '🌙';
+  if (b) b.innerHTML = t === 'dark' ? '<i class="ti ti-sun"></i>' : '<i class="ti ti-moon-stars"></i>';
   if (lagre) localStorage.setItem(TEMA_KEY, t);
 }
 

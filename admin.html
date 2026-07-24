@@ -3,8 +3,9 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@2.44.0/tabler-icons.min.css">
 <link rel="manifest" href="manifest.webmanifest">
-<meta name="theme-color" content="#f97316">
+<meta name="theme-color" content="#2e5d4f">
 <link rel="apple-touch-icon" href="ikoner/apple-touch-icon.png">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
@@ -18,11 +19,12 @@
 .ny-hus-rad .btn-ghost{flex-shrink:0}
 .hjem-lenke{font-size:12px;color:var(--text3);text-decoration:none}
 </style>
+<link rel="stylesheet" href="felles/gran.css">
 </head>
 <body>
 <div class="fw">
   <div class="top-bar">
-    <p class="app-title">🔧 Admin</p>
+    <p class="app-title"><i class="ti ti-tool"></i> Admin</p>
     <div class="top-right">
       <a class="hjem-lenke" href="index.html">← Hjem</a>
       <button class="icon-btn" id="theme-btn"></button>
@@ -30,7 +32,7 @@
   </div>
 
   <div class="card">
-    <div class="card-title">➕ Ny husstand</div>
+    <div class="card-title">Ny husstand</div>
     <div class="ny-hus-rad">
       <input class="hinput" id="ny-fam-navn" placeholder="F.eks. Familien Hansen" maxlength="40" />
       <button class="btn-ghost" id="ny-fam-btn">Opprett</button>
@@ -110,19 +112,19 @@ function render() {
       '<div class="hrow medlem-rad">'
       + '<div class="hrow-main"><div class="hrow-title">' + esc(b.navn || b.epost) + '</div>'
       + '<div class="hrow-sub">' + esc(b.epost || '') + ' · ' + sistSettTxt(b.sistSett) + '</div></div>'
-      + '<button class="btn-lenke" data-reset="' + esc(b.epost || '') + '">✉️ reset</button>'
+      + '<button class="btn-lenke" data-reset="' + esc(b.epost || '') + '"><i class="ti ti-mail"></i> reset</button>'
       + '<button class="hrow-del" data-fjern="' + uid + '" data-navn="' + esc(b.navn || b.epost || '') + '" title="Fjern tilgang">×</button>'
       + '</div>'
     ).join('') || '<div class="hrow-sub" style="padding:6px 2px">Ingen medlemmer ennå</div>';
 
     const bryterHtml = Object.keys(APP_NAVN).map(a =>
       '<span class="appbryter' + (apper[a] !== false ? ' on' : '') + '" data-fid="' + fid + '" data-app="' + a + '">'
-      + APP_IKON[a] + ' ' + esc(APP_NAVN[a]) + '</span>'
+      + '<i class="ti ' + APP_IKON[a] + '"></i> ' + esc(APP_NAVN[a]) + '</span>'
     ).join('');
 
     return '<div class="fam-kort">'
-      + '<div class="fam-navn">🏠 ' + esc(meta.navn || fid)
-      + '<button class="btn-lenke" style="margin-left:auto" data-eksport="' + fid + '">⬇️ eksport</button></div>'
+      + '<div class="fam-navn"><i class="ti ti-home" style="color:var(--accent-text)"></i> ' + esc(meta.navn || fid)
+      + '<button class="btn-lenke" style="margin-left:auto" data-eksport="' + fid + '"><i class="ti ti-download"></i> eksport</button></div>'
       + '<div class="fam-meta">' + medlemmer.length + ' medlem' + (medlemmer.length === 1 ? '' : 'mer')
       + (meta.onboardet ? ' · onboardet ✓' : ' · venter på onboarding') + '</div>'
       + '<div class="appbryter-rad">' + bryterHtml + '</div>'

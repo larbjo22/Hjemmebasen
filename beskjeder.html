@@ -3,8 +3,9 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@2.44.0/tabler-icons.min.css">
 <link rel="manifest" href="manifest.webmanifest">
-<meta name="theme-color" content="#f97316">
+<meta name="theme-color" content="#2e5d4f">
 <link rel="apple-touch-icon" href="ikoner/apple-touch-icon.png">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
@@ -21,18 +22,19 @@
 .lapp.ny{border-left-color:var(--green)}
 @media(min-width:700px){.fw{max-width:560px}}
 </style>
+<link rel="stylesheet" href="felles/gran.css">
 </head>
 <body>
 <div class="fw">
   <div class="top-bar">
-    <p class="app-title">📌 Beskjeder</p>
+    <p class="app-title"><i class="ti ti-pin"></i> Beskjeder</p>
     <div class="top-right">
       <button class="icon-btn" id="theme-btn"></button>
     </div>
   </div>
 
   <div class="card">
-    <div class="card-title">✏️ Ny beskjed til tavla</div>
+    <div class="card-title">Ny beskjed til tavla</div>
     <div class="skriv-rad">
       <input type="text" id="ny-tekst" class="hinput" maxlength="300" placeholder="F.eks. «Tar bilen i dag» eller «Husk gymtøy fredag»" />
       <button class="btn-primary" style="flex:0 0 auto;width:auto;padding:10px 16px" id="send-btn">Heng opp</button>
@@ -123,7 +125,7 @@ function render(){
     +'<div class="lapp-meta"><span class="pfarge" style="width:9px;height:9px;border-radius:50%;display:inline-block;background:'+personFarge(l.fra)+'"></span>'
     +esc(l.fra)+' · '+esc(tidTxt(l.ts))
     +'<button class="hrow-del" data-slett="'+l.id+'" title="Ta ned lappen">×</button></div></div>').join('')
-    ||'<div class="empty-state">Tavla er tom – heng opp den første beskjeden! 📌</div>';
+    ||'<div class="empty-state">Tavla er tom – heng opp den første beskjeden.</div>';
 }
 
 async function sendBeskjed(){

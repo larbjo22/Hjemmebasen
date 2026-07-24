@@ -3,8 +3,9 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@2.44.0/tabler-icons.min.css">
 <link rel="manifest" href="manifest.webmanifest">
-<meta name="theme-color" content="#f97316">
+<meta name="theme-color" content="#2e5d4f">
 <link rel="apple-touch-icon" href="ikoner/apple-touch-icon.png">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
@@ -27,7 +28,7 @@
 .barn-rad .hinput{min-width:0}
 .appvalg{display:flex;align-items:center;gap:10px;padding:10px 4px;border-bottom:1px solid var(--border2);cursor:pointer}
 .appvalg:last-child{border-bottom:none}
-.appvalg .emoji{font-size:22px}
+.appvalg .emoji{font-size:22px;color:var(--accent-text)}
 .appvalg .navn{flex:1;font-size:14px;font-weight:600}
 .appvalg input{width:19px;height:19px;accent-color:var(--accent)}
 .stedresultat{padding:9px 10px;border:1px solid var(--border2);border-radius:8px;margin-bottom:5px;font-size:13px;cursor:pointer}
@@ -38,6 +39,7 @@
 .oppsummering{font-size:13px;line-height:1.7}
 .oppsummering b{font-weight:700}
 </style>
+<link rel="stylesheet" href="felles/gran.css">
 </head>
 <body>
 <div class="ob-wrap">
@@ -90,20 +92,20 @@ function render() {
   const k = document.getElementById('steg-kort');
 
   if (steg === 0) {
-    k.innerHTML = '<div class="ob-tittel">👋 Velkommen til Hjemmebasen!</div>'
+    k.innerHTML = '<div class="ob-tittel">Velkommen til Hjemmebasen!</div>'
       + '<div class="ob-under">Familiens apper – handleliste, middagsplan, oppgaver og mer – samlet på ett sted. Først: hva skal husstanden hete?</div>'
       + '<label for="ob-navn">Husstandens navn</label>'
       + '<input class="hinput" id="ob-navn" maxlength="40" value="' + esc(st.navn) + '" placeholder="F.eks. Familien Hansen" />'
       + nav(false);
   } else if (steg === 1) {
-    k.innerHTML = '<div class="ob-tittel">🧑‍🍳 De voksne</div>'
+    k.innerHTML = '<div class="ob-tittel">De voksne</div>'
       + '<div class="ob-under">Navnene brukes i middagsplanen («hvem lager?») og oppgavelista. Kortnavn holder.</div>'
       + '<div class="chiprad">' + st.voksne.map((v, i) =>
           '<span class="pchip">' + esc(v) + '<button data-fjern-voksen="' + i + '" aria-label="Fjern">×</button></span>').join('') + '</div>'
       + '<div class="leggtil-rad"><input class="hinput" id="ob-voksen" maxlength="30" placeholder="Navn..." /><button class="btn-ghost" id="ob-voksen-btn">Legg til</button></div>'
       + nav();
   } else if (steg === 2) {
-    k.innerHTML = '<div class="ob-tittel">🧒 Barna</div>'
+    k.innerHTML = '<div class="ob-tittel">Barna</div>'
       + '<div class="ob-under">Brukes i plikter, helse og søvnsporing. Fødselsdato gir aldersbaserte anbefalinger (f.eks. våkenvinduer for babyer). Har dere ikke barn, hopper du bare videre.</div>'
       + st.barn.map((b, i) =>
           '<div class="barn-rad"><input class="hinput" style="flex:2" maxlength="30" value="' + esc(b.navn) + '" data-barn-navn="' + i + '" placeholder="Navn" />'
@@ -112,7 +114,7 @@ function render() {
       + '<button class="btn-ghost" style="width:100%;margin-top:4px" id="ob-barn-btn">+ Legg til barn</button>'
       + nav();
   } else if (steg === 3) {
-    k.innerHTML = '<div class="ob-tittel">📍 Hvor bor dere?</div>'
+    k.innerHTML = '<div class="ob-tittel">Hvor bor dere?</div>'
       + '<div class="ob-under">Brukes til værbaserte påkledningsråd for barna (kommer snart). Kan hoppes over.</div>'
       + '<div class="leggtil-rad"><input class="hinput" id="ob-sted" placeholder="Stedsnavn, f.eks. Skien..." value="' + esc(st.sted?.navn || '') + '" /><button class="btn-ghost" id="ob-sted-btn">Søk</button></div>'
       + '<div id="ob-sted-treff" style="margin-top:8px">'
@@ -122,23 +124,23 @@ function render() {
   } else if (steg === 4) {
     const barnUnder3 = st.barn.some(b => { const a = alderAar(b.fodt); return a !== null && a < 3; });
     if (!barnUnder3 && st.apper.sovn === true && !st._sovnJustert) st.apper.sovn = st.barn.length > 0;
-    k.innerHTML = '<div class="ob-tittel">📱 Hvilke apper vil dere bruke?</div>'
+    k.innerHTML = '<div class="ob-tittel">Hvilke apper vil dere bruke?</div>'
       + '<div class="ob-under">Dette kan endres når som helst senere (av administrator).</div>'
       + Object.keys(APP_NAVN).map(a =>
-          '<label class="appvalg"><span class="emoji">' + APP_IKON[a] + '</span><span class="navn">' + esc(APP_NAVN[a]) + '</span>'
+          '<label class="appvalg"><span class="emoji"><i class="ti ' + APP_IKON[a] + '"></i></span><span class="navn">' + esc(APP_NAVN[a]) + '</span>'
           + '<input type="checkbox" data-app="' + a + '"' + (st.apper[a] !== false ? ' checked' : '') + '></label>').join('')
       + nav();
   } else {
-    k.innerHTML = '<div class="ob-tittel">✅ Klart!</div>'
+    k.innerHTML = '<div class="ob-tittel">Klart!</div>'
       + '<div class="ob-under">Sjekk at alt stemmer – så er dere i gang.</div>'
       + '<div class="oppsummering">'
       + '<b>' + esc(st.navn || 'Husstanden') + '</b><br>'
-      + '👤 Voksne: ' + (st.voksne.map(esc).join(', ') || '<i>ingen</i>') + '<br>'
-      + '🧒 Barn: ' + (st.barn.filter(b => b.navn).map(b => esc(b.navn)).join(', ') || '<i>ingen</i>') + '<br>'
-      + '📍 Sted: ' + (st.sted ? esc(st.sted.navn) : '<i>ikke valgt</i>') + '<br>'
-      + '📱 Apper: ' + Object.keys(APP_NAVN).filter(a => st.apper[a] !== false).map(a => APP_IKON[a]).join(' ')
+      + 'Voksne: ' + (st.voksne.map(esc).join(', ') || '<i>ingen</i>') + '<br>'
+      + 'Barn: ' + (st.barn.filter(b => b.navn).map(b => esc(b.navn)).join(', ') || '<i>ingen</i>') + '<br>'
+      + 'Sted: ' + (st.sted ? esc(st.sted.navn) : '<i>ikke valgt</i>') + '<br>'
+      + 'Apper: ' + Object.keys(APP_NAVN).filter(a => st.apper[a] !== false).map(a => '<i class="ti ' + APP_IKON[a] + '" style="color:var(--accent-text)"></i>').join(' ')
       + '</div>'
-      + '<div class="ob-nav"><button class="btn-ghost" id="ob-tilbake">Tilbake</button><button class="btn-primary" id="ob-ferdig">Start Hjemmebasen 🎉</button></div>';
+      + '<div class="ob-nav"><button class="btn-ghost" id="ob-tilbake">Tilbake</button><button class="btn-primary" id="ob-ferdig">Start Hjemmebasen</button></div>';
   }
   koble();
 }
@@ -212,7 +214,7 @@ function koble() {
       }));
       setStatus(st.stedTreff.length ? '' : 'Ingen treff – prøv et annet navn', st.stedTreff.length ? '' : 'err');
       document.getElementById('ob-sted-treff').innerHTML = st.stedTreff.map((t, i) =>
-        '<div class="stedresultat" data-sted="' + i + '">📍 ' + esc(t.navn) + '</div>').join('');
+        '<div class="stedresultat" data-sted="' + i + '"><i class="ti ti-map-pin" style="color:var(--accent-text)"></i> ' + esc(t.navn) + '</div>').join('');
       document.querySelectorAll('[data-sted]').forEach(el =>
         el.addEventListener('click', () => { st.sted = st.stedTreff[+el.dataset.sted]; render(); }));
     } catch (e) { setStatus('Stedsøket feilet – hopp over, dette kan settes senere', 'err'); }
@@ -252,7 +254,7 @@ async function fullfor() {
     location.replace('index.html');
   } catch (e) {
     setStatus('Kunne ikke lagre: ' + (e.message || 'prøv igjen'), 'err');
-    btn.disabled = false; btn.textContent = 'Start Hjemmebasen 🎉';
+    btn.disabled = false; btn.textContent = 'Start Hjemmebasen';
   }
 }
 

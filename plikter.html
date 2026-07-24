@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
 <link rel="manifest" href="manifest.webmanifest">
-<meta name="theme-color" content="#f97316">
+<meta name="theme-color" content="#2e5d4f">
 <link rel="apple-touch-icon" href="ikoner/apple-touch-icon.png">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
@@ -144,6 +144,7 @@ input:focus-visible,select:focus-visible,button:focus-visible,[role="button"]:fo
 .status-bar.err{color:var(--danger)}
 .status-bar.ok{color:var(--green)}
 </style>
+<link rel="stylesheet" href="felles/gran.css">
 </head>
 <body>
 <main class="fw">
@@ -229,14 +230,14 @@ input:focus-visible,select:focus-visible,button:focus-visible,[role="button"]:fo
     <div class="stat-section">
       <div class="stat-title"><i class="ti ti-palette"></i> Fargetema</div>
       <div style="margin-bottom:10px">
-        <div style="font-size:12px;color:var(--text2);margin-bottom:6px">☀️ Lys modus</div>
+        <div style="font-size:12px;color:var(--text2);margin-bottom:6px">Lys modus</div>
         <div style="display:flex;align-items:center;gap:10px">
           <input type="color" id="color-light" onchange="setAccentColor('light',this.value)" style="width:44px;height:36px;border:1px solid var(--border);border-radius:8px;cursor:pointer;background:none;padding:2px" />
           <button onclick="resetAccentColor('light')" style="font-size:11px;padding:4px 10px;border:1px solid var(--border);border-radius:6px;background:var(--surface2);color:var(--text2);cursor:pointer">Tilbakestill</button>
         </div>
       </div>
       <div>
-        <div style="font-size:12px;color:var(--text2);margin-bottom:6px">🌙 Mørk modus</div>
+        <div style="font-size:12px;color:var(--text2);margin-bottom:6px">Mørk modus</div>
         <div style="display:flex;align-items:center;gap:10px">
           <input type="color" id="color-dark" onchange="setAccentColor('dark',this.value)" style="width:44px;height:36px;border:1px solid var(--border);border-radius:8px;cursor:pointer;background:none;padding:2px" />
           <button onclick="resetAccentColor('dark')" style="font-size:11px;padding:4px 10px;border:1px solid var(--border);border-radius:6px;background:var(--surface2);color:var(--text2);cursor:pointer">Tilbakestill</button>
@@ -368,7 +369,7 @@ function initAccentColors(){['light','dark'].forEach(mode=>{const s=localStorage
 function updateColorPickers(){['light','dark'].forEach(mode=>{const s=localStorage.getItem(APP_KEY+'_color_'+mode)||DEFAULT_COLORS[mode];const i=document.getElementById('color-'+mode);if(i)i.value=s;});}
 initAccentColors();
 function initTheme(){const s=localStorage.getItem('hjemmebasen_theme');const dark=window.matchMedia('(prefers-color-scheme:dark)').matches;setTheme(s||(dark?'dark':'light'),false);}
-function setTheme(t,save=true){document.documentElement.setAttribute('data-theme',t);const b=document.getElementById('theme-btn');if(b)b.textContent=t==='dark'?'☀️':'🌙';if(save)localStorage.setItem('hjemmebasen_theme',t);}
+function setTheme(t,save=true){document.documentElement.setAttribute('data-theme',t);const b=document.getElementById('theme-btn');if(b)b.innerHTML=t==='dark'?'<i class="ti ti-sun"></i>':'<i class="ti ti-moon-stars"></i>';if(save)localStorage.setItem('hjemmebasen_theme',t);}
 function toggleTheme(){setTheme(document.documentElement.getAttribute('data-theme')==='dark'?'light':'dark');}
 initTheme();
 

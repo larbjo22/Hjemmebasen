@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
 <link rel="manifest" href="manifest.webmanifest">
-<meta name="theme-color" content="#f97316">
+<meta name="theme-color" content="#2e5d4f">
 <link rel="apple-touch-icon" href="ikoner/apple-touch-icon.png">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
@@ -255,11 +255,12 @@ body.embed .action-btn .big{font-size:22px}
 body.embed .info-rows{gap:6px;margin-bottom:.5rem}
 body.embed .info-row{padding:10px 14px}
 </style>
+<link rel="stylesheet" href="felles/gran.css">
 </head>
 <body>
 <main class="fw" id="app">
   <div class="top-bar">
-    <h1 class="app-title">😴 Søvn</h1>
+    <h1 class="app-title"><i class="ti ti-moon" aria-hidden="true"></i> Søvn</h1>
     <div class="top-right">
       <button class="theme-btn" id="theme-btn" onclick="toggleTheme()" title="Bytt tema" aria-label="Bytt mellom lyst og mørkt tema"></button>
     </div>
@@ -388,7 +389,7 @@ body.embed .info-row{padding:10px 14px}
     <div class="stat-section">
       <div class="stat-title"><i class="ti ti-palette"></i> Fargetema</div>
       <div style="margin-bottom:12px">
-        <div style="font-size:12px;color:var(--text2);margin-bottom:6px">☀️ Lys modus – accent-farge</div>
+        <div style="font-size:12px;color:var(--text2);margin-bottom:6px">Lys modus – accent-farge</div>
         <div style="display:flex;align-items:center;gap:10px">
           <input type="color" id="color-light" onchange="setAccentColor('light',this.value)" style="width:44px;height:36px;border:1px solid var(--border);border-radius:8px;cursor:pointer;background:none;padding:2px" />
           <span style="font-size:12px;color:var(--text3)" id="color-light-val"></span>
@@ -396,7 +397,7 @@ body.embed .info-row{padding:10px 14px}
         </div>
       </div>
       <div>
-        <div style="font-size:12px;color:var(--text2);margin-bottom:6px">🌙 Mørk modus – accent-farge</div>
+        <div style="font-size:12px;color:var(--text2);margin-bottom:6px">Mørk modus – accent-farge</div>
         <div style="display:flex;align-items:center;gap:10px">
           <input type="color" id="color-dark" onchange="setAccentColor('dark',this.value)" style="width:44px;height:36px;border:1px solid var(--border);border-radius:8px;cursor:pointer;background:none;padding:2px" />
           <span style="font-size:12px;color:var(--text3)" id="color-dark-val"></span>
@@ -591,7 +592,7 @@ function initTheme(){
 function setTheme(theme,save=true){
   document.documentElement.setAttribute('data-theme',theme);
   const btn=document.getElementById('theme-btn');
-  if(btn)btn.textContent=theme==='dark'?'☀️':'🌙';
+  if(btn)btn.innerHTML=theme==='dark'?'<i class="ti ti-sun"></i>':'<i class="ti ti-moon-stars"></i>';
   if(save)localStorage.setItem('hjemmebasen_theme',theme);
 }
 function toggleTheme(){setTheme(document.documentElement.getAttribute('data-theme')==='dark'?'light':'dark');}

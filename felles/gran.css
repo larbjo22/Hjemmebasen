@@ -1,0 +1,69 @@
+/* ── gran.css ─────────────────────────────────────────────────
+   «Gran»-identiteten: dyp granskog-grønn på varm papirbunn, med
+   oker for det som haster. Lastes ETTER appens innebygde CSS og
+   vinner dermed token-kampen – appene omfarges uten at én eneste
+   komponentregel røres. Kontrasten på --text3/--text4 er samtidig
+   løftet til lesbart nivå (review-funn).
+
+   Bruksregel: aksentfargen er ÉN – gran. Oker (--varsle) er
+   forbeholdt frister/medisin/«bruk opp». Semantisk rød/grønn består. */
+
+:root{
+  --bg:#f7f6f2;--surface:#ffffff;--surface2:#f0efe9;
+  --border:#e3e1d8;--border2:#edece5;
+  --text:#1f2a26;--text2:#4c5a53;--text3:#6d7a74;--text4:#93a099;--text5:#b3bdb7;
+  --accent:#2e5d4f;--accent-bg:#e9f0ed;--accent-border:#c5d8d0;--accent-text:#2e5d4f;
+  --orange:#2e5d4f;--orange-bg:#e9f0ed;--orange-light:#dce8e3;
+  --varsle:#b45309;
+  --danger:#b3392b;--green:#2e7d54;
+  --radius:14px;
+}
+@media(prefers-color-scheme:dark){:root{
+  --bg:#151a18;--surface:#1d2422;--surface2:#252d2a;
+  --border:#2c3531;--border2:#242c29;
+  --text:#e6ebe8;--text2:#c0cac5;--text3:#8fa098;--text4:#6d7d75;--text5:#55645d;
+  --accent:#7fb8a4;--accent-bg:#243731;--accent-border:#3a544a;--accent-text:#9fd0be;
+  --orange:#7fb8a4;--orange-bg:#243731;--orange-light:#2b423a;
+  --varsle:#e5a04c;
+  --danger:#e07a6b;--green:#7fc79e;
+}}
+[data-theme="dark"]{
+  --bg:#151a18;--surface:#1d2422;--surface2:#252d2a;
+  --border:#2c3531;--border2:#242c29;
+  --text:#e6ebe8;--text2:#c0cac5;--text3:#8fa098;--text4:#6d7d75;--text5:#55645d;
+  --accent:#7fb8a4;--accent-bg:#243731;--accent-border:#3a544a;--accent-text:#9fd0be;
+  --orange:#7fb8a4;--orange-bg:#243731;--orange-light:#2b423a;
+  --varsle:#e5a04c;
+  --danger:#e07a6b;--green:#7fc79e;
+}
+[data-theme="light"]{
+  --bg:#f7f6f2;--surface:#ffffff;--surface2:#f0efe9;
+  --border:#e3e1d8;--border2:#edece5;
+  --text:#1f2a26;--text2:#4c5a53;--text3:#6d7a74;--text4:#93a099;--text5:#b3bdb7;
+  --accent:#2e5d4f;--accent-bg:#e9f0ed;--accent-border:#c5d8d0;--accent-text:#2e5d4f;
+  --orange:#2e5d4f;--orange-bg:#e9f0ed;--orange-light:#dce8e3;
+  --varsle:#b45309;
+  --danger:#b3392b;--green:#2e7d54;
+}
+
+/* Middagsappens kokk-fallbacks (definert per app) harmoniseres */
+:root,[data-theme="dark"],[data-theme="light"]{
+  --cook-lars-bg:var(--accent-bg);--cook-lars-fg:var(--accent-text);
+  --cook-lene-bg:var(--accent-bg);--cook-lene-fg:var(--accent-text);
+  --cook-felles-bg:var(--accent-bg);--cook-felles-fg:var(--accent-text);
+}
+
+/* Myk, avrundet display på titler og hilsen – Gran-signaturen */
+.app-title,.hilsen h2,.modal-title,.ob-tittel,.logo h1,
+.rname,.stat-num,.status-tall,.price-big{
+  font-family:ui-rounded,'SF Pro Rounded',-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;
+}
+
+/* Hvite knapper på gran-bakgrunn trenger hvit tekst begge veier */
+[data-theme="dark"] .btn-primary,.btn-primary{color:#fff}
+
+/* App-tittelens ikon følger gran uansett appens innebygde farge */
+.app-title i{color:var(--accent-text)}
+
+/* Ikon-chip: app-ikon i tonet rute (forsidefliser m.m.) */
+.ikon-chip{display:inline-flex;align-items:center;justify-content:center;width:40px;height:40px;border-radius:12px;background:var(--accent-bg);color:var(--accent-text);font-size:21px;flex-shrink:0}
