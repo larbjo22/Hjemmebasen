@@ -1,0 +1,156 @@
+<!DOCTYPE html>
+<html lang="no">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<link rel="manifest" href="manifest.webmanifest">
+<meta name="theme-color" content="#f97316">
+<link rel="apple-touch-icon" href="ikoner/apple-touch-icon.png">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="mobile-web-app-capable" content="yes">
+<title>Beskjeder</title>
+<link rel="stylesheet" href="felles/stil.css">
+<style>
+.skriv-rad{display:flex;gap:6px}
+.skriv-rad .hinput{flex:1;min-width:0}
+.lapp{background:var(--surface);border:1px solid var(--border);border-left:4px solid var(--accent);border-radius:10px;padding:10px 12px;margin-bottom:8px}
+.lapp-tekst{font-size:14px;line-height:1.5;white-space:pre-line;word-break:break-word}
+.lapp-meta{display:flex;align-items:center;gap:6px;margin-top:6px;font-size:11px;color:var(--text3)}
+.lapp-meta .hrow-del{margin-left:auto}
+.lapp.ny{border-left-color:var(--green)}
+@media(min-width:700px){.fw{max-width:560px}}
+</style>
+</head>
+<body>
+<div class="fw">
+  <div class="top-bar">
+    <p class="app-title">📌 Beskjeder</p>
+    <div class="top-right">
+      <button class="icon-btn" id="theme-btn"></button>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-title">✏️ Ny beskjed til tavla</div>
+    <div class="skriv-rad">
+      <input type="text" id="ny-tekst" class="hinput" maxlength="300" placeholder="F.eks. «Tar bilen i dag» eller «Husk gymtøy fredag»" />
+      <button class="btn-primary" style="flex:0 0 auto;width:auto;padding:10px 16px" id="send-btn">Heng opp</button>
+    </div>
+  </div>
+
+  <div id="tavle"></div>
+  <div class="status-bar" id="status-bar"></div>
+</div>
+
+<script type="module">
+import { requireAuth } from './felles/auth.js';
+import { dbGet, dbSet, dbListen } from './felles/storage.js';
+import { esc, initTheme, toggleTheme, setStatus, personFarge } from './felles/ui.js';
+import { monterNav } from './felles/nav.js';
+
+initTheme();
+document.getElementById('theme-btn').addEventListener('click', toggleTheme);
+
+const APP='beskjeder';
+let FAMILIE=null, mittNavn='', data=null, dataLoaded=false, sistSkrevet='';
+
+// Normaliser-mønsteret: adopter enhver ikke-null node, default alle felter
+// (Firebase stripper tomme arrays – aldri gate på enkeltfelter).
+function normaliser(d){
+  const b=d||{};
+  if(!Array.isArray(b.lapper))b.lapper=[];
+  const maxId=Math.max(0,...b.lapper.map(l=>l.id||0));
+  if(!b.nextId||b.nextId<=maxId)b.nextId=maxId+1;
+  return b;
+}
+
+async function load(){
+  setStatus('Laster...');
+  try{
+    const ctx=await requireAuth();
+    if(!ctx.familieId){setStatus('Ingen husstand – kontakt administrator','err');return;}
+    FAMILIE=ctx.familieId;
+    mittNavn=(ctx.medlem?.navn||'').split(' ')[0]||'Ukjent';
+    monterNav(FAMILIE,APP);
+    data=normaliser(await dbGet(FAMILIE,APP));
+    dataLoaded=true;
+    setStatus('');
+    startListen();
+  }catch(e){setStatus('Kunne ikke laste – '+(e.message||'prøv igjen'),'err');return;}
+  render();
+}
+
+async function save(){
+  if(!dataLoaded){setStatus('Ikke lagret – data er ikke lastet','err');return;}
+  try{
+    sistSkrevet=JSON.stringify(data);
+    await dbSet(FAMILIE,APP,data);
+    setStatus('Lagret ✓','ok');
+  }catch(e){setStatus('Kunne ikke lagre – prøv igjen','err');}
+}
+
+let stopListen=null;
+function startListen(){
+  if(stopListen)return;
+  stopListen=dbListen(FAMILIE,APP,saved=>{
+    if(!saved)return;
+    if(JSON.stringify(saved)===sistSkrevet)return; // ekko av egen skriving
+    const s=JSON.stringify(normaliser(saved));
+    if(s===JSON.stringify(data))return;
+    const inp=document.getElementById('ny-tekst');
+    if(inp&&inp.value.trim())return; // noen skriver – ikke forstyrr
+    data=JSON.parse(s);
+    render();
+  });
+}
+
+function tidTxt(ts){
+  const d=Date.now()-ts;
+  if(d<60000)return 'nå nettopp';
+  if(d<3600000)return 'for '+Math.round(d/60000)+' min siden';
+  if(d<86400000)return 'for '+Math.round(d/3600000)+' t siden';
+  return new Date(ts).toLocaleDateString('nb-NO',{weekday:'short',day:'numeric',month:'short'})
+    +' kl '+String(new Date(ts).getHours()).padStart(2,'0')+':'+String(new Date(ts).getMinutes()).padStart(2,'0');
+}
+
+function render(){
+  const el=document.getElementById('tavle');
+  const lapper=[...data.lapper].sort((a,b)=>b.ts-a.ts);
+  el.innerHTML=lapper.map(l=>
+    '<div class="lapp'+(Date.now()-l.ts<3600000?' ny':'')+'" style="border-left-color:'+personFarge(l.fra)+'">'
+    +'<div class="lapp-tekst">'+esc(l.tekst)+'</div>'
+    +'<div class="lapp-meta"><span class="pfarge" style="width:9px;height:9px;border-radius:50%;display:inline-block;background:'+personFarge(l.fra)+'"></span>'
+    +esc(l.fra)+' · '+esc(tidTxt(l.ts))
+    +'<button class="hrow-del" data-slett="'+l.id+'" title="Ta ned lappen">×</button></div></div>').join('')
+    ||'<div class="empty-state">Tavla er tom – heng opp den første beskjeden! 📌</div>';
+}
+
+async function sendBeskjed(){
+  const inp=document.getElementById('ny-tekst');
+  const tekst=inp.value.trim();
+  if(!tekst)return;
+  data.lapper.push({id:data.nextId++,tekst,fra:mittNavn,ts:Date.now()});
+  // Tavla er flyktig: behold de 50 nyeste (ubegrenset vekst unngås)
+  if(data.lapper.length>50)data.lapper=data.lapper.sort((a,b)=>b.ts-a.ts).slice(0,50);
+  inp.value='';
+  await save();render();
+}
+document.getElementById('send-btn').addEventListener('click',sendBeskjed);
+document.getElementById('ny-tekst').addEventListener('keydown',e=>{if(e.key==='Enter')sendBeskjed();});
+
+document.getElementById('tavle').addEventListener('click',async e=>{
+  const b=e.target.closest('[data-slett]');
+  if(!b)return;
+  if(!confirm('Ta ned lappen?'))return;
+  data.lapper=data.lapper.filter(l=>l.id!==parseInt(b.dataset.slett));
+  await save();render();
+});
+
+// «for X min siden» holder seg fersk
+setInterval(()=>{if(dataLoaded&&!document.getElementById('ny-tekst').value.trim())render();},60000);
+
+load();
+</script>
+</body>
+</html>

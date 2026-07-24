@@ -106,7 +106,7 @@ document.getElementById('meny-btn').addEventListener('click', () => {
 });
 document.getElementById('logg-ut-btn').addEventListener('click', loggUt);
 
-const BYGGET = new Set(['handleliste', 'middag', 'oppgaver', 'fryser', 'plikter', 'sovn', 'helse']);
+const BYGGET = new Set(['handleliste', 'middag', 'oppgaver', 'fryser', 'plikter', 'sovn', 'helse', 'beskjeder', 'pakkelister', 'vekst']);
 const UKEDAG = ['søndag', 'mandag', 'tirsdag', 'onsdag', 'torsdag', 'fredag', 'lørdag'];
 
 const { erAdmin, familieId, medlem } = await requireAuth();
@@ -223,6 +223,12 @@ function tegnVarsler(fam, meta) {
         tekst: 'I dag til middag: ' + idag.meal + (idag.cook ? ' (' + idag.cook + ' lager)' : '') });
       else v.push({ prio: 3, ikon: '🍽️', href: 'middag.html', tekst: 'Ingen middag planlagt i dag – spinn ruletten?' });
     }
+    // Ferske beskjeder på tavla (siste 24 t)
+    if (aktiv('beskjeder')) {
+      const lapper = (fam.beskjeder?.lapper || []).filter(l => Date.now() - l.ts < 86400000).sort((a, b) => b.ts - a.ts);
+      if (lapper.length) v.push({ prio: 3, ikon: '📌', href: 'beskjeder.html',
+        tekst: lapper[0].fra + ': «' + lapper[0].tekst + '»' + (lapper.length > 1 ? ' (+' + (lapper.length - 1) + ' til)' : '') });
+    }
     // Helse: neste dose
     if (aktiv('helse')) {
       const doser = fam.helse?.doser || [];
@@ -327,6 +333,29 @@ function appStatus(app, fam) {
         }
       }
       return { txt: 'Ingen aktive medisiner 💚' };
+    }
+    if (app === 'beskjeder') {
+      const lapper = d?.lapper || [];
+      if (!lapper.length) return { txt: 'Tavla er tom' };
+      const siste = [...lapper].sort((a, b) => b.ts - a.ts)[0];
+      return { txt: siste.fra + ': «' + siste.tekst + '»', varsel: Date.now() - siste.ts < 86400000 };
+    }
+    if (app === 'pakkelister') {
+      const lister = d?.lister || [];
+      const paagaar = lister.filter(l => (l.items || []).length && (l.items || []).some(i => i.pakket) && (l.items || []).some(i => !i.pakket));
+      if (paagaar.length) {
+        const l = paagaar[0];
+        return { txt: l.navn + ': ' + l.items.filter(i => i.pakket).length + '/' + l.items.length + ' pakket', varsel: true };
+      }
+      return { txt: lister.length ? lister.length + ' lister klare' : 'Ingen lister ennå' };
+    }
+    if (app === 'vekst') {
+      const ms = d?.maalinger || [];
+      if (!ms.length) return { txt: 'Ingen målinger ennå' };
+      const siste = [...ms].sort((a, b) => (b.dato || '').localeCompare(a.dato || ''))[0];
+      const navn = barnNavn(fam, siste.barn);
+      const deler = [siste.hoyde ? siste.hoyde + ' cm' : null, siste.vekt ? siste.vekt + ' kg' : null, siste.sko ? 'sko ' + siste.sko : null].filter(Boolean);
+      return { txt: 'Sist: ' + navn + ' – ' + deler.join(' · ') };
     }
   } catch (e) { /* defensivt */ }
   return { txt: '' };

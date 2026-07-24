@@ -1,0 +1,224 @@
+<!DOCTYPE html>
+<html lang="no">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<link rel="manifest" href="manifest.webmanifest">
+<meta name="theme-color" content="#f97316">
+<link rel="apple-touch-icon" href="ikoner/apple-touch-icon.png">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="mobile-web-app-capable" content="yes">
+<title>Vekst</title>
+<link rel="stylesheet" href="felles/stil.css">
+<style>
+.hchip{font-size:13px;font-weight:600;padding:7px 14px;border-radius:16px;border:1px solid var(--border);background:var(--surface2);color:var(--text2);cursor:pointer;display:inline-flex;align-items:center;gap:6px;user-select:none}
+.hchip.on{background:var(--accent-bg);border-color:var(--accent-border);color:var(--accent-text)}
+.chiprad{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:10px}
+.pfarge{width:9px;height:9px;border-radius:50%;display:inline-block}
+.status-grid{display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px}
+.status-boks{background:var(--surface2);border-radius:10px;padding:12px 8px;text-align:center}
+.status-tall{font-size:22px;font-weight:800;line-height:1.1}
+.status-lbl{font-size:10.5px;color:var(--text3);margin-top:3px}
+.status-delta{font-size:10.5px;color:var(--green);margin-top:2px;font-weight:600}
+.logg-rad{display:flex;gap:6px}
+.logg-rad .hinput{min-width:0;text-align:center}
+.alder-lbl{font-size:11px;color:var(--text3);margin-top:4px}
+@media(min-width:700px){.fw{max-width:560px}}
+</style>
+</head>
+<body>
+<div class="fw">
+  <div class="top-bar">
+    <p class="app-title">📏 Vekst</p>
+    <div class="top-right">
+      <button class="icon-btn" id="theme-btn"></button>
+    </div>
+  </div>
+
+  <div id="ingen-barn" class="card" style="display:none">
+    <p style="font-size:13px;color:var(--text2);line-height:1.5">Ingen barn er registrert i husstanden ennå.
+    Legg til barn i <a href="onboarding.html" style="color:var(--accent-text)">Endre oppsett</a>, så dukker de opp her.</p>
+  </div>
+
+  <div id="hoved" style="display:none">
+    <div class="chiprad" id="barn-chips"></div>
+
+    <div class="card">
+      <div class="card-title">📊 Sist målt</div>
+      <div class="status-grid" id="status-grid"></div>
+      <p class="alder-lbl" id="alder-lbl"></p>
+    </div>
+
+    <div class="card">
+      <div class="card-title">➕ Ny måling <span style="text-transform:none;letter-spacing:0;font-weight:400">(fyll det du har)</span></div>
+      <div class="logg-rad">
+        <input type="number" step="0.1" inputmode="decimal" id="ny-hoyde" class="hinput" placeholder="Høyde cm" />
+        <input type="number" step="0.1" inputmode="decimal" id="ny-vekt" class="hinput" placeholder="Vekt kg" />
+        <input type="number" step="0.5" inputmode="decimal" id="ny-sko" class="hinput" placeholder="Sko str" />
+      </div>
+      <label for="ny-dato">Dato</label>
+      <input type="date" id="ny-dato" class="hinput" />
+      <div style="margin-top:10px"><button class="btn-primary" id="logg-btn">Loggfør</button></div>
+    </div>
+
+    <div class="card">
+      <div class="card-title">🕐 Historikk</div>
+      <div id="historikk"></div>
+    </div>
+  </div>
+
+  <div class="status-bar" id="status-bar"></div>
+</div>
+
+<script type="module">
+import { requireAuth } from './felles/auth.js';
+import { dbGet, dbSet, dbListen } from './felles/storage.js';
+import { esc, todayStr, initTheme, toggleTheme, setStatus, personFarge } from './felles/ui.js';
+import { monterNav } from './felles/nav.js';
+
+initTheme();
+document.getElementById('theme-btn').addEventListener('click', toggleTheme);
+
+const APP='vekst';
+let FAMILIE=null, barn=[], data=null, dataLoaded=false, sistSkrevet='', aktivBarnId=null;
+
+function normaliser(d){
+  const b=d||{};
+  if(!Array.isArray(b.maalinger))b.maalinger=[];
+  const maxId=Math.max(0,...b.maalinger.map(m=>m.id||0));
+  if(!b.nextId||b.nextId<=maxId)b.nextId=maxId+1;
+  return b;
+}
+
+async function load(){
+  setStatus('Laster...');
+  try{
+    const ctx=await requireAuth();
+    if(!ctx.familieId){setStatus('Ingen husstand – kontakt administrator','err');return;}
+    FAMILIE=ctx.familieId;
+    monterNav(FAMILIE,APP);
+    const p=await dbGet(FAMILIE,'personer');
+    barn=(p?.barn||[]).filter(b=>b.navn);
+    data=normaliser(await dbGet(FAMILIE,APP));
+    dataLoaded=true;
+    setStatus('');
+    startListen();
+  }catch(e){setStatus('Kunne ikke laste – '+(e.message||'prøv igjen'),'err');return;}
+  if(aktivBarnId===null&&barn.length)aktivBarnId=barn[0].id;
+  document.getElementById('ny-dato').value=todayStr();
+  render();
+}
+
+async function save(){
+  if(!dataLoaded){setStatus('Ikke lagret – data er ikke lastet','err');return;}
+  try{
+    sistSkrevet=JSON.stringify(data);
+    await dbSet(FAMILIE,APP,data);
+    setStatus('Lagret ✓','ok');
+  }catch(e){setStatus('Kunne ikke lagre – prøv igjen','err');}
+}
+
+let stopListen=null;
+function startListen(){
+  if(stopListen)return;
+  stopListen=dbListen(FAMILIE,APP,saved=>{
+    if(!saved)return;
+    if(JSON.stringify(saved)===sistSkrevet)return;
+    const s=JSON.stringify(normaliser(saved));
+    if(s===JSON.stringify(data))return;
+    if(['ny-hoyde','ny-vekt','ny-sko'].some(id=>document.getElementById(id)?.value))return;
+    data=JSON.parse(s);
+    render();
+  });
+}
+
+// ── Hjelpere ──
+function barnMaalinger(bid){
+  return data.maalinger.filter(m=>m.barn===bid).sort((a,b)=>(b.dato||'').localeCompare(a.dato||''));
+}
+function sisteMed(bid,felt){
+  return barnMaalinger(bid).find(m=>m[felt]!=null&&m[felt]!=='')||null;
+}
+function alderTxt(fodt,dato){
+  if(!fodt)return '';
+  const mnd=Math.floor((new Date(dato||todayStr())-new Date(fodt))/(30.44*86400000));
+  if(mnd<24)return mnd+' mnd';
+  const aar=Math.floor(mnd/12);
+  return aar+' år'+(mnd%12?' '+(mnd%12)+' mnd':'');
+}
+function deltaTxt(bid,felt,enhet){
+  const ms=barnMaalinger(bid).filter(m=>m[felt]!=null&&m[felt]!=='');
+  if(ms.length<2)return '';
+  const d=(parseFloat(ms[0][felt])-parseFloat(ms[1][felt])).toFixed(1).replace('.0','').replace('.',',');
+  if(parseFloat(d.replace(',','.'))===0)return '';
+  return (d.startsWith('-')?'':'+')+d+' '+enhet+' siden sist';
+}
+function fmtDato(ds){return ds?new Date(ds+'T12:00:00').toLocaleDateString('nb-NO',{day:'numeric',month:'short',year:'2-digit'}):'';}
+
+// ── Render ──
+function render(){
+  const harBarn=barn.length>0;
+  document.getElementById('ingen-barn').style.display=harBarn?'none':'block';
+  document.getElementById('hoved').style.display=harBarn?'block':'none';
+  if(!harBarn)return;
+
+  document.getElementById('barn-chips').innerHTML=barn.map(b=>
+    '<span class="hchip'+(b.id===aktivBarnId?' on':'')+'" data-velg="'+b.id+'"><span class="pfarge" style="background:'+personFarge(b.navn)+'"></span>'+esc(b.navn)+'</span>').join('');
+  document.getElementById('barn-chips').style.display=barn.length<2?'none':'flex';
+
+  const b=barn.find(x=>x.id===aktivBarnId)||barn[0];
+  const hoyde=sisteMed(b.id,'hoyde'), vekt=sisteMed(b.id,'vekt'), sko=sisteMed(b.id,'sko');
+  document.getElementById('status-grid').innerHTML=
+    boks(hoyde?hoyde.hoyde+'':'–','Høyde (cm)',deltaTxt(b.id,'hoyde','cm'),hoyde?fmtDato(hoyde.dato):'')
+    +boks(vekt?vekt.vekt+'':'–','Vekt (kg)',deltaTxt(b.id,'vekt','kg'),vekt?fmtDato(vekt.dato):'')
+    +boks(sko?sko.sko+'':'–','Skostørrelse',deltaTxt(b.id,'sko',''),sko?fmtDato(sko.dato):'');
+  document.getElementById('alder-lbl').textContent=b.fodt?esc(b.navn)+' er '+alderTxt(b.fodt)+' gammel':'';
+
+  const ms=barnMaalinger(b.id);
+  document.getElementById('historikk').innerHTML=ms.map(m=>
+    '<div class="hrow"><div class="hrow-main"><div class="hrow-title">'
+    +[m.hoyde?m.hoyde+' cm':null,m.vekt?m.vekt+' kg':null,m.sko?'sko '+m.sko:null].filter(Boolean).join(' · ')
+    +'</div><div class="hrow-sub">'+fmtDato(m.dato)+(b.fodt?' · '+alderTxt(b.fodt,m.dato):'')+'</div></div>'
+    +'<button class="hrow-del" data-slett="'+m.id+'" title="Slett">×</button></div>').join('')
+    ||'<div class="empty-state" style="padding:.8rem">Ingen målinger ennå – loggfør den første over 📏</div>';
+}
+function boks(tall,lbl,delta,dato){
+  return '<div class="status-boks"><div class="status-tall">'+esc(String(tall))+'</div><div class="status-lbl">'+lbl+(dato?' · '+esc(dato):'')+'</div>'
+    +(delta?'<div class="status-delta">'+esc(delta)+'</div>':'')+'</div>';
+}
+
+// ── Hendelser ──
+document.getElementById('barn-chips').addEventListener('click',e=>{
+  const c=e.target.closest('[data-velg]');
+  if(c){aktivBarnId=parseInt(c.dataset.velg);render();}
+});
+
+document.getElementById('logg-btn').addEventListener('click',async()=>{
+  const b=barn.find(x=>x.id===aktivBarnId);
+  if(!b){setStatus('Velg barn','err');return;}
+  const hoyde=parseFloat(document.getElementById('ny-hoyde').value)||null;
+  const vekt=parseFloat(document.getElementById('ny-vekt').value)||null;
+  const sko=parseFloat(document.getElementById('ny-sko').value)||null;
+  const dato=document.getElementById('ny-dato').value||todayStr();
+  if(hoyde===null&&vekt===null&&sko===null){setStatus('Fyll inn minst ett felt','err');return;}
+  if(hoyde!==null&&(hoyde<30||hoyde>220)){setStatus('Høyden ser ikke riktig ut (30–220 cm)','err');return;}
+  if(vekt!==null&&(vekt<1||vekt>150)){setStatus('Vekten ser ikke riktig ut (1–150 kg)','err');return;}
+  if(sko!==null&&(sko<14||sko>48)){setStatus('Skostørrelsen ser ikke riktig ut (14–48)','err');return;}
+  data.maalinger.push({id:data.nextId++,barn:b.id,dato,hoyde,vekt,sko});
+  ['ny-hoyde','ny-vekt','ny-sko'].forEach(id=>document.getElementById(id).value='');
+  await save();render();
+});
+
+document.getElementById('historikk').addEventListener('click',async e=>{
+  const b=e.target.closest('[data-slett]');
+  if(!b)return;
+  if(!confirm('Slette målingen?'))return;
+  data.maalinger=data.maalinger.filter(m=>m.id!==parseInt(b.dataset.slett));
+  await save();render();
+});
+
+load();
+</script>
+</body>
+</html>
