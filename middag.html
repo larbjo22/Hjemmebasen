@@ -380,7 +380,7 @@ body.embed .status-bar{display:none}
 // (ukens ingredienser) og 'personer' (lazy-seed av people-lista).
 import { requireAuth } from './felles/auth.js';
 import { dbGet, dbSet, dbListen } from './felles/storage.js';
-import { esc, todayStr } from './felles/ui.js';
+import { esc, todayStr, initTheme, toggleTheme, setStatus } from './felles/ui.js';
 import { monterNav } from './felles/nav.js';
 const APP='middag';
 let FAMILIE=null;
@@ -479,11 +479,6 @@ function checkFreezer(mealName){
 }
 
 // ── Status ───────────────────────────────────────────────────
-function setStatus(msg,type=''){
-  const s=document.getElementById('status-bar');
-  s.textContent=msg;s.className='status-bar'+(type?' '+type:'');
-  if(type==='ok')setTimeout(()=>{s.textContent='';s.className='status-bar';},2000);
-}
 
 // ── Lagring (Firebase via felles/storage.js) ─────────────────
 function adoptData(saved){
@@ -1313,22 +1308,6 @@ function renderRulett(){
   rulettRenderCook();
 }
 
-function initTheme(){
-  const saved=localStorage.getItem('hjemmebasen_theme');
-  const prefersDark=window.matchMedia('(prefers-color-scheme:dark)').matches;
-  const theme=saved||(prefersDark?'dark':'light');
-  setTheme(theme,false);
-}
-function setTheme(theme,save=true){
-  document.documentElement.setAttribute('data-theme',theme);
-  const btn=document.getElementById('theme-btn');
-  if(btn)btn.innerHTML=theme==='dark'?'<i class="ti ti-sun"></i>':'<i class="ti ti-moon-stars"></i>';
-  if(save)localStorage.setItem('hjemmebasen_theme',theme);
-}
-function toggleTheme(){
-  const current=document.documentElement.getAttribute('data-theme')||'light';
-  setTheme(current==='dark'?'light':'dark');
-}
 initTheme();
 
 // Kompakt dashboard-modus: middag.html?embed=1

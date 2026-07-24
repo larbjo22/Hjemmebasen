@@ -4,7 +4,8 @@
 import { app } from './firebase-init.js';
 import {
   getAuth, onAuthStateChanged, signInWithEmailAndPassword,
-  sendPasswordResetEmail, signOut, setPersistence, browserLocalPersistence,
+  sendPasswordResetEmail, sendEmailVerification, signOut,
+  setPersistence, browserLocalPersistence,
 } from 'https://www.gstatic.com/firebasejs/10.14.1/firebase-auth.js';
 import {
   getDatabase, ref, get, update,
@@ -42,6 +43,12 @@ export async function requireAuth({ adminKreves = false, utenTilgang = null } = 
     location.replace('login.html?feil=ingen-tilgang');
     return new Promise(() => {});
   }
+  // E-postverifisering kreves for vanlige medlemmer. Admin (eieren) unntas
+  // så hen aldri kan låse seg selv ute. login-siden tilbyr «send på nytt».
+  if (medlem && !erAdmin && !user.emailVerified) {
+    location.replace('login.html?feil=ikke-verifisert');
+    return new Promise(() => {});
+  }
 
   // «Sist sett» – eneste feltet et medlem kan skrive på sin egen brukernode
   if (medlem) update(ref(db, 'brukere/' + user.uid), { sistSett: Date.now() }).catch(() => {});
@@ -60,4 +67,9 @@ export function loggUt() {
 
 export function glemtPassord(epost) {
   return sendPasswordResetEmail(auth, epost);
+}
+
+// Sender (evt. på nytt) en e-post med bekreftelseslenke til brukeren.
+export function sendVerifisering(bruker) {
+  return sendEmailVerification(bruker || auth.currentUser);
 }

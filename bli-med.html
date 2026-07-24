@@ -36,7 +36,7 @@
     <input class="hinput" id="navn" maxlength="40" placeholder="F.eks. Kari" autocomplete="name" />
     <label for="epost">E-post (blir innloggingen din)</label>
     <input class="hinput" id="epost" type="email" autocomplete="username" inputmode="email" />
-    <label for="passord">Velg et passord (min. 6 tegn)</label>
+    <label for="passord">Velg et passord (min. 8 tegn)</label>
     <input class="hinput" id="passord" type="password" autocomplete="new-password" />
     <label for="kode">Invitasjonskode</label>
     <input class="hinput" id="kode" maxlength="12" autocomplete="off" autocapitalize="characters" style="text-transform:uppercase;letter-spacing:.15em;font-weight:700" />
@@ -53,7 +53,7 @@ import { app } from './felles/firebase-init.js';
 import { initTheme, setStatus } from './felles/ui.js';
 import {
   getAuth, createUserWithEmailAndPassword, signInWithEmailAndPassword,
-  setPersistence, browserLocalPersistence,
+  sendEmailVerification, setPersistence, browserLocalPersistence,
 } from 'https://www.gstatic.com/firebasejs/10.14.1/firebase-auth.js';
 import { getDatabase, ref, get, set } from 'https://www.gstatic.com/firebasejs/10.14.1/firebase-database.js';
 
@@ -79,8 +79,8 @@ document.getElementById('bli-med-btn').addEventListener('click', async () => {
   const epost = document.getElementById('epost').value.trim();
   const passord = document.getElementById('passord').value;
   const kode = document.getElementById('kode').value.trim().toUpperCase();
-  if (!navn || !epost || passord.length < 6 || !kode) {
-    visFeil('Fyll inn navn, e-post, passord (min. 6 tegn) og invitasjonskode.');
+  if (!navn || !epost || passord.length < 8 || !kode) {
+    visFeil('Fyll inn navn, e-post, passord (min. 8 tegn) og invitasjonskode.');
     return;
   }
   const btn = document.getElementById('bli-med-btn');
@@ -106,6 +106,8 @@ document.getElementById('bli-med-btn').addEventListener('click', async () => {
       familieId, navn, epost, kode,
       opprettet: Date.now(), sistSett: 0,
     });
+    // Send bekreftelseslenke; requireAuth sender uverifiserte til login-skjermen
+    try { if (!cred.user.emailVerified) await sendEmailVerification(cred.user); } catch (e) { /* login tilbyr «send på nytt» */ }
     location.replace('index.html');
   } catch (e) {
     const tekst = e.code === 'auth/email-already-in-use' ? 'E-posten er i bruk med et annet passord.'

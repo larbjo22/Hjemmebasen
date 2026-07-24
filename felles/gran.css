@@ -67,3 +67,6 @@
 
 /* Ikon-chip: app-ikon i tonet rute (forsidefliser m.m.) */
 .ikon-chip{display:inline-flex;align-items:center;justify-content:center;width:40px;height:40px;border-radius:12px;background:var(--accent-bg);color:var(--accent-text);font-size:21px;flex-shrink:0}
+
+/* Avatarer: farget initial-sirkel, eller opplastet bilde */
+.avatar{display:inline-flex;align-items:center;justify-content:center;border-radius:50%;color:#fff;font-weight:700;background-size:cover;background-position:center;flex-shrink:0;line-height:1;overflow:hidden;vertical-align:middle;letter-spacing:.02em}

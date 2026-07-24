@@ -47,7 +47,7 @@
 </div>
 
 <script type="module">
-import { auth, loggInn, glemtPassord } from './felles/auth.js';
+import { auth, loggInn, glemtPassord, sendVerifisering } from './felles/auth.js';
 import { initTheme, setStatus } from './felles/ui.js';
 import { onAuthStateChanged, signOut } from 'https://www.gstatic.com/firebasejs/10.14.1/firebase-auth.js';
 
@@ -56,15 +56,46 @@ initTheme();
 const feilEl = document.getElementById('feil');
 function visFeil(msg) { feilEl.textContent = msg; feilEl.style.display = 'block'; }
 
+// Verifiseringsskjerm: forklaring + «send på nytt» + «jeg har bekreftet».
+let verifiserVist = false;
+function visVerifiser(bruker) {
+  verifiserVist = true;
+  const epost = bruker?.email || document.getElementById('epost').value.trim();
+  visFeil('Bekreft e-posten din før du logger inn. Vi har sendt en lenke til ' + (epost || 'adressen din') + ' – sjekk også søppelpost.');
+  let boks = document.getElementById('verifiser-boks');
+  if (!boks) {
+    boks = document.createElement('div');
+    boks.id = 'verifiser-boks';
+    boks.style.cssText = 'display:flex;gap:6px;margin-top:10px';
+    boks.innerHTML = '<button class="btn-ghost" id="verifiser-send" style="flex:1">Send lenke på nytt</button>'
+      + '<button class="btn-primary" id="verifiser-prov" style="flex:1;width:auto">Jeg har bekreftet</button>';
+    feilEl.parentNode.insertBefore(boks, feilEl.nextSibling);
+    document.getElementById('verifiser-send').addEventListener('click', async () => {
+      try { await sendVerifisering(auth.currentUser); setStatus('Bekreftelseslenke sendt ✓', 'ok'); }
+      catch (e) { setStatus('Kunne ikke sende – prøv igjen om litt', 'err'); }
+    });
+    document.getElementById('verifiser-prov').addEventListener('click', async () => {
+      try { await auth.currentUser?.reload(); } catch (e) { /* ignore */ }
+      if (auth.currentUser?.emailVerified) location.replace('index.html');
+      else setStatus('Ikke bekreftet ennå – klikk lenken i e-posten først', 'err');
+    });
+  }
+}
+
 // Kom brukeren hit med ?feil=ingen-tilgang: forklar hvorfor, og logg ut
 // stille så neste innloggingsforsøk starter med blanke ark.
-if (new URLSearchParams(location.search).get('feil') === 'ingen-tilgang') {
+const feilParam = new URLSearchParams(location.search).get('feil');
+if (feilParam === 'ingen-tilgang') {
   visFeil('Kontoen din er ikke knyttet til en husstand. Kontakt administrator.');
   signOut(auth).catch(() => {});
 }
 
-// Allerede innlogget → rett til launcheren
-onAuthStateChanged(auth, user => { if (user && !feilEl.textContent) location.replace('index.html'); });
+// Allerede innlogget → rett til launcheren (men bare hvis e-posten er bekreftet)
+onAuthStateChanged(auth, user => {
+  if (!user) return;
+  if (feilParam === 'ikke-verifisert' || !user.emailVerified) { visVerifiser(user); return; }
+  if (!feilEl.textContent) location.replace('index.html');
+});
 
 const FEILTEKST = {
   'auth/invalid-credential': 'Feil e-post eller passord.',
@@ -82,7 +113,13 @@ async function inn() {
   btn.disabled = true; btn.textContent = 'Logger inn...';
   feilEl.style.display = 'none'; feilEl.textContent = '';
   try {
-    await loggInn(epost, passord);
+    const cred = await loggInn(epost, passord);
+    if (!cred.user.emailVerified) {
+      try { await sendVerifisering(cred.user); } catch (e) { /* vises som «send på nytt» */ }
+      visVerifiser(cred.user);
+      btn.disabled = false; btn.textContent = 'Logg inn';
+      return;
+    }
     location.replace('index.html');
   } catch (e) {
     visFeil(FEILTEKST[e.code] || 'Innlogging feilet. Prøv igjen.');

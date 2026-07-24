@@ -36,7 +36,7 @@
 <body>
 <div class="fw">
   <div class="top-bar">
-    <p class="app-title"><i class="ti ti-ruler-2"></i> Vekst</p>
+    <h1 class="app-title"><i class="ti ti-ruler-2"></i> Vekst</h1>
     <div class="top-right">
       <button class="icon-btn" id="theme-btn"></button>
     </div>
@@ -87,14 +87,14 @@
 <script type="module">
 import { requireAuth } from './felles/auth.js';
 import { dbGet, dbSet, dbListen } from './felles/storage.js';
-import { esc, todayStr, initTheme, toggleTheme, setStatus, personFarge } from './felles/ui.js';
+import { esc, todayStr, initTheme, toggleTheme, setStatus, avatarHtml, finnAvatar } from './felles/ui.js';
 import { monterNav } from './felles/nav.js';
 
 initTheme();
 document.getElementById('theme-btn').addEventListener('click', toggleTheme);
 
 const APP='vekst';
-let FAMILIE=null, barn=[], data=null, dataLoaded=false, sistSkrevet='', aktivBarnId=null, mittNavn='';
+let FAMILIE=null, barn=[], data=null, dataLoaded=false, sistSkrevet='', aktivBarnId=null, mittNavn='', AVA={};
 
 function normaliser(d){
   const b=d||{};
@@ -112,6 +112,7 @@ async function load(){
     if(!ctx.familieId){setStatus('Ingen husstand – kontakt administrator','err');return;}
     FAMILIE=ctx.familieId;
     mittNavn=(ctx.medlem?.navn||'').split(' ')[0];
+    AVA=await dbGet(FAMILIE,'avatarer')||{};
     monterNav(FAMILIE,APP);
     const p=await dbGet(FAMILIE,'personer');
     barn=(p?.barn||[]).filter(b=>b.navn);
@@ -197,7 +198,7 @@ function render(){
   if(!harBarn)return;
 
   document.getElementById('barn-chips').innerHTML=barn.map(b=>
-    '<span class="hchip'+(b.id===aktivBarnId?' on':'')+'" data-velg="'+b.id+'"><span class="pfarge" style="background:'+personFarge(b.navn)+'"></span>'+esc(b.navn)+'</span>').join('');
+    '<span class="hchip'+(b.id===aktivBarnId?' on':'')+'" data-velg="'+b.id+'">'+avatarHtml(b.navn,finnAvatar(AVA,b.navn),20)+esc(b.navn)+'</span>').join('');
   document.getElementById('barn-chips').style.display=barn.length<2?'none':'flex';
 
   const b=barn.find(x=>x.id===aktivBarnId)||barn[0];

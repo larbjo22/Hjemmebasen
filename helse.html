@@ -34,7 +34,7 @@
 <body>
 <div class="fw">
   <div class="top-bar">
-    <p class="app-title"><i class="ti ti-first-aid-kit"></i> Helse</p>
+    <h1 class="app-title"><i class="ti ti-first-aid-kit"></i> Helse</h1>
     <div class="top-right">
       <button class="icon-btn" id="theme-btn"></button>
     </div>
@@ -118,7 +118,7 @@
 <script type="module">
 import { requireAuth } from './felles/auth.js';
 import { dbGet, dbSet, dbListen } from './felles/storage.js';
-import { esc, initTheme, toggleTheme, setStatus, personFarge } from './felles/ui.js';
+import { esc, initTheme, toggleTheme, setStatus, avatarHtml, finnAvatar } from './felles/ui.js';
 import { monterNav } from './felles/nav.js';
 
 initTheme();
@@ -131,7 +131,7 @@ let helse=null;
 let dataLoaded=false;   // datatap-vernet håndheves også av dbSet
 let lastSave=0;
 let sistSkrevet=''; // ekko-vern: JSON av egen siste skriving
-let hdBarnId=null, hdMedId=null, modalType=null, visAlleDoser=false;
+let hdBarnId=null, hdMedId=null, modalType=null, visAlleDoser=false, AVA={};
 
 function normaliser(d){
   const h=d||{};
@@ -156,6 +156,7 @@ async function load(){
       monterNav(FAMILIE,APP); // felles app-meny øverst
     const p=await dbGet(FAMILIE,'personer');
     barn=(p?.barn||[]).filter(b=>b.navn);
+    AVA=await dbGet(FAMILIE,'avatarer')||{};
     helse=normaliser(await dbGet(FAMILIE,APP));
     dataLoaded=true;
     setStatus('');
@@ -247,7 +248,7 @@ function renderStatus(){
 
 function renderChips(){
   document.getElementById('hd-barn-chips').innerHTML=barn.map(b=>
-    '<span class="hchip'+(b.id===hdBarnId?' on':'')+'" data-velg-barn="'+b.id+'"><span class="pfarge" style="background:'+personFarge(b.navn)+'"></span>'+esc(b.navn)+'</span>').join('');
+    '<span class="hchip'+(b.id===hdBarnId?' on':'')+'" data-velg-barn="'+b.id+'">'+avatarHtml(b.navn,finnAvatar(AVA,b.navn),20)+esc(b.navn)+'</span>').join('');
   document.getElementById('hd-med-chips').innerHTML=helse.medisiner.map(m=>
     '<span class="hchip'+(m.id===hdMedId?' on':'')+'" data-velg-med="'+m.id+'">'+esc(m.name)+' <span style="opacity:.6;font-size:10px">'+m.intervalH+'t</span></span>').join('')
     ||'<span style="font-size:12px;color:var(--text4)">Legg til medisin nederst</span>';

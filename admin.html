@@ -52,7 +52,7 @@
     <input class="hinput" id="bm-navn" maxlength="40" placeholder="F.eks. Kari" />
     <label for="bm-epost">E-post (blir innloggingen)</label>
     <input class="hinput" id="bm-epost" type="email" inputmode="email" />
-    <label for="bm-passord">Startpassord (min. 6 tegn – del med medlemmet)</label>
+    <label for="bm-passord">Startpassord (min. 8 tegn – del med medlemmet)</label>
     <input class="hinput" id="bm-passord" type="text" autocomplete="off" />
     <div class="modal-actions">
       <button class="btn-ghost" id="bm-avbryt">Avbryt</button>
@@ -67,7 +67,7 @@ import { requireAuth, auth, db, glemtPassord } from './felles/auth.js';
 import { esc, initTheme, toggleTheme, setStatus } from './felles/ui.js';
 import { seedFamilie, APP_NAVN, APP_IKON } from './felles/seed.js';
 import { initializeApp, deleteApp } from 'https://www.gstatic.com/firebasejs/10.14.1/firebase-app.js';
-import { getAuth, createUserWithEmailAndPassword, signOut } from 'https://www.gstatic.com/firebasejs/10.14.1/firebase-auth.js';
+import { getAuth, createUserWithEmailAndPassword, sendEmailVerification, signOut } from 'https://www.gstatic.com/firebasejs/10.14.1/firebase-auth.js';
 import { ref, get, set, update, remove, push } from 'https://www.gstatic.com/firebasejs/10.14.1/firebase-database.js';
 
 initTheme();
@@ -196,8 +196,8 @@ document.getElementById('bm-lagre').addEventListener('click', async () => {
   const navn = document.getElementById('bm-navn').value.trim();
   const epost = document.getElementById('bm-epost').value.trim();
   const passord = document.getElementById('bm-passord').value;
-  if (!navn || !epost || passord.length < 6) {
-    setStatus('Fyll inn navn, e-post og passord på minst 6 tegn', 'err');
+  if (!navn || !epost || passord.length < 8) {
+    setStatus('Fyll inn navn, e-post og passord på minst 8 tegn', 'err');
     return;
   }
   const btn = document.getElementById('bm-lagre');
@@ -212,8 +212,9 @@ document.getElementById('bm-lagre').addEventListener('click', async () => {
       familieId: modalFamilieId, navn, epost,
       opprettet: Date.now(), sistSett: 0,
     });
+    try { await sendEmailVerification(cred.user); } catch (e) { /* medlemmet kan be om ny lenke ved innlogging */ }
     document.getElementById('bruker-modal').style.display = 'none';
-    setStatus(navn + ' er opprettet – del e-post og startpassord med dem ✓', 'ok');
+    setStatus(navn + ' er opprettet – de må bekrefte e-posten ved første innlogging ✓', 'ok');
     await lastAlt();
   } catch (e) {
     const tekst = e.code === 'auth/email-already-in-use'
