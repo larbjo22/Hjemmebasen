@@ -1,0 +1,90 @@
+<!DOCTYPE html>
+<html lang="no">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Hjemmebasen</title>
+<link rel="stylesheet" href="felles/stil.css">
+<style>
+.onboard-banner{background:var(--accent-bg);border:1px solid var(--accent-border);border-radius:12px;padding:10px 12px;font-size:12.5px;color:var(--accent-text);line-height:1.45;margin-bottom:10px}
+.admin-lenke{display:block;text-align:center;margin-top:14px;font-size:12px;color:var(--text3);text-decoration:none}
+.admin-lenke:hover{color:var(--accent-text)}
+#meny{position:absolute;right:0;top:34px;background:var(--surface);border:1px solid var(--border);border-radius:10px;box-shadow:0 6px 24px rgba(0,0,0,.12);z-index:50;min-width:150px;overflow:hidden}
+#meny button{display:block;width:100%;text-align:left;padding:10px 14px;font-size:13px;border:none;background:none;color:var(--text);cursor:pointer}
+#meny button:hover{background:var(--surface2)}
+</style>
+</head>
+<body>
+<div class="fw">
+  <div class="top-bar" style="position:relative">
+    <p class="app-title">🏠 <span id="fam-navn">Hjemmebasen</span></p>
+    <div class="top-right">
+      <button class="icon-btn" id="theme-btn"></button>
+      <button class="icon-btn" id="meny-btn">⚙️</button>
+      <div id="meny" style="display:none">
+        <button id="logg-ut-btn">Logg ut</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="onboard-banner" id="onboard-banner" style="display:none">
+    👋 Velkommen! Oppsettet av husstanden (navn, barn, sted) kommer i neste
+    versjon – appene under bruker standardoppsett så lenge.
+  </div>
+
+  <div class="app-grid" id="app-grid"></div>
+
+  <a class="admin-lenke" id="admin-lenke" href="admin.html" style="display:none">🔧 Administrer husstander</a>
+  <div class="status-bar" id="status-bar"></div>
+</div>
+
+<script type="module">
+import { requireAuth, loggUt, db } from './felles/auth.js';
+import { esc, initTheme, toggleTheme, setStatus } from './felles/ui.js';
+import { APP_NAVN, APP_IKON } from './felles/seed.js';
+import { ref, get } from 'https://www.gstatic.com/firebasejs/10.14.1/firebase-database.js';
+
+initTheme();
+document.getElementById('theme-btn').addEventListener('click', toggleTheme);
+document.getElementById('meny-btn').addEventListener('click', () => {
+  const m = document.getElementById('meny');
+  m.style.display = m.style.display === 'none' ? 'block' : 'none';
+});
+document.getElementById('logg-ut-btn').addEventListener('click', loggUt);
+
+// Appene som faktisk er bygget så langt. Utvides i etappe 2 og 3 –
+// aktiverte apper som ikke er bygget vises som «kommer».
+const BYGGET = new Set([]);
+
+const { erAdmin, familieId } = await requireAuth();
+
+if (erAdmin) document.getElementById('admin-lenke').style.display = 'block';
+
+if (!familieId) {
+  // Admin uten egen husstand: vis bare admin-inngangen
+  document.getElementById('app-grid').innerHTML =
+    '<div class="empty-state" style="grid-column:1/-1">Du er administrator uten egen husstand.<br>Bruk admin-siden for å opprette husstander.</div>';
+} else {
+  const meta = (await get(ref(db, 'familier/' + familieId + '/meta'))).val() || {};
+  document.getElementById('fam-navn').textContent = meta.navn || 'Hjemmebasen';
+  document.title = meta.navn ? meta.navn + ' – Hjemmebasen' : 'Hjemmebasen';
+  if (!meta.onboardet) document.getElementById('onboard-banner').style.display = 'block';
+
+  const apper = meta.apper || {};
+  const aktive = Object.keys(APP_NAVN).filter(a => apper[a] !== false);
+  document.getElementById('app-grid').innerHTML = aktive.map(a => {
+    const bygget = BYGGET.has(a);
+    if (bygget) {
+      return '<a class="app-tile" href="' + a + '.html">'
+        + '<span class="emoji">' + APP_IKON[a] + '</span>'
+        + '<span class="navn">' + esc(APP_NAVN[a]) + '</span></a>';
+    }
+    return '<div class="app-tile kommer">'
+      + '<span class="emoji">' + APP_IKON[a] + '</span>'
+      + '<span class="navn">' + esc(APP_NAVN[a]) + '</span>'
+      + '<span class="badge">kommer</span></div>';
+  }).join('') || '<div class="empty-state" style="grid-column:1/-1">Ingen apper er aktivert for husstanden.</div>';
+}
+</script>
+</body>
+</html>

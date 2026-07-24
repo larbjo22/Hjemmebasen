@@ -1,0 +1,224 @@
+<!DOCTYPE html>
+<html lang="no">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Hjemmebasen – Admin</title>
+<link rel="stylesheet" href="felles/stil.css">
+<style>
+.medlem-rad .hrow-title{font-weight:500}
+.ny-hus-rad{display:flex;gap:8px}
+.ny-hus-rad .hinput{flex:1}
+.ny-hus-rad .btn-ghost{flex-shrink:0}
+.hjem-lenke{font-size:12px;color:var(--text3);text-decoration:none}
+</style>
+</head>
+<body>
+<div class="fw">
+  <div class="top-bar">
+    <p class="app-title">🔧 Admin</p>
+    <div class="top-right">
+      <a class="hjem-lenke" href="index.html">← Hjem</a>
+      <button class="icon-btn" id="theme-btn"></button>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-title">➕ Ny husstand</div>
+    <div class="ny-hus-rad">
+      <input class="hinput" id="ny-fam-navn" placeholder="F.eks. Familien Hansen" maxlength="40" />
+      <button class="btn-ghost" id="ny-fam-btn">Opprett</button>
+    </div>
+    <p style="font-size:11px;color:var(--text3);margin-top:6px">Opprettes med norsk standardoppsett (seed-data) og alle apper aktivert.</p>
+  </div>
+
+  <div id="fam-liste"><div class="empty-state">Laster husstander...</div></div>
+  <div class="status-bar" id="status-bar"></div>
+</div>
+
+<!-- Ny bruker-modal -->
+<div class="modal-bg" id="bruker-modal" style="display:none">
+  <div class="modal">
+    <p class="modal-title">Nytt medlem i <span id="bm-fam"></span></p>
+    <label for="bm-navn">Navn</label>
+    <input class="hinput" id="bm-navn" maxlength="40" placeholder="F.eks. Kari" />
+    <label for="bm-epost">E-post (blir innloggingen)</label>
+    <input class="hinput" id="bm-epost" type="email" inputmode="email" />
+    <label for="bm-passord">Startpassord (min. 6 tegn – del med medlemmet)</label>
+    <input class="hinput" id="bm-passord" type="text" autocomplete="off" />
+    <div class="modal-actions">
+      <button class="btn-ghost" id="bm-avbryt">Avbryt</button>
+      <button class="btn-primary" id="bm-lagre">Opprett medlem</button>
+    </div>
+  </div>
+</div>
+
+<script type="module">
+import { firebaseConfig } from './felles/firebase-init.js';
+import { requireAuth, auth, db, glemtPassord } from './felles/auth.js';
+import { esc, initTheme, toggleTheme, setStatus } from './felles/ui.js';
+import { seedFamilie, APP_NAVN, APP_IKON } from './felles/seed.js';
+import { initializeApp, deleteApp } from 'https://www.gstatic.com/firebasejs/10.14.1/firebase-app.js';
+import { getAuth, createUserWithEmailAndPassword, signOut } from 'https://www.gstatic.com/firebasejs/10.14.1/firebase-auth.js';
+import { ref, get, set, update, remove, push } from 'https://www.gstatic.com/firebasejs/10.14.1/firebase-database.js';
+
+initTheme();
+document.getElementById('theme-btn').addEventListener('click', toggleTheme);
+
+const { user } = await requireAuth({ adminKreves: true });
+
+let familier = {}; // familieId → familieobjekt (kun meta brukes her)
+let brukere = {};  // uid → {familieId, navn, epost, sistSett}
+let modalFamilieId = null;
+
+async function lastAlt() {
+  const [famSnap, brukSnap] = await Promise.all([
+    get(ref(db, 'familier')),
+    get(ref(db, 'brukere')),
+  ]);
+  familier = famSnap.exists() ? famSnap.val() : {};
+  brukere = brukSnap.exists() ? brukSnap.val() : {};
+  render();
+}
+
+function sistSettTxt(ts) {
+  if (!ts) return 'aldri innlogget';
+  const d = Math.floor((Date.now() - ts) / 86400000);
+  if (d === 0) return 'sett i dag';
+  if (d === 1) return 'sett i går';
+  return 'sett for ' + d + ' dager siden';
+}
+
+function render() {
+  const el = document.getElementById('fam-liste');
+  const ids = Object.keys(familier);
+  if (!ids.length) { el.innerHTML = '<div class="empty-state">Ingen husstander ennå – opprett den første over.</div>'; return; }
+
+  el.innerHTML = ids.map(fid => {
+    const fam = familier[fid] || {};
+    const meta = fam.meta || {};
+    const medlemmer = Object.entries(brukere).filter(([, b]) => b.familieId === fid);
+    const apper = meta.apper || {};
+
+    const medlemHtml = medlemmer.map(([uid, b]) =>
+      '<div class="hrow medlem-rad">'
+      + '<div class="hrow-main"><div class="hrow-title">' + esc(b.navn || b.epost) + '</div>'
+      + '<div class="hrow-sub">' + esc(b.epost || '') + ' · ' + sistSettTxt(b.sistSett) + '</div></div>'
+      + '<button class="btn-lenke" data-reset="' + esc(b.epost || '') + '">✉️ reset</button>'
+      + '<button class="hrow-del" data-fjern="' + uid + '" data-navn="' + esc(b.navn || b.epost || '') + '" title="Fjern tilgang">×</button>'
+      + '</div>'
+    ).join('') || '<div class="hrow-sub" style="padding:6px 2px">Ingen medlemmer ennå</div>';
+
+    const bryterHtml = Object.keys(APP_NAVN).map(a =>
+      '<span class="appbryter' + (apper[a] !== false ? ' on' : '') + '" data-fid="' + fid + '" data-app="' + a + '">'
+      + APP_IKON[a] + ' ' + esc(APP_NAVN[a]) + '</span>'
+    ).join('');
+
+    return '<div class="fam-kort">'
+      + '<div class="fam-navn">🏠 ' + esc(meta.navn || fid) + '</div>'
+      + '<div class="fam-meta">' + medlemmer.length + ' medlem' + (medlemmer.length === 1 ? '' : 'mer')
+      + (meta.onboardet ? ' · onboardet ✓' : ' · venter på onboarding') + '</div>'
+      + '<div class="appbryter-rad">' + bryterHtml + '</div>'
+      + medlemHtml
+      + '<button class="btn-ghost" style="width:100%;margin-top:8px" data-nybruker="' + fid + '">+ Nytt medlem</button>'
+      + '</div>';
+  }).join('');
+
+  // Hendelser (ingen inline onclick med brukerdata – alt via data-attributter)
+  el.querySelectorAll('.appbryter').forEach(b => b.addEventListener('click', () => vippApp(b.dataset.fid, b.dataset.app)));
+  el.querySelectorAll('[data-nybruker]').forEach(b => b.addEventListener('click', () => aapneBrukerModal(b.dataset.nybruker)));
+  el.querySelectorAll('[data-reset]').forEach(b => b.addEventListener('click', () => sendReset(b.dataset.reset)));
+  el.querySelectorAll('[data-fjern]').forEach(b => b.addEventListener('click', () => fjernTilgang(b.dataset.fjern, b.dataset.navn)));
+}
+
+// ── Husstander ──
+document.getElementById('ny-fam-btn').addEventListener('click', async () => {
+  const inp = document.getElementById('ny-fam-navn');
+  const navn = inp.value.trim();
+  if (!navn) { inp.focus(); return; }
+  try {
+    await push(ref(db, 'familier'), seedFamilie(navn, user.uid));
+    inp.value = '';
+    setStatus('Husstanden «' + navn + '» opprettet med seed-data ✓', 'ok');
+    await lastAlt();
+  } catch (e) { setStatus('Kunne ikke opprette husstand: ' + e.message, 'err'); }
+});
+
+async function vippApp(fid, app) {
+  const naa = (familier[fid]?.meta?.apper?.[app]) !== false;
+  try {
+    await update(ref(db, 'familier/' + fid + '/meta/apper'), { [app]: !naa });
+    if (!familier[fid].meta) familier[fid].meta = {};
+    if (!familier[fid].meta.apper) familier[fid].meta.apper = {};
+    familier[fid].meta.apper[app] = !naa;
+    render();
+  } catch (e) { setStatus('Kunne ikke endre app-bryter: ' + e.message, 'err'); }
+}
+
+// ── Medlemmer ──
+function aapneBrukerModal(fid) {
+  modalFamilieId = fid;
+  document.getElementById('bm-fam').textContent = familier[fid]?.meta?.navn || fid;
+  ['bm-navn', 'bm-epost', 'bm-passord'].forEach(id => document.getElementById(id).value = '');
+  document.getElementById('bruker-modal').style.display = 'flex';
+  setTimeout(() => document.getElementById('bm-navn').focus(), 50);
+}
+document.getElementById('bm-avbryt').addEventListener('click', () => {
+  document.getElementById('bruker-modal').style.display = 'none';
+});
+
+document.getElementById('bm-lagre').addEventListener('click', async () => {
+  const navn = document.getElementById('bm-navn').value.trim();
+  const epost = document.getElementById('bm-epost').value.trim();
+  const passord = document.getElementById('bm-passord').value;
+  if (!navn || !epost || passord.length < 6) {
+    setStatus('Fyll inn navn, e-post og passord på minst 6 tegn', 'err');
+    return;
+  }
+  const btn = document.getElementById('bm-lagre');
+  btn.disabled = true; btn.textContent = 'Oppretter...';
+
+  // Sekundær app-instans så admin ikke logges ut av opprettelsen (ADR-0002)
+  const sekundaer = initializeApp(firebaseConfig, 'sekundaer-' + Date.now());
+  try {
+    const sekAuth = getAuth(sekundaer);
+    const cred = await createUserWithEmailAndPassword(sekAuth, epost, passord);
+    await set(ref(db, 'brukere/' + cred.user.uid), {
+      familieId: modalFamilieId, navn, epost,
+      opprettet: Date.now(), sistSett: 0,
+    });
+    await signOut(sekAuth);
+    document.getElementById('bruker-modal').style.display = 'none';
+    setStatus(navn + ' er opprettet – del e-post og startpassord med dem ✓', 'ok');
+    await lastAlt();
+  } catch (e) {
+    const tekst = e.code === 'auth/email-already-in-use' ? 'E-posten er allerede i bruk.'
+      : e.code === 'auth/invalid-email' ? 'Ugyldig e-postadresse.'
+      : e.code === 'auth/weak-password' ? 'Passordet er for svakt.'
+      : 'Kunne ikke opprette: ' + e.message;
+    setStatus(tekst, 'err');
+  } finally {
+    deleteApp(sekundaer).catch(() => {});
+    btn.disabled = false; btn.textContent = 'Opprett medlem';
+  }
+});
+
+async function sendReset(epost) {
+  if (!epost) return;
+  try { await glemtPassord(epost); setStatus('Tilbakestillings-e-post sendt til ' + epost + ' ✓', 'ok'); }
+  catch (e) { setStatus('Kunne ikke sende: ' + e.message, 'err'); }
+}
+
+async function fjernTilgang(uid, navn) {
+  if (!confirm('Fjerne tilgangen til ' + navn + '? (Kontoen består, men mister all datatilgang. Endelig sletting gjøres i Firebase Console.)')) return;
+  try {
+    await remove(ref(db, 'brukere/' + uid));
+    setStatus('Tilgang fjernet ✓', 'ok');
+    await lastAlt();
+  } catch (e) { setStatus('Kunne ikke fjerne: ' + e.message, 'err'); }
+}
+
+await lastAlt();
+</script>
+</body>
+</html>
