@@ -403,7 +403,7 @@ input:focus-visible,select:focus-visible,button:focus-visible,textarea:focus-vis
 // Datatap-vernet består (dbSet nekter før lesning); sanntidslytter erstatter polling.
 import { requireAuth } from './felles/auth.js';
 import { dbGet, dbSet, dbListen } from './felles/storage.js';
-import { esc, todayStr } from './felles/ui.js';
+import { esc, todayStr, initTheme, toggleTheme, setStatus } from './felles/ui.js';
 import { monterNav } from './felles/nav.js';
 const APP='oppgaver';
 let FAMILIE=null;
@@ -448,13 +448,9 @@ function getWeekNumber(d){const date=new Date(d);date.setHours(0,0,0,0);date.set
 
 // ── Tema ─────────────────────────────────────────────────────
 const APP_KEY='oppgaver';
-function initTheme(){const s=localStorage.getItem('hjemmebasen_theme');const dark=window.matchMedia('(prefers-color-scheme:dark)').matches;setTheme(s||(dark?'dark':'light'),false);}
-function setTheme(t,save=true){document.documentElement.setAttribute('data-theme',t);const b=document.getElementById('theme-btn');if(b)b.innerHTML=t==='dark'?'<i class="ti ti-sun"></i>':'<i class="ti ti-moon-stars"></i>';if(save)localStorage.setItem('hjemmebasen_theme',t);}
-function toggleTheme(){setTheme(document.documentElement.getAttribute('data-theme')==='dark'?'light':'dark');}
 initTheme();
 
 // ── Status ───────────────────────────────────────────────────
-function setStatus(msg,type=''){const s=document.getElementById('status-bar');s.textContent=msg;s.className='status-bar'+(type?' '+type:'');if(type==='ok')setTimeout(()=>{s.textContent='';s.className='status-bar';},2000);}
 
 // ── Lagring (Firebase via felles/storage.js) ─────────────────
 // Firebase RTDB lagrer IKKE tomme arrays – feltet fjernes fra noden.

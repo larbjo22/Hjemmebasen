@@ -551,11 +551,17 @@ document.getElementById('inviter-lukk').addEventListener('click', () => {
 // Personene: deg selv (fornavn) + husstandens barn. Bildene lagres
 // i familier/<id>/avatarer og deles med alle i husstanden.
 function profilPersoner() {
+  // Hele husstanden får en rad – alle kan ha bilde (delt i familien).
   const mittFornavn = (medlem?.navn || '').split(' ')[0];
-  const rader = [];
-  if (mittFornavn) rader.push({ navn: mittFornavn, merke: 'Deg' });
-  (sisteFam?.personer?.barn || []).filter(b => b.navn).forEach(b => rader.push({ navn: b.navn, merke: 'Barn' }));
-  // Andre voksne vises også, men uten «last opp» (hver setter sitt eget)
+  const rader = [], sett = new Set();
+  const leggTil = (navn, merke) => {
+    const k = (navn || '').trim().toLowerCase();
+    if (!k || sett.has(k)) return;
+    sett.add(k); rader.push({ navn: navn.trim(), merke });
+  };
+  if (mittFornavn) leggTil(mittFornavn, 'Deg');
+  (sisteFam?.personer?.voksne || []).forEach(v => leggTil(v, 'Voksen'));
+  (sisteFam?.personer?.barn || []).filter(b => b.navn).forEach(b => leggTil(b.navn, 'Barn'));
   return rader;
 }
 function tegnProfil() {

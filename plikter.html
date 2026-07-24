@@ -299,7 +299,7 @@ input:focus-visible,select:focus-visible,button:focus-visible,[role="button"]:fo
 // sanntidslytter erstatter polling. Barn seedes lat fra personregisteret.
 import { requireAuth } from './felles/auth.js';
 import { dbGet, dbSet, dbListen } from './felles/storage.js';
-import { esc, todayStr, avatarHtml, finnAvatar } from './felles/ui.js';
+import { esc, todayStr, avatarHtml, finnAvatar, initTheme, toggleTheme, setStatus } from './felles/ui.js';
 import { monterNav } from './felles/nav.js';
 const APP='plikter';
 let FAMILIE=null;
@@ -343,11 +343,7 @@ function getWeekDates(off){const m=getMonday(off);return Array.from({length:7},(
 function getWeekNumber(d){const date=new Date(d);date.setHours(0,0,0,0);date.setDate(date.getDate()+3-(date.getDay()+6)%7);const w1=new Date(date.getFullYear(),0,4);return 1+Math.round(((date-w1)/86400000-3+(w1.getDay()+6)%7)/7);}
 
 // ── Status / tema ────────────────────────────────────────────
-function setStatus(msg,type=''){const s=document.getElementById('status-bar');s.textContent=msg;s.className='status-bar'+(type?' '+type:'');if(type==='ok')setTimeout(()=>{s.textContent='';s.className='status-bar';},2000);}
 const APP_KEY='plikter';
-function initTheme(){const s=localStorage.getItem('hjemmebasen_theme');const dark=window.matchMedia('(prefers-color-scheme:dark)').matches;setTheme(s||(dark?'dark':'light'),false);}
-function setTheme(t,save=true){document.documentElement.setAttribute('data-theme',t);const b=document.getElementById('theme-btn');if(b)b.innerHTML=t==='dark'?'<i class="ti ti-sun"></i>':'<i class="ti ti-moon-stars"></i>';if(save)localStorage.setItem('hjemmebasen_theme',t);}
-function toggleTheme(){setTheme(document.documentElement.getAttribute('data-theme')==='dark'?'light':'dark');}
 initTheme();
 
 function kidColor(name){let h=0;for(let i=0;i<name.length;i++)h=(h+name.charCodeAt(i))%KID_COLORS.length;return KID_COLORS[h];}
