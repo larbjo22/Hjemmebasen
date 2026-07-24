@@ -1,0 +1,95 @@
+/* ── stil.css ─────────────────────────────────────────────────
+   Delte tema-tokens og grunnkomponenter for Hjemmebasen.
+   Samme mønster som ha-apper: custom properties + [data-theme]. */
+* { box-sizing: border-box; margin: 0; padding: 0; }
+
+:root {
+  --bg: #f5f5f5; --surface: #fff; --surface2: #f9f9f9;
+  --border: #e0e0e0; --border2: #f0f0f0;
+  --text: #1a1a1a; --text2: #666; --text3: #aaa; --text4: #bbb;
+  --accent: #f97316; --accent-bg: #fff8f5; --accent-border: #fed7aa; --accent-text: #c2570c;
+  --danger: #e53e3e; --green: #16a34a;
+}
+@media (prefers-color-scheme: dark) { :root {
+  --bg: #111; --surface: #1c1c1e; --surface2: #2c2c2e;
+  --border: #2c2c2e; --border2: #3a3a3c;
+  --text: #f2f2f7; --text2: #aeaeb2; --text3: #636366; --text4: #48484a;
+  --accent: #f97316; --accent-bg: rgba(249,115,22,.1); --accent-border: rgba(249,115,22,.4); --accent-text: #fdba74;
+  --danger: #f87171; --green: #4ade80;
+}}
+[data-theme="dark"] {
+  --bg: #111; --surface: #1c1c1e; --surface2: #2c2c2e;
+  --border: #2c2c2e; --border2: #3a3a3c;
+  --text: #f2f2f7; --text2: #aeaeb2; --text3: #636366; --text4: #48484a;
+  --accent: #f97316; --accent-bg: rgba(249,115,22,.1); --accent-border: rgba(249,115,22,.4); --accent-text: #fdba74;
+  --danger: #f87171; --green: #4ade80;
+}
+[data-theme="light"] {
+  --bg: #f5f5f5; --surface: #fff; --surface2: #f9f9f9;
+  --border: #e0e0e0; --border2: #f0f0f0;
+  --text: #1a1a1a; --text2: #666; --text3: #aaa; --text4: #bbb;
+  --accent: #f97316; --accent-bg: #fff8f5; --accent-border: #fed7aa; --accent-text: #c2570c;
+  --danger: #e53e3e; --green: #16a34a;
+}
+
+body {
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  background: var(--bg); color: var(--text); font-size: 14px;
+}
+input:focus-visible, button:focus-visible { outline: 2px solid var(--accent); outline-offset: 1px; }
+
+.fw { max-width: 480px; margin: 0 auto; padding: .6rem .75rem; }
+.top-bar { display: flex; align-items: center; justify-content: space-between; margin-bottom: .75rem; }
+.app-title { font-size: 15px; font-weight: 600; display: flex; align-items: center; gap: 6px; }
+.top-right { display: flex; align-items: center; gap: 8px; }
+.icon-btn { width: 28px; height: 28px; border-radius: 50%; border: 1px solid var(--border); background: var(--surface2); cursor: pointer; font-size: 14px; display: flex; align-items: center; justify-content: center; color: var(--text2); }
+
+.card { background: var(--surface); border: 1px solid var(--border); border-radius: 12px; padding: 14px; margin-bottom: 10px; }
+.card-title { font-size: 12px; font-weight: 600; color: var(--text2); text-transform: uppercase; letter-spacing: .05em; margin-bottom: 10px; display: flex; align-items: center; gap: 6px; }
+
+label { font-size: 11px; color: var(--text2); display: block; margin: 10px 0 3px; }
+.hinput { font-size: 14px; padding: 9px 10px; border: 1px solid var(--border); border-radius: 8px; background: var(--surface); color: var(--text); outline: none; width: 100%; }
+.hinput:focus { border-color: var(--accent); }
+
+.btn-primary { width: 100%; padding: 11px; font-size: 14px; font-weight: 600; background: var(--accent); border: none; border-radius: 8px; cursor: pointer; color: #fff; }
+.btn-primary:disabled { opacity: .6; cursor: default; }
+.btn-ghost { padding: 9px 14px; font-size: 13px; background: var(--surface2); border: 1px solid var(--border); border-radius: 8px; cursor: pointer; color: var(--text2); }
+.btn-danger { padding: 9px 14px; font-size: 13px; background: var(--surface); border: 1px solid #fca5a5; border-radius: 8px; cursor: pointer; color: var(--danger); }
+.btn-lenke { background: none; border: none; color: var(--accent-text); cursor: pointer; font-size: 12px; text-decoration: underline; text-underline-offset: 2px; }
+
+.status-bar { font-size: 11px; color: var(--text3); text-align: center; margin-top: 8px; min-height: 14px; }
+.status-bar.err { color: var(--danger); }
+.status-bar.ok { color: var(--green); }
+
+.hrow { display: flex; align-items: center; gap: 10px; padding: 8px 2px; border-bottom: 1px solid var(--border2); }
+.hrow:last-child { border-bottom: none; }
+.hrow-main { flex: 1; min-width: 0; }
+.hrow-title { font-size: 13px; font-weight: 600; color: var(--text); }
+.hrow-sub { font-size: 11px; color: var(--text3); margin-top: 1px; }
+.hrow-del { width: 26px; height: 26px; border: none; background: transparent; color: var(--text4); cursor: pointer; font-size: 15px; flex-shrink: 0; }
+.hrow-del:hover { color: var(--danger); }
+
+.empty-state { text-align: center; padding: 1.2rem; color: var(--text3); font-size: 13px; }
+
+.modal-bg { position: fixed; inset: 0; background: rgba(0,0,0,.45); display: flex; align-items: flex-start; justify-content: center; padding-top: 40px; z-index: 100; }
+.modal { background: var(--surface); border: 1px solid var(--border); border-radius: 14px; padding: 1rem; width: 92%; max-width: 380px; max-height: 85vh; overflow-y: auto; }
+.modal-title { font-size: 15px; font-weight: 600; margin-bottom: .5rem; }
+.modal-actions { display: flex; gap: 8px; margin-top: 1rem; }
+.modal-actions .btn-primary { flex: 1; width: auto; }
+
+/* Launcher-brettet */
+.app-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+.app-tile { background: var(--surface); border: 1px solid var(--border); border-radius: 14px; padding: 18px 12px; text-align: center; cursor: pointer; text-decoration: none; color: var(--text); display: block; }
+.app-tile:active { background: var(--surface2); }
+.app-tile .emoji { font-size: 34px; display: block; margin-bottom: 8px; }
+.app-tile .navn { font-size: 13px; font-weight: 600; }
+.app-tile.kommer { opacity: .55; cursor: default; }
+.app-tile .badge { display: inline-block; font-size: 10px; font-weight: 600; background: var(--accent-bg); color: var(--accent-text); border: 1px solid var(--accent-border); border-radius: 10px; padding: 1px 8px; margin-top: 6px; }
+
+/* Admin */
+.fam-kort { background: var(--surface); border: 1px solid var(--border); border-radius: 12px; padding: 12px; margin-bottom: 10px; }
+.fam-navn { font-size: 14px; font-weight: 700; display: flex; align-items: center; gap: 8px; }
+.fam-meta { font-size: 11px; color: var(--text3); margin-top: 2px; }
+.appbryter-rad { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 10px; }
+.appbryter { font-size: 11px; padding: 4px 10px; border-radius: 14px; border: 1px solid var(--border); background: var(--surface2); color: var(--text3); cursor: pointer; user-select: none; }
+.appbryter.on { background: var(--accent-bg); border-color: var(--accent-border); color: var(--accent-text); font-weight: 600; }

@@ -1,0 +1,33 @@
+{
+  "rules": {
+    ".read": false,
+    ".write": false,
+
+    "admins": {
+      ".read": "auth != null && root.child('admins').child(auth.uid).val() === true",
+      "$uid": {
+        ".read": "auth != null && auth.uid === $uid"
+      }
+    },
+
+    "brukere": {
+      ".read": "auth != null && root.child('admins').child(auth.uid).val() === true",
+      ".write": "auth != null && root.child('admins').child(auth.uid).val() === true",
+      "$uid": {
+        ".read": "auth != null && auth.uid === $uid",
+        "sistSett": {
+          ".write": "auth != null && auth.uid === $uid"
+        }
+      }
+    },
+
+    "familier": {
+      ".read": "auth != null && root.child('admins').child(auth.uid).val() === true",
+      ".write": "auth != null && root.child('admins').child(auth.uid).val() === true",
+      "$familieId": {
+        ".read": "auth != null && root.child('brukere').child(auth.uid).child('familieId').val() === $familieId",
+        ".write": "auth != null && root.child('brukere').child(auth.uid).child('familieId').val() === $familieId"
+      }
+    }
+  }
+}
