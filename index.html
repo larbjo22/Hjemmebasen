@@ -32,11 +32,27 @@
 .varsel.gronn{border-color:rgba(22,163,74,.35)}
 
 /* Install-hint */
-.hint-banner{display:none;align-items:flex-start;gap:10px;background:var(--accent-bg);border:1px solid var(--accent-border);border-radius:12px;padding:10px 12px;font-size:12.5px;color:var(--accent-text);line-height:1.5;margin-bottom:12px}
+.hint-banner{display:none;align-items:flex-start;gap:10px;background:var(--accent-bg);border:1px solid var(--accent-border);border-radius:12px;padding:10px 12px;font-size:12.5px;color:var(--accent-text);line-height:1.5;margin-bottom:12px;transition:opacity .22s var(--ease-out),transform .22s var(--ease-out),display .22s allow-discrete}
+.hint-banner[style*="none"]{opacity:0;transform:translateY(6px)}
 .hint-banner button{border:none;background:none;color:inherit;cursor:pointer;font-size:15px;padding:0;flex-shrink:0}
 
+/* Fire-once entré (fyrer kun ved første display-flip, ikke på 60s-rerender) */
+.hilsen{transition:opacity .22s var(--ease-out),transform .22s var(--ease-out)}
+@starting-style{
+  .hilsen[style*="block"]{opacity:0;transform:translateY(6px)}
+  .hint-banner[style*="flex"]{opacity:0;transform:translateY(6px)}
+}
+/* Redusert bevegelse: behold fade/farge, dropp forskyvning/skalering på forsidens flater */
+@media(prefers-reduced-motion:reduce){
+  #meny,#meny[style*="none"],.app-tile:active,.icon-btn:active,.dash-check:active,
+  .hilsen,.hint-banner,.hint-banner[style*="none"]{transform:none!important}
+}
+
 /* Dashbord-fliser med statuslinje */
-.app-tile{text-align:left;padding:14px;display:flex;align-items:center;gap:12px}
+.app-tile{text-align:left;padding:14px;display:flex;align-items:center;gap:12px;transition:transform .14s var(--ease-out),background-color .14s var(--ease-out)}
+.app-tile:active{transform:scale(.97)}
+.icon-btn{transition:transform .14s var(--ease-out),background-color .15s var(--ease-out)}
+.icon-btn:active{transform:scale(.92)}
 .app-tile .ikon-chip{width:44px;height:44px;font-size:22px}
 .tile-tekst{flex:1;min-width:0}
 .app-tile .navn{display:block}
@@ -44,14 +60,17 @@
 .tile-status.varsel{color:var(--accent-text);font-weight:600}
 .tile-linje{display:flex;align-items:center;gap:6px;font-size:12px;color:var(--text2);margin-top:4px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .tile-linje.overtid{color:var(--danger)}
-.dash-check{width:20px;height:20px;border-radius:50%;border:1.5px solid var(--border);background:transparent;color:var(--text4);cursor:pointer;font-size:11px;line-height:1;flex-shrink:0;padding:0}
-.dash-check:hover{border-color:var(--accent);color:var(--accent)}
+.dash-check{width:20px;height:20px;border-radius:50%;border:1.5px solid var(--border);background:transparent;color:var(--text4);cursor:pointer;font-size:11px;line-height:1;flex-shrink:0;padding:0;transition:border-color .15s var(--ease-out),color .15s var(--ease-out),transform .14s var(--ease-out)}
+.dash-check:active{transform:scale(.92)}
+@media(hover:hover) and (pointer:fine){.dash-check:hover{border-color:var(--accent);color:var(--accent)}}
 .app-tile.kommer .tile-status{font-style:italic}
 .admin-lenke{display:block;text-align:center;margin-top:14px;font-size:12px;color:var(--text3);text-decoration:none}
-.admin-lenke:hover{color:var(--accent-text)}
-#meny{position:absolute;right:0;top:34px;background:var(--surface);border:1px solid var(--border);border-radius:10px;box-shadow:0 6px 24px rgba(0,0,0,.12);z-index:50;min-width:170px;overflow:hidden}
+@media(hover:hover) and (pointer:fine){.admin-lenke:hover{color:var(--accent-text)}}
+#meny{position:absolute;right:0;top:34px;background:var(--surface);border:1px solid var(--border);border-radius:10px;box-shadow:0 6px 24px rgba(0,0,0,.12);z-index:50;min-width:170px;overflow:hidden;transform-origin:top right;transition:opacity .18s var(--ease-out),transform .18s var(--ease-out),display .18s allow-discrete}
+#meny[style*="none"]{opacity:0;transform:scale(.96)}
+@starting-style{#meny{opacity:0;transform:scale(.96)}}
 #meny a,#meny button{display:block;width:100%;text-align:left;padding:10px 14px;font-size:13px;border:none;background:none;color:var(--text);cursor:pointer;text-decoration:none}
-#meny a:hover,#meny button:hover{background:var(--surface2)}
+@media(hover:hover) and (pointer:fine){#meny a:hover,#meny button:hover{background:var(--surface2)}}
 /* PC: bredere brett og flere kolonner */
 @media(min-width:700px){
   .fw{max-width:760px}
