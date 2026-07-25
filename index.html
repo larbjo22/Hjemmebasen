@@ -124,6 +124,11 @@
     <p class="modal-title"><i class="ti ti-user-circle" style="color:var(--accent-text)"></i> Min profil &amp; bilder</p>
     <p style="font-size:11.5px;color:var(--text3);margin-bottom:10px">Last opp bilder så blir appene mer personlige. Bildene deles i husstanden og vises overalt navnet dukker opp.</p>
     <div id="profil-liste"></div>
+    <div id="varsler-seksjon" style="border-top:1px solid var(--border);margin-top:12px;padding-top:12px">
+      <div style="font-size:13px;font-weight:600">Push-varsler</div>
+      <p style="font-size:11.5px;color:var(--text3);margin:2px 0 8px">Få en morgen-oppsummering (dagens oppgaver, middag, kalender) på denne enheten. På iPhone må appen først ligge på Hjem-skjermen.</p>
+      <button class="btn-ghost" id="varsler-btn"><i class="ti ti-bell"></i> Slå på varsler på denne enheten</button>
+    </div>
     <div class="modal-actions">
       <button class="btn-ghost" id="profil-lukk">Lukk</button>
     </div>
@@ -150,6 +155,7 @@
 import { requireAuth, loggUt, db } from './felles/auth.js';
 import { esc, todayStr, initTheme, toggleTheme, setStatus, avatarHtml, avatarKey, finnAvatar, bildeTilAvatar } from './felles/ui.js';
 import { APP_NAVN, APP_IKON } from './felles/seed.js';
+import { varslerStottet, varslerTillatt, aktiverVarsler } from './felles/push.js';
 import { ref, onValue, set } from 'https://www.gstatic.com/firebasejs/10.14.1/firebase-database.js';
 
 initTheme();
@@ -614,10 +620,26 @@ document.getElementById('profil-liste').addEventListener('click', async e => {
 document.getElementById('meny-profil').addEventListener('click', () => {
   document.getElementById('meny').style.display = 'none';
   tegnProfil();
+  oppdaterVarslerKnapp();
   document.getElementById('profil-modal').style.display = 'flex';
 });
 document.getElementById('profil-lukk').addEventListener('click', () => {
   document.getElementById('profil-modal').style.display = 'none';
+});
+async function oppdaterVarslerKnapp() {
+  const btn = document.getElementById('varsler-btn');
+  if (!await varslerStottet()) { btn.disabled = true; btn.innerHTML = '<i class="ti ti-bell-off"></i> Varsler støttes ikke her'; return; }
+  if (varslerTillatt()) { btn.innerHTML = '<i class="ti ti-bell-check" style="color:var(--green)"></i> Varsler er på denne enheten'; }
+  else { btn.innerHTML = '<i class="ti ti-bell"></i> Slå på varsler på denne enheten'; }
+}
+document.getElementById('varsler-btn').addEventListener('click', async () => {
+  const btn = document.getElementById('varsler-btn');
+  btn.disabled = true; btn.textContent = 'Aktiverer...';
+  try {
+    await aktiverVarsler(familieId, user.uid, (medlem?.navn || '').split(' ')[0]);
+    setStatus('Varsler er på for denne enheten ✓', 'ok');
+  } catch (e) { setStatus(e.message || 'Kunne ikke slå på varsler', 'err'); }
+  btn.disabled = false; oppdaterVarslerKnapp();
 });
 
 // ── Tilpass forsiden (per bruker) ────────────────────────────

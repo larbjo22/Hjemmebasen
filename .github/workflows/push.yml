@@ -1,0 +1,33 @@
+# Daglig push-varsel (morgen-digest) til alle registrerte enheter.
+#
+# Oppsett (én gang, i Settings → Secrets and variables → Actions):
+#   FCM_SERVICE_ACCOUNT = hele service-account-JSON-en (Firebase Console →
+#                         Project settings → Service accounts → Generate new
+#                         private key). Lim inn HELE fila som secret.
+#   FIREBASE_DB_URL     = https://hjemmebasen-12fc3-default-rtdb.europe-west1.firebasedatabase.app
+#
+# I tillegg må hver enhet ha slått på varsler i appen (Min profil & bilder →
+# «Slå på varsler»), og VAPID-nøkkelen må være satt i felles/push.js.
+
+name: Daglig push-varsel
+
+on:
+  schedule:
+    - cron: '0 6 * * *'    # 06:00 UTC ≈ 07:00/08:00 norsk tid (morgen-digest)
+  workflow_dispatch: {}     # og manuelt fra Actions-fanen
+
+jobs:
+  push:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+      - name: Installer firebase-admin
+        run: npm init -y >/dev/null 2>&1 && npm install firebase-admin@12 --no-audit --no-fund
+      - name: Send morgen-digest
+        env:
+          FCM_SERVICE_ACCOUNT: ${{ secrets.FCM_SERVICE_ACCOUNT }}
+          FIREBASE_DB_URL: ${{ secrets.FIREBASE_DB_URL }}
+        run: node scripts/send-push.mjs
