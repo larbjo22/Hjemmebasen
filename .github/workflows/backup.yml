@@ -27,12 +27,14 @@ jobs:
     steps:
       - name: Hent hele databasen
         env:
-          DB_URL: ${{ secrets.FIREBASE_DB_URL }}
+          # DB_URL er offentlig (ligger i felles/firebase-init.js) – hardkodet
+          # som standard, kan overstyres med FIREBASE_DB_URL-secret.
+          DB_URL: ${{ secrets.FIREBASE_DB_URL || 'https://hjemmebasen-12fc3-default-rtdb.europe-west1.firebasedatabase.app' }}
           DB_SECRET: ${{ secrets.FIREBASE_DB_SECRET }}
         run: |
           set -euo pipefail
-          if [ -z "$DB_URL" ] || [ -z "$DB_SECRET" ]; then
-            echo "::error::Secrets FIREBASE_DB_URL/FIREBASE_DB_SECRET mangler – se kommentaren øverst i workflow-fila."
+          if [ -z "$DB_SECRET" ]; then
+            echo "::error::Secret FIREBASE_DB_SECRET mangler – se kommentaren øverst i workflow-fila."
             exit 1
           fi
           curl -sSf "$DB_URL/.json?auth=$DB_SECRET&format=export" -o backup.json
