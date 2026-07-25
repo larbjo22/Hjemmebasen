@@ -1007,9 +1007,16 @@ function rulettSpin(){
   if(rulettTimer)clearTimeout(rulettTimer);
   const stage=document.getElementById('rstage');
   ph.style.display='none';document.getElementById('rset-row').classList.remove('show');
-  nameEl.style.display='block';metaEl.style.display='none';stage.classList.add('spinning');
+  nameEl.style.display='block';metaEl.style.display='none';
+  const final=rulettPick(list);
+  if(window.matchMedia&&window.matchMedia('(prefers-reduced-motion: reduce)').matches){
+    rulettCurrent=final;nameEl.textContent=final.display;rulettRenderMeta(final);
+    rulettCook=null;rulettRenderCook();document.getElementById('rset-row').classList.add('show');
+    document.getElementById('rspin-btn').innerHTML='<i class="ti ti-arrows-shuffle"></i> Spinn igjen';
+    return;}
+  stage.classList.add('spinning');
   document.getElementById('rspin-btn').disabled=true;
-  const final=rulettPick(list);let ticks=0;const maxTicks=16;
+  let ticks=0;const maxTicks=16;
   const tick=()=>{
     ticks++;
     if(ticks<maxTicks){nameEl.textContent=list[Math.floor(Math.random()*list.length)].display;rulettTimer=setTimeout(tick,60+ticks*14);}

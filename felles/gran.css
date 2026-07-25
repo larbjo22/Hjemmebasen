@@ -17,6 +17,7 @@
   --varsle:#b45309;
   --danger:#b3392b;--green:#2e7d54;
   --radius:14px;
+  --ease-out:cubic-bezier(0.23,1,0.32,1);--ease-in-out:cubic-bezier(0.77,0,0.175,1);
 }
 @media(prefers-color-scheme:dark){:root{
   --bg:#151a18;--surface:#1d2422;--surface2:#252d2a;
@@ -70,3 +71,26 @@
 
 /* Avatarer: farget initial-sirkel, eller opplastet bilde */
 .avatar{display:inline-flex;align-items:center;justify-content:center;border-radius:50%;color:#fff;font-weight:700;background-size:cover;background-position:center;flex-shrink:0;line-height:1;overflow:hidden;vertical-align:middle;letter-spacing:.02em}
+
+/* ── Bevegelse ────────────────────────────────────────────────
+   Global motion bor her fordi gran.css lastes sist av alle apper.
+   Emil Kowalski-skillene: rolig, rask bevegelse – ikke sprett. */
+
+/* Modal enter/exit – drevet av inline display-toggelen alle sider bruker.
+   CSS-only via @starting-style + allow-discrete; ingen JS-endring. */
+.modal-bg{transition:opacity .2s var(--ease-out),display .2s allow-discrete}
+.modal-bg[style*="none"]{opacity:0}
+.modal{transition:transform .22s var(--ease-out),opacity .22s var(--ease-out)}
+.modal-bg[style*="none"] .modal{transform:scale(.96);opacity:0}
+@starting-style{
+  .modal-bg{opacity:0}
+  .modal-bg .modal{transform:scale(.96);opacity:0}
+}
+
+/* Reduced motion: behold opacity/farge-feedback, dropp bevegelse/skalering */
+@media(prefers-reduced-motion:reduce){
+  .toast{transition:opacity .2s var(--ease-out)!important;transform:translateX(-50%)!important}
+  .toast.show{transform:translateX(-50%)!important}
+  .action-btn:active{transform:none!important}
+  .modal,.modal-bg[style*="none"] .modal{transform:none!important}
+}
