@@ -11,7 +11,7 @@ import { ref, set, remove } from 'https://www.gstatic.com/firebasejs/10.14.1/fir
 // Offentlig VAPID-nøkkel (Web Push-sertifikat). Hentes i Firebase Console →
 // Project settings → Cloud Messaging → «Web configuration» → Generate key pair.
 // Lim inn den offentlige nøkkelen her (den er offentlig, trygt i koden).
-export const VAPID_KEY = 'DIN_VAPID_NØKKEL_HER';
+export const VAPID_KEY = 'BNXHHXkP2WatdU9dS3I7UmvP80yjZjIRSP0pwmEXBFs89MDq-sCmFliCyv-SnY85jfOHRKZPCqtsmUc1jR1tD1Y';
 
 // RTDB-nøkler tåler ikke . # $ [ ] / – token lagres derfor under en «trygg»
 // nøkkel, mens det ekte tokenet ligger i verdien (som senderen bruker).
