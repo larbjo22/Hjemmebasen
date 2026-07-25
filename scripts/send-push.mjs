@@ -10,9 +10,12 @@
 import admin from 'firebase-admin';
 
 const svcRaw = process.env.FCM_SERVICE_ACCOUNT;
-const dbUrl = process.env.FIREBASE_DB_URL;
-if (!svcRaw || !dbUrl) {
-  console.error('::error::FCM_SERVICE_ACCOUNT eller FIREBASE_DB_URL mangler.');
+// Databasens URL er OFFENTLIG (ligger i felles/firebase-init.js), så den er
+// hardkodet som standard – kan overstyres med FIREBASE_DB_URL-secret om ønskelig.
+const dbUrl = process.env.FIREBASE_DB_URL
+  || 'https://hjemmebasen-12fc3-default-rtdb.europe-west1.firebasedatabase.app';
+if (!svcRaw) {
+  console.error('::error::FCM_SERVICE_ACCOUNT mangler – legg til som Actions-secret.');
   process.exit(1);
 }
 
