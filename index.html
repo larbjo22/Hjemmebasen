@@ -160,7 +160,7 @@ document.getElementById('meny-btn').addEventListener('click', () => {
 });
 document.getElementById('logg-ut-btn').addEventListener('click', loggUt);
 
-const BYGGET = new Set(['handleliste', 'middag', 'oppgaver', 'fryser', 'plikter', 'sovn', 'helse', 'beskjeder', 'pakkelister', 'vekst']);
+const BYGGET = new Set(['kalender', 'handleliste', 'middag', 'oppgaver', 'fryser', 'plikter', 'sovn', 'helse', 'beskjeder', 'pakkelister', 'vekst']);
 const UKEDAG = ['søndag', 'mandag', 'tirsdag', 'onsdag', 'torsdag', 'fredag', 'lørdag'];
 
 const { user, erAdmin, familieId, medlem } = await requireAuth();
@@ -275,6 +275,13 @@ function tegnVarsler(fam, meta) {
       if (gamle.length) v.push({ prio: 3, ikon: 'ti-snowflake', href: 'fryser.html',
         tekst: gamle.length + (gamle.length === 1 ? ' fryservare' : ' fryservarer') + ' bør brukes opp (over 90 dager)' });
     }
+    // Kalender: hendelser i dag
+    if (aktiv('kalender')) {
+      const idagH = (fam.kalender?.hendelser || []).filter(h => h.dato === todayStr())
+        .sort((a, b) => (a.tid || '99').localeCompare(b.tid || '99'));
+      idagH.forEach(h => v.push({ prio: 2, ikon: 'ti-calendar', href: 'kalender.html',
+        tekst: 'I dag' + (h.tid ? ' kl ' + h.tid : '') + ': ' + h.tittel + (h.hvem ? ' (' + h.hvem + ')' : '') }));
+    }
     // Middag i dag
     if (aktiv('middag')) {
       const idag = (fam.middag?.meals || []).find(m => m.date === todayStr());
@@ -325,6 +332,12 @@ function tegnVarsler(fam, meta) {
 function appStatus(app, fam) {
   const d = fam[app];
   try {
+    if (app === 'kalender') {
+      const hs = (d?.hendelser || []).filter(h => h.dato && h.dato >= todayStr()).sort((a, b) => a.dato.localeCompare(b.dato) || (a.tid || '99').localeCompare(b.tid || '99'));
+      if (!hs.length) return { txt: 'Ingen kommende hendelser' };
+      const n = hs[0];
+      return { txt: fristTekst(n.dato) + (n.tid ? ' ' + n.tid : '') + ': ' + n.tittel, varsel: n.dato === todayStr() };
+    }
     if (app === 'handleliste') {
       const uavh = (d?.items || []).filter(i => !i.checked);
       const div = (d?.other || []).filter(o => !o.checked).length;

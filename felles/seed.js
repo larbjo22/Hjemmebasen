@@ -4,6 +4,7 @@
 // Onboarding (etappe 2) fyller personregisteret og re-seeder personlister.
 
 export const APP_NAVN = {
+  kalender: 'Kalender',
   handleliste: 'Handleliste',
   middag: 'Middag',
   oppgaver: 'Oppgaver',
@@ -18,6 +19,7 @@ export const APP_NAVN = {
 
 // Tabler-ikonklasser (gran-designet): render som <i class="ti ${APP_IKON[app]}">
 export const APP_IKON = {
+  kalender: 'ti-calendar',
   handleliste: 'ti-shopping-cart', middag: 'ti-tools-kitchen-2', oppgaver: 'ti-checkbox', fryser: 'ti-snowflake',
   plikter: 'ti-star', sovn: 'ti-moon', helse: 'ti-first-aid-kit',
   beskjeder: 'ti-pin', pakkelister: 'ti-backpack', vekst: 'ti-ruler-2',

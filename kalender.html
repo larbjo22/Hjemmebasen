@@ -1,0 +1,260 @@
+<!DOCTYPE html>
+<html lang="no">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@2.44.0/tabler-icons.min.css">
+<link rel="manifest" href="manifest.webmanifest">
+<meta name="theme-color" content="#2e5d4f">
+<link rel="apple-touch-icon" href="ikoner/apple-touch-icon.png">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="mobile-web-app-capable" content="yes">
+<title>Kalender</title>
+<link rel="stylesheet" href="felles/stil.css">
+<style>
+.kal-topp{display:flex;align-items:center;gap:8px;margin-bottom:10px}
+.kal-topp .mnd{flex:1;text-align:center;font-size:15px;font-weight:700}
+.kal-nav{width:34px;height:34px;border-radius:9px;border:1px solid var(--border);background:var(--surface2);color:var(--text2);cursor:pointer;font-size:16px}
+.ukedager{display:grid;grid-template-columns:repeat(7,1fr);gap:3px;margin-bottom:3px}
+.ukedager div{text-align:center;font-size:10px;font-weight:600;color:var(--text3);text-transform:uppercase}
+.kal-grid{display:grid;grid-template-columns:repeat(7,1fr);gap:3px}
+.dag{min-height:58px;background:var(--surface);border:1px solid var(--border2);border-radius:8px;padding:3px 4px;cursor:pointer;overflow:hidden}
+.dag.tom{background:transparent;border:none;cursor:default}
+.dag.idag{border-color:var(--accent);border-width:1.5px}
+.dag.valgt{background:var(--accent-bg)}
+.dag-nr{font-size:11px;font-weight:600;color:var(--text2)}
+.dag.idag .dag-nr{color:var(--accent-text)}
+.hpille{display:block;font-size:9.5px;line-height:1.35;color:#fff;border-radius:4px;padding:0 3px;margin-top:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.hmer{font-size:9px;color:var(--text3);margin-top:1px}
+.dagpanel{margin-top:14px}
+.dag-tittel{font-size:14px;font-weight:700;margin-bottom:8px;text-transform:capitalize}
+.hrad{display:flex;align-items:center;gap:9px;padding:8px 0;border-bottom:1px solid var(--border2)}
+.hrad:last-child{border-bottom:none}
+.hprikk{width:10px;height:10px;border-radius:50%;flex-shrink:0}
+.hrad-main{flex:1;min-width:0}
+.hrad-tittel{font-size:13.5px;font-weight:600}
+.hrad-sub{font-size:11px;color:var(--text3);margin-top:1px}
+.skjema{display:grid;gap:7px;margin-top:10px}
+.skjema .rad2{display:flex;gap:7px}
+.skjema .rad2 .hinput,.skjema .rad2 select{flex:1;min-width:0}
+@media(min-width:700px){.fw{max-width:620px}.dag{min-height:70px}}
+</style>
+<link rel="stylesheet" href="felles/gran.css">
+</head>
+<body>
+<div class="fw">
+  <div class="top-bar">
+    <h1 class="app-title"><i class="ti ti-calendar"></i> Kalender</h1>
+    <div class="top-right">
+      <button class="icon-btn" id="theme-btn"></button>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="kal-topp">
+      <button class="kal-nav" id="forrige" aria-label="Forrige måned">‹</button>
+      <div class="mnd" id="mnd-label"></div>
+      <button class="kal-nav" id="neste" aria-label="Neste måned">›</button>
+    </div>
+    <div class="ukedager"><div>Man</div><div>Tir</div><div>Ons</div><div>Tor</div><div>Fre</div><div>Lør</div><div>Søn</div></div>
+    <div class="kal-grid" id="grid"></div>
+  </div>
+
+  <div class="card dagpanel" id="dagpanel" style="display:none">
+    <div class="dag-tittel" id="dag-tittel"></div>
+    <div id="dag-hendelser"></div>
+    <div class="skjema">
+      <input type="text" id="h-tittel" class="hinput" maxlength="60" placeholder="Hva skjer? F.eks. «Legetime», «Fotballtrening»" />
+      <div class="rad2">
+        <input type="time" id="h-tid" class="hinput" />
+        <select id="h-hvem" class="hinput"></select>
+      </div>
+      <input type="text" id="h-notat" class="hinput" maxlength="120" placeholder="Notat (valgfritt)" />
+      <div style="display:flex;gap:6px">
+        <button class="btn-primary" id="h-lagre" style="flex:1;width:auto">Legg til</button>
+        <button class="btn-ghost" id="h-avbryt" style="display:none">Avbryt</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="status-bar" id="status-bar"></div>
+</div>
+
+<script type="module">
+import { requireAuth } from './felles/auth.js';
+import { dbGet, dbSet, dbListen } from './felles/storage.js';
+import { esc, todayStr, initTheme, toggleTheme, setStatus, personFarge } from './felles/ui.js';
+import { monterNav } from './felles/nav.js';
+
+initTheme();
+document.getElementById('theme-btn').addEventListener('click', toggleTheme);
+
+const APP='kalender';
+const MND=['januar','februar','mars','april','mai','juni','juli','august','september','oktober','november','desember'];
+let FAMILIE=null, data=null, dataLoaded=false, sistSkrevet='', personer=[];
+let visAar, visMnd, valgtDato=null, redigerId=null;
+
+function normaliser(d){
+  const b=d||{};
+  if(!Array.isArray(b.hendelser))b.hendelser=[];
+  const maxId=Math.max(0,...b.hendelser.map(h=>h.id||0));
+  if(!b.nextId||b.nextId<=maxId)b.nextId=maxId+1;
+  return b;
+}
+
+async function load(){
+  setStatus('Laster...');
+  try{
+    const ctx=await requireAuth();
+    if(!ctx.familieId){setStatus('Ingen husstand – kontakt administrator','err');return;}
+    FAMILIE=ctx.familieId;
+    monterNav(FAMILIE,APP);
+    const p=await dbGet(FAMILIE,'personer');
+    personer=[...(p?.voksne||[]),...((p?.barn||[]).map(b=>b.navn))].filter(Boolean);
+    data=normaliser(await dbGet(FAMILIE,APP));
+    dataLoaded=true;
+    setStatus('');
+    startListen();
+  }catch(e){setStatus('Kunne ikke laste – '+(e.message||'prøv igjen'),'err');return;}
+  const n=new Date();
+  visAar=n.getFullYear(); visMnd=n.getMonth();
+  fyllHvem();
+  render();
+}
+
+async function save(){
+  if(!dataLoaded){setStatus('Ikke lagret – data er ikke lastet','err');return;}
+  try{
+    sistSkrevet=JSON.stringify(data);
+    await dbSet(FAMILIE,APP,data);
+    setStatus('Lagret ✓','ok');
+  }catch(e){setStatus('Kunne ikke lagre – prøv igjen','err');}
+}
+
+let stopListen=null;
+function startListen(){
+  if(stopListen)return;
+  stopListen=dbListen(FAMILIE,APP,saved=>{
+    if(!saved)return;
+    if(JSON.stringify(saved)===sistSkrevet)return;
+    const s=JSON.stringify(normaliser(saved));
+    if(s===JSON.stringify(data))return;
+    if(document.getElementById('h-tittel').value.trim())return; // noen skriver
+    data=JSON.parse(s);
+    render();
+  });
+}
+
+function fyllHvem(){
+  document.getElementById('h-hvem').innerHTML='<option value="">Hele familien</option>'
+    +personer.map(n=>'<option value="'+esc(n)+'">'+esc(n)+'</option>').join('');
+}
+function farge(hvem){return hvem?personFarge(hvem):'var(--accent)';}
+function toStr(y,m,d){return y+'-'+String(m+1).padStart(2,'0')+'-'+String(d).padStart(2,'0');}
+function hendelserPa(dato){return data.hendelser.filter(h=>h.dato===dato).sort((a,b)=>(a.tid||'99').localeCompare(b.tid||'99'));}
+
+function render(){
+  document.getElementById('mnd-label').textContent=MND[visMnd].charAt(0).toUpperCase()+MND[visMnd].slice(1)+' '+visAar;
+  const forste=new Date(visAar,visMnd,1);
+  const offset=(forste.getDay()+6)%7; // mandag=0
+  const dager=new Date(visAar,visMnd+1,0).getDate();
+  const idag=todayStr();
+  let celler='';
+  for(let i=0;i<offset;i++)celler+='<div class="dag tom"></div>';
+  for(let d=1;d<=dager;d++){
+    const ds=toStr(visAar,visMnd,d);
+    const hs=hendelserPa(ds);
+    const piller=hs.slice(0,2).map(h=>
+      '<span class="hpille" style="background:'+farge(h.hvem)+'">'+(h.tid?esc(h.tid)+' ':'')+esc(h.tittel)+'</span>').join('');
+    const mer=hs.length>2?'<div class="hmer">+'+(hs.length-2)+' til</div>':'';
+    celler+='<div class="dag'+(ds===idag?' idag':'')+(ds===valgtDato?' valgt':'')+'" data-dato="'+ds+'">'
+      +'<div class="dag-nr">'+d+'</div>'+piller+mer+'</div>';
+  }
+  document.getElementById('grid').innerHTML=celler;
+  if(valgtDato)renderDag();
+}
+
+function renderDag(){
+  const panel=document.getElementById('dagpanel');
+  panel.style.display='block';
+  const dt=new Date(valgtDato+'T12:00:00');
+  document.getElementById('dag-tittel').textContent=
+    dt.toLocaleDateString('nb-NO',{weekday:'long',day:'numeric',month:'long'});
+  const hs=hendelserPa(valgtDato);
+  document.getElementById('dag-hendelser').innerHTML=hs.map(h=>
+    '<div class="hrad"><span class="hprikk" style="background:'+farge(h.hvem)+'"></span>'
+    +'<div class="hrad-main"><div class="hrad-tittel">'+(h.tid?esc(h.tid)+' · ':'')+esc(h.tittel)+'</div>'
+    +'<div class="hrad-sub">'+(h.hvem?esc(h.hvem):'Hele familien')+(h.notat?' · '+esc(h.notat):'')+'</div></div>'
+    +'<button class="icon-btn" data-rediger="'+h.id+'" title="Rediger"><i class="ti ti-edit"></i></button>'
+    +'<button class="icon-btn danger" data-slett="'+h.id+'" title="Slett"><i class="ti ti-trash"></i></button></div>').join('')
+    ||'<div class="empty-state" style="padding:.5rem">Ingenting planlagt denne dagen.</div>';
+}
+
+// ── Hendelser ──
+document.getElementById('grid').addEventListener('click',e=>{
+  const c=e.target.closest('[data-dato]');
+  if(!c)return;
+  valgtDato=c.dataset.dato; redigerId=null; nullstillSkjema();
+  render();
+  document.getElementById('dagpanel').scrollIntoView({behavior:'smooth',block:'nearest'});
+});
+document.getElementById('forrige').addEventListener('click',()=>{if(--visMnd<0){visMnd=11;visAar--;}render();});
+document.getElementById('neste').addEventListener('click',()=>{if(++visMnd>11){visMnd=0;visAar++;}render();});
+
+function nullstillSkjema(){
+  document.getElementById('h-tittel').value='';
+  document.getElementById('h-tid').value='';
+  document.getElementById('h-hvem').value='';
+  document.getElementById('h-notat').value='';
+  redigerId=null;
+  document.getElementById('h-lagre').textContent='Legg til';
+  document.getElementById('h-avbryt').style.display='none';
+}
+
+document.getElementById('h-lagre').addEventListener('click',async()=>{
+  if(!valgtDato)return;
+  const tittel=document.getElementById('h-tittel').value.trim();
+  if(!tittel){setStatus('Skriv hva som skjer','err');return;}
+  const felt={tittel,tid:document.getElementById('h-tid').value||'',
+    hvem:document.getElementById('h-hvem').value||'',
+    notat:document.getElementById('h-notat').value.trim()||''};
+  if(redigerId){
+    const h=data.hendelser.find(x=>x.id===redigerId);
+    if(h)Object.assign(h,felt);
+  }else{
+    data.hendelser.push({id:data.nextId++,dato:valgtDato,...felt});
+  }
+  nullstillSkjema();
+  await save();render();
+});
+document.getElementById('h-avbryt').addEventListener('click',nullstillSkjema);
+
+document.getElementById('dag-hendelser').addEventListener('click',async e=>{
+  const r=e.target.closest('[data-rediger]');
+  if(r){
+    const h=data.hendelser.find(x=>x.id===parseInt(r.dataset.rediger));
+    if(!h)return;
+    redigerId=h.id;
+    document.getElementById('h-tittel').value=h.tittel;
+    document.getElementById('h-tid').value=h.tid||'';
+    document.getElementById('h-hvem').value=h.hvem||'';
+    document.getElementById('h-notat').value=h.notat||'';
+    document.getElementById('h-lagre').textContent='Lagre endring';
+    document.getElementById('h-avbryt').style.display='inline-flex';
+    document.getElementById('h-tittel').focus();
+    return;
+  }
+  const s=e.target.closest('[data-slett]');
+  if(s){
+    if(!confirm('Slette hendelsen?'))return;
+    data.hendelser=data.hendelser.filter(x=>x.id!==parseInt(s.dataset.slett));
+    if(redigerId===parseInt(s.dataset.slett))nullstillSkjema();
+    await save();render();
+  }
+});
+
+load();
+</script>
+</body>
+</html>
