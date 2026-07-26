@@ -60,7 +60,12 @@
       <div class="card-title">Tenner <span id="tann-antall" style="text-transform:none;letter-spacing:0;font-weight:400"></span></div>
       <div class="tannrad" id="tenner-oppe"></div>
       <div class="tannrad nede" id="tenner-nede"></div>
-      <p class="alder-lbl" style="text-align:center">Trykk på tannen når den kommer (bruker datoen under) – trykk igjen for å fjerne.</p>
+      <div style="display:flex;gap:8px;align-items:center;justify-content:center;margin:6px 0 2px">
+        <label for="tann-dato" style="font-size:11px;color:var(--text3);margin:0">Dato tann kom:</label>
+        <input type="date" id="tann-dato" class="hinput" style="flex:0 1 160px;margin:0;font-size:12.5px;padding:6px 8px" />
+      </div>
+      <p class="alder-lbl" style="text-align:center">Trykk på tannen når den kommer – bruker datoen over. Trykk igjen for å fjerne.</p>
+      <div id="tann-logg" style="margin-top:6px"></div>
     </div>
 
     <div class="card">
@@ -188,6 +193,15 @@ function tegnTenner(b){
   document.getElementById('tenner-nede').innerHTML=rad(TENNER_NEDE);
   const n=Object.keys(t).length;
   document.getElementById('tann-antall').textContent=n?'· '+n+' av 20':'';
+  tegnTannLogg(b);
+}
+function tegnTannLogg(b){
+  const t=data.tenner[b.id]||{};
+  const fdis=Object.keys(t).sort((x,y)=>(t[y]||'').localeCompare(t[x]||'')); // nyeste først
+  document.getElementById('tann-logg').innerHTML=fdis.map(f=>
+    '<div class="hrow"><div class="hrow-main"><div class="hrow-title" style="font-size:13px">'+esc(tannNavn(f))+'</div>'
+    +'<div class="hrow-sub">Kom '+esc(fmtDato(t[f]))+(b.fodt?' · '+esc(alderTxt(b.fodt,t[f])):'')+'</div></div>'
+    +'<button class="hrow-del" data-tann-del="'+f+'" title="Fjern tann" aria-label="Fjern tann">×</button></div>').join('');
 }
 
 // ── Render ──
@@ -209,6 +223,7 @@ function render(){
     +boks(sko?sko.sko+'':'–','Skostørrelse',deltaTxt(b.id,'sko',''),sko?fmtDato(sko.dato):'');
   document.getElementById('alder-lbl').textContent=b.fodt?esc(b.navn)+' er '+alderTxt(b.fodt)+' gammel':'';
   tegnTenner(b);
+  {const td=document.getElementById('tann-dato'); if(td&&!td.value)td.value=todayStr();}
 
   const ms=barnMaalinger(b.id);
   document.getElementById('historikk').innerHTML=ms.map(m=>
@@ -248,17 +263,23 @@ document.getElementById('logg-btn').addEventListener('click',async()=>{
 });
 
 document.getElementById('tann-kort').addEventListener('click',async e=>{
-  const k=e.target.closest('[data-tann]');
-  if(!k)return;
   const b=barn.find(x=>x.id===aktivBarnId)||barn[0];
   if(!b)return;
+  const del=e.target.closest('[data-tann-del]');
+  if(del){
+    const df=del.dataset.tannDel;
+    if(data.tenner[b.id]&&data.tenner[b.id][df]&&confirm('Fjerne '+tannNavn(df)+' for '+b.navn+'?')){delete data.tenner[b.id][df];await save();render();}
+    return;
+  }
+  const k=e.target.closest('[data-tann]');
+  if(!k)return;
   const f=k.dataset.tann;
   if(!data.tenner[b.id])data.tenner[b.id]={};
   if(data.tenner[b.id][f]){
     if(!confirm('Fjerne '+tannNavn(f)+' for '+b.navn+'?'))return;
     delete data.tenner[b.id][f];
   }else{
-    data.tenner[b.id][f]=document.getElementById('ny-dato').value||todayStr();
+    data.tenner[b.id][f]=document.getElementById('tann-dato').value||todayStr();
   }
   await save();render();
 });

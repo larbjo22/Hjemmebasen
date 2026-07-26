@@ -88,7 +88,8 @@ input:focus-visible,select:focus-visible,button:focus-visible,textarea:focus-vis
 .repeat-select{font-size:12px;padding:5px 8px;border:1px solid var(--border);border-radius:7px;outline:none;background:var(--surface);color:var(--text)}
 /* Filter */
 .filter-row{display:flex;gap:4px;margin-bottom:.6rem;flex-wrap:wrap;align-items:center}
-.filter-chip{font-size:11px;padding:4px 10px;border-radius:20px;border:1px solid var(--border);background:var(--surface2);color:var(--text2);cursor:pointer}
+#filter-chips,#archive-filter-chips{display:flex;flex-wrap:wrap;gap:6px;width:100%}
+.filter-chip{font-size:11px;padding:4px 10px;border-radius:20px;border:1px solid var(--border);background:var(--surface2);color:var(--text2);cursor:pointer;white-space:nowrap}
 .filter-chip.active{background:var(--accent-bg);color:var(--accent-text);border-color:var(--accent-border);font-weight:500}
 .search-input{flex:1;font-size:12px;padding:5px 9px;border:1px solid var(--border);border-radius:7px;height:28px;outline:none;background:var(--surface);color:var(--text);min-width:80px}
 .search-input:focus{border-color:var(--accent)}
