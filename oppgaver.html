@@ -366,6 +366,11 @@ input:focus-visible,select:focus-visible,button:focus-visible,textarea:focus-vis
       <div id="modal-repeat-custom-wrap" style="display:none;margin-top:6px">
         <input type="number" id="modal-repeat-custom" placeholder="Antall dager mellom hver gang" min="1" style="width:100%;font-size:13px;padding:7px 9px;border:1px solid var(--border);border-radius:7px;outline:none;background:var(--surface);color:var(--text)" />
       </div>
+      <div id="modal-komm" style="margin-top:12px;border-top:1px solid var(--border);padding-top:10px"></div>
+      <div style="display:flex;gap:6px;margin-top:8px">
+        <input type="text" id="modal-komm-inp" maxlength="200" placeholder="Skriv en kommentar..." onkeydown="kommEnter(event)" style="flex:1;min-width:0;font-size:13px;padding:7px 9px;border:1px solid var(--border);border-radius:7px;background:var(--surface);color:var(--text);outline:none" />
+        <button class="btn-ghost" style="width:auto;flex:0 0 auto" onclick="sendModalKomm()">Send</button>
+      </div>
       <div class="modal-actions">
         <button class="btn-danger" onclick="deleteFromModal()">Slett</button>
         <button class="btn-ghost" onclick="hideModal()">Avbryt</button>
@@ -738,8 +743,26 @@ function openModal(id){
   populateCatSelect('modal-cat',task.cat);
   populateWhoSelect('modal-who',task.who);
   ['high','normal','low'].forEach(x=>document.getElementById('modal-prio-'+x).classList.toggle('active',x===modalPrio));
+  renderModalKomm(task);
   document.getElementById('modal').style.display='flex';
   setTimeout(()=>document.getElementById('modal-title').focus(),50);
+}
+function kommTid(ts){const d=Date.now()-ts;if(d<60000)return 'nå nettopp';if(d<3600000)return 'for '+Math.round(d/60000)+' min siden';if(d<86400000)return 'for '+Math.round(d/3600000)+' t siden';return new Date(ts).toLocaleDateString('nb-NO',{day:'numeric',month:'short'});}
+function renderModalKomm(task){
+  const el=document.getElementById('modal-komm');if(!el)return;
+  const ks=[...(task.kommentarer||[])].sort((a,b)=>a.ts-b.ts);
+  el.innerHTML='<div style="font-size:11px;font-weight:600;color:var(--text3);text-transform:uppercase;letter-spacing:.05em;margin-bottom:6px">Kommentarer</div>'
+    +(ks.map(k=>{const c=personColor(k.fra||'?');return '<div style="font-size:12.5px;line-height:1.45;margin-bottom:5px"><b style="color:'+c+'">'+esc(k.fra||'Ukjent')+'</b> '+esc(k.tekst)+' <span style="color:var(--text4);font-size:10.5px">'+esc(kommTid(k.ts))+'</span></div>';}).join('')
+      ||'<div style="font-size:12px;color:var(--text4)">Ingen kommentarer ennå.</div>');
+}
+function kommEnter(e){if(e.key==='Enter')sendModalKomm();}
+function sendModalKomm(){
+  const id=parseInt(document.getElementById('modal-id').value,10);
+  const task=data.tasks.find(t=>t.id===id);if(!task)return;
+  const inp=document.getElementById('modal-komm-inp');const tekst=inp.value.trim();if(!tekst)return;
+  if(!Array.isArray(task.kommentarer))task.kommentarer=[];
+  task.kommentarer.push({fra:MITT||'Ukjent',tekst,ts:Date.now()});
+  inp.value='';save();renderModalKomm(task);render();
 }
 function hideModal(){document.getElementById('modal').style.display='none';}
 function saveModal(){
@@ -1004,6 +1027,7 @@ function renderTaskRow(task){
     +(task.who?'<span class="task-who" style="background:'+whoColor+'22;color:'+whoColor+'">'+esc(task.who)+'</span>':'')
     +(task.date?'<span class="task-date'+(overdue?' overdue':'')+'"><i class="ti ti-calendar" style="font-size:10px"></i>'+formatDate(task.date)+(overdue?' ⚠️':'')+'</span>':'')
     +(repeatLabel?'<span class="task-repeat"><i class="ti ti-refresh" style="font-size:10px"></i>'+repeatLabel+'</span>':'')
+    +((task.kommentarer&&task.kommentarer.length)?'<span class="task-repeat"><i class="ti ti-message-circle" style="font-size:10px"></i>'+task.kommentarer.length+'</span>':'')
     +(task.note?'<span style="font-size:10px;color:var(--text4)"><i class="ti ti-note" style="font-size:10px;vertical-align:-1px"></i></span>':'')
     +'</div></div>'
     +'<button class="icon-btn danger" onclick="deleteTask('+task.id+')" title="Slett"><i class="ti ti-trash"></i></button>'
@@ -1212,7 +1236,7 @@ document.addEventListener('keydown',e=>{
 // Modul-scope: funksjoner brukt i on*-attributter må eksponeres på window.
 Object.assign(window,{addCategory,addMaint,addPerson,addTask,changeWeek,clearArchive,
 completeTask,deleteFromModal,deleteMaint,deleteTask,goToNow,hideMaintModal,hideModal,
-maintAddDate,maintDelDate,maintDoneNow,openMaintModal,openModal,render,
+maintAddDate,maintDelDate,maintDoneNow,openMaintModal,openModal,render,sendModalKomm,
 saveMaintModal,saveModal,setModalPrio,setMyName,
 setNewPrio,setView,setWeekMode,taskDragStart,toggleNewRepeat,toggleTheme});
 
