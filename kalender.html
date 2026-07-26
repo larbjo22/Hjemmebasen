@@ -35,6 +35,14 @@
 .hrad-main{flex:1;min-width:0}
 .hrad-tittel{font-size:13.5px;font-weight:600}
 .hrad-sub{font-size:11px;color:var(--text3);margin-top:1px}
+.komm-knapp{position:relative}
+.komm-tall{font-size:10px;font-weight:700;margin-left:2px}
+.komm-boks{margin:2px 0 8px 19px;padding:8px 10px;background:var(--surface2);border-radius:10px}
+.komm-rad{font-size:12px;line-height:1.4;margin-bottom:5px}
+.komm-rad b{font-weight:600}
+.komm-rad .naar{color:var(--text4);font-size:10.5px;margin-left:4px}
+.komm-skriv{display:flex;gap:6px;margin-top:6px}
+.komm-skriv .hinput{flex:1;min-width:0;margin:0;font-size:12.5px;padding:6px 8px}
 .skjema{display:grid;gap:7px;margin-top:10px}
 .skjema .rad2{display:flex;gap:7px}
 .skjema .rad2 .hinput,.skjema .rad2 select{flex:1;min-width:0}
@@ -93,11 +101,12 @@ document.getElementById('theme-btn').addEventListener('click', toggleTheme);
 const APP='kalender';
 const MND=['januar','februar','mars','april','mai','juni','juli','august','september','oktober','november','desember'];
 let FAMILIE=null, data=null, dataLoaded=false, sistSkrevet='', personer=[];
-let visAar, visMnd, valgtDato=null, redigerId=null;
+let visAar, visMnd, valgtDato=null, redigerId=null, mittNavn='', apenKommentar=null;
 
 function normaliser(d){
   const b=d||{};
   if(!Array.isArray(b.hendelser))b.hendelser=[];
+  b.hendelser.forEach(h=>{if(!Array.isArray(h.kommentarer))h.kommentarer=[];});
   const maxId=Math.max(0,...b.hendelser.map(h=>h.id||0));
   if(!b.nextId||b.nextId<=maxId)b.nextId=maxId+1;
   return b;
@@ -109,6 +118,7 @@ async function load(){
     const ctx=await requireAuth();
     if(!ctx.familieId){setStatus('Ingen husstand – kontakt administrator','err');return;}
     FAMILIE=ctx.familieId;
+    mittNavn=(ctx.medlem?.navn||'').split(' ')[0]||'Ukjent';
     monterNav(FAMILIE,APP);
     const p=await dbGet(FAMILIE,'personer');
     personer=[...(p?.voksne||[]),...((p?.barn||[]).map(b=>b.navn))].filter(Boolean);
@@ -141,6 +151,7 @@ function startListen(){
     const s=JSON.stringify(normaliser(saved));
     if(s===JSON.stringify(data))return;
     if(document.getElementById('h-tittel').value.trim())return; // noen skriver
+    if(document.getElementById('komm-inp')?.value.trim())return; // noen skriver en kommentar
     data=JSON.parse(s);
     render();
   });
@@ -175,6 +186,21 @@ function render(){
   if(valgtDato)renderDag();
 }
 
+function tidSiden(ts){
+  const d=Date.now()-ts;
+  if(d<60000)return 'nå nettopp';
+  if(d<3600000)return 'for '+Math.round(d/60000)+' min siden';
+  if(d<86400000)return 'for '+Math.round(d/3600000)+' t siden';
+  return new Date(ts).toLocaleDateString('nb-NO',{day:'numeric',month:'short'});
+}
+function kommentarBoks(h){
+  const rader=[...h.kommentarer].sort((a,b)=>a.ts-b.ts).map(k=>
+    '<div class="komm-rad"><b style="color:'+farge(k.fra)+'">'+esc(k.fra)+'</b> '+esc(k.tekst)+'<span class="naar">'+esc(tidSiden(k.ts))+'</span></div>').join('')
+    ||'<div class="komm-rad" style="color:var(--text4)">Ingen kommentarer ennå.</div>';
+  return '<div class="komm-boks">'+rader
+    +'<div class="komm-skriv"><input type="text" id="komm-inp" class="hinput" maxlength="200" placeholder="Skriv en kommentar..." />'
+    +'<button class="btn-ghost" style="width:auto;flex:0 0 auto" data-send-komm="'+h.id+'">Send</button></div></div>';
+}
 function renderDag(){
   const panel=document.getElementById('dagpanel');
   panel.style.display='block';
@@ -186,8 +212,10 @@ function renderDag(){
     '<div class="hrad"><span class="hprikk" style="background:'+farge(h.hvem)+'"></span>'
     +'<div class="hrad-main"><div class="hrad-tittel">'+(h.tid?esc(h.tid)+' · ':'')+esc(h.tittel)+'</div>'
     +'<div class="hrad-sub">'+(h.hvem?esc(h.hvem):'Hele familien')+(h.notat?' · '+esc(h.notat):'')+'</div></div>'
+    +'<button class="icon-btn komm-knapp" data-komm="'+h.id+'" title="Kommentarer" aria-label="Kommentarer"><i class="ti ti-message-circle"></i>'+(h.kommentarer.length?'<span class="komm-tall">'+h.kommentarer.length+'</span>':'')+'</button>'
     +'<button class="icon-btn" data-rediger="'+h.id+'" title="Rediger"><i class="ti ti-edit"></i></button>'
-    +'<button class="icon-btn danger" data-slett="'+h.id+'" title="Slett"><i class="ti ti-trash"></i></button></div>').join('')
+    +'<button class="icon-btn danger" data-slett="'+h.id+'" title="Slett"><i class="ti ti-trash"></i></button></div>'
+    +(apenKommentar===h.id?kommentarBoks(h):'')).join('')
     ||'<div class="empty-state" style="padding:.5rem">Ingenting planlagt denne dagen.</div>';
 }
 
@@ -230,7 +258,25 @@ document.getElementById('h-lagre').addEventListener('click',async()=>{
 });
 document.getElementById('h-avbryt').addEventListener('click',nullstillSkjema);
 
+async function sendKommentar(id){
+  const inp=document.getElementById('komm-inp');
+  const tekst=inp?.value.trim();
+  if(!tekst)return;
+  const h=data.hendelser.find(x=>x.id===id);
+  if(!h)return;
+  if(!Array.isArray(h.kommentarer))h.kommentarer=[];
+  h.kommentarer.push({fra:mittNavn,tekst,ts:Date.now()});
+  await save();render();
+  setTimeout(()=>document.getElementById('komm-inp')?.focus(),30);
+}
+document.getElementById('dag-hendelser').addEventListener('keydown',e=>{
+  if(e.key==='Enter'&&e.target.id==='komm-inp'&&apenKommentar!=null)sendKommentar(apenKommentar);
+});
 document.getElementById('dag-hendelser').addEventListener('click',async e=>{
+  const kt=e.target.closest('[data-komm]');
+  if(kt){apenKommentar=apenKommentar===parseInt(kt.dataset.komm)?null:parseInt(kt.dataset.komm);renderDag();return;}
+  const sk=e.target.closest('[data-send-komm]');
+  if(sk){await sendKommentar(parseInt(sk.dataset.sendKomm));return;}
   const r=e.target.closest('[data-rediger]');
   if(r){
     const h=data.hendelser.find(x=>x.id===parseInt(r.dataset.rediger));
