@@ -53,7 +53,7 @@ import { app } from './felles/firebase-init.js';
 import { initTheme, setStatus } from './felles/ui.js';
 import {
   getAuth, createUserWithEmailAndPassword, signInWithEmailAndPassword,
-  sendEmailVerification, setPersistence, browserLocalPersistence,
+  setPersistence, browserLocalPersistence,
 } from 'https://www.gstatic.com/firebasejs/10.14.1/firebase-auth.js';
 import { getDatabase, ref, get, set } from 'https://www.gstatic.com/firebasejs/10.14.1/firebase-database.js';
 
@@ -106,8 +106,6 @@ document.getElementById('bli-med-btn').addEventListener('click', async () => {
       familieId, navn, epost, kode,
       opprettet: Date.now(), sistSett: 0,
     });
-    // Send bekreftelseslenke; requireAuth sender uverifiserte til login-skjermen
-    try { if (!cred.user.emailVerified) await sendEmailVerification(cred.user); } catch (e) { /* login tilbyr «send på nytt» */ }
     location.replace('index.html');
   } catch (e) {
     const tekst = e.code === 'auth/email-already-in-use' ? 'E-posten er i bruk med et annet passord.'
