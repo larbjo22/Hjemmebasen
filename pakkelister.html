@@ -79,6 +79,7 @@
       <div id="item-liste" style="margin-top:10px"></div>
       <div style="display:flex;gap:6px;margin-top:10px">
         <input type="text" id="ny-item" class="hinput" maxlength="60" placeholder="Legg til ting..." style="flex:1;min-width:0" />
+        <button class="btn-ghost" id="lim-inn-btn" title="Lim inn flere (én per linje)" style="flex:0 0 auto"><i class="ti ti-clipboard-plus"></i></button>
         <button class="btn-ghost" id="ny-item-btn">+</button>
       </div>
       <div class="verktoy">
@@ -88,6 +89,18 @@
       <div class="verktoy">
         <button class="btn-ghost" id="kopier-btn"><i class="ti ti-copy"></i> Lag kopi</button>
         <button class="btn-danger" id="slett-liste-btn">Slett lista</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="modal-bg" id="lim-modal" style="display:none">
+    <div class="modal">
+      <p class="modal-title">Lim inn flere ting</p>
+      <p style="font-size:11.5px;color:var(--text3);margin-bottom:8px">Én ting per linje. Tomme linjer og ting som alt står i lista hoppes over.</p>
+      <textarea id="lim-tekst" rows="7" style="width:100%;font-size:13px;padding:8px;border:1px solid var(--border);border-radius:8px;background:var(--surface);color:var(--text);outline:none;resize:vertical" placeholder="Tannbørste&#10;Regnjakke&#10;Kosedyr"></textarea>
+      <div class="modal-actions">
+        <button class="btn-ghost" id="lim-avbryt">Avbryt</button>
+        <button class="btn-primary" id="lim-legg">Legg til</button>
       </div>
     </div>
   </div>
@@ -297,6 +310,31 @@ document.getElementById('slett-liste-btn').addEventListener('click',async()=>{
   data.lister=data.lister.filter(x=>x.id!==l.id);
   aktivId=null;
   await save();render();
+});
+
+document.getElementById('lim-inn-btn').addEventListener('click',()=>{
+  if(!aktivListe())return;
+  document.getElementById('lim-tekst').value='';
+  document.getElementById('lim-modal').style.display='flex';
+  setTimeout(()=>document.getElementById('lim-tekst').focus(),50);
+});
+document.getElementById('lim-avbryt').addEventListener('click',()=>{document.getElementById('lim-modal').style.display='none';});
+document.getElementById('lim-modal').addEventListener('click',e=>{if(e.target.id==='lim-modal')e.currentTarget.style.display='none';});
+document.getElementById('lim-legg').addEventListener('click',async()=>{
+  const l=aktivListe();if(!l){document.getElementById('lim-modal').style.display='none';return;}
+  const linjer=document.getElementById('lim-tekst').value.split('\n').map(x=>x.trim()).filter(Boolean);
+  const finnes=new Set(l.items.map(i=>i.navn.toLowerCase()));
+  let lagt=0;
+  linjer.forEach(navn=>{
+    const n=navn.slice(0,60);
+    if(finnes.has(n.toLowerCase()))return;
+    finnes.add(n.toLowerCase());
+    l.items.push({id:data.nextId++,navn:n,pakket:false});
+    lagt++;
+  });
+  document.getElementById('lim-modal').style.display='none';
+  if(lagt){await save();render();setStatus('La til '+lagt+' ting ✓','ok');}
+  else setStatus('Ingen nye ting å legge til','err');
 });
 
 load();

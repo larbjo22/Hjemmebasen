@@ -535,6 +535,13 @@ function normalizeData(d,barn){
   if(!d.sessions)d.sessions=[];
   if(!d.since)d.since=Date.now();
   if(!d.state)d.state='awake';
+  // Invariant: når man er våken skal 'since' (= våknet-tidspunkt) alltid være
+  // lik siste økt-slutt. Reparer orphan-tilstander etter manuell redigering,
+  // ellers forsvinner våkentid fra statistikken.
+  if(d.state==='awake'&&d.sessions.length){
+    const le=d.sessions.reduce((a,b)=>a.end>=b.end?a:b).end;
+    if(d.since!==le)d.since=le;
+  }
   if(!d.nextSid)d.nextSid=Math.max(1,...d.sessions.map(s=>s.id||0))+1;
   d.settings={...DEFAULT_SETTINGS,...(d.settings||{})};
   // Migrer til fleksibel liste med våkenvinduer (siste = før natt)
@@ -1735,6 +1742,14 @@ function openStatDetail(kind){
   document.getElementById('stat-modal').style.display='flex';
 }
 function handleSessBg(e){if(e.target===document.getElementById('sess-modal'))hideSessModal();}
+function reanchorSince(){
+  // Etter manuell endring/sletting av en økt: hold 'since' i synk med siste
+  // økt-slutt når man er våken (no-op i normal flyt).
+  if(data.state==='awake'&&data.sessions.length){
+    const le=data.sessions.reduce((a,b)=>a.end>=b.end?a:b).end;
+    if(data.since!==le)data.since=le;
+  }
+}
 function saveSess(){
   const start=fromLocalInput(document.getElementById('sess-start').value);
   const end=fromLocalInput(document.getElementById('sess-end').value);
@@ -1755,6 +1770,7 @@ function saveSess(){
     if(laid!==null)ns.laidDown=laid;
     data.sessions.push(ns);
   }
+  reanchorSince();
   hideSessModal();save();render();
 }
 function deleteSess(){
@@ -1762,6 +1778,7 @@ function deleteSess(){
   if(!idVal)return;
   if(!confirm('Slette denne søvnøkten?'))return;
   data.sessions=data.sessions.filter(x=>x.id!==parseInt(idVal));
+  reanchorSince();
   hideSessModal();save();render();
 }
 

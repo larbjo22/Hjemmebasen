@@ -150,6 +150,8 @@ input:focus-visible,select:focus-visible,button:focus-visible,[role="button"]:fo
 .modal label:first-of-type{margin-top:0}
 .modal input,.modal select{width:100%;font-size:13px;padding:7px 9px;border:1px solid var(--border);border-radius:7px;outline:none;background:var(--surface);color:var(--text)}
 .modal-actions{display:flex;gap:7px;margin-top:1rem}
+.tab-badge{display:inline-block;min-width:15px;font-size:10px;font-weight:700;line-height:15px;text-align:center;background:var(--accent);color:#fff;border-radius:8px;padding:0 4px;margin-left:2px;vertical-align:middle}
+.tab.active .tab-badge{background:#fff;color:var(--accent)}
 .btn-primary{flex:1;padding:9px;font-size:13px;font-weight:600;background:var(--accent);border:none;border-radius:7px;cursor:pointer;color:#fff}
 .btn-ghost{padding:9px 14px;font-size:13px;background:var(--surface2);border:1px solid var(--border);border-radius:7px;cursor:pointer;color:var(--text2)}
 .btn-danger{padding:9px 14px;font-size:13px;background:var(--surface);border:1px solid #fca5a5;border-radius:7px;cursor:pointer;color:var(--danger)}
@@ -169,8 +171,8 @@ input:focus-visible,select:focus-visible,button:focus-visible,[role="button"]:fo
     </div>
   </div>
   <div class="tabs">
-    <button class="tab active" id="tab-list" onclick="setView('list')"><i class="ti ti-list-check"></i> Butikken</button>
-    <button class="tab" id="tab-other" onclick="setView('other')"><i class="ti ti-shopping-bag"></i> Diverse</button>
+    <button class="tab active" id="tab-list" onclick="setView('list')"><i class="ti ti-list-check"></i> Dagligvare</button>
+    <button class="tab" id="tab-other" onclick="setView('other')"><i class="ti ti-shopping-bag"></i> Diverse <span class="tab-badge" id="other-badge" style="display:none"></span></button>
     <button class="tab" id="tab-history" onclick="setView('history')"><i class="ti ti-chart-bar"></i> Statistikk</button>
     <button class="tab" id="tab-settings" onclick="setView('settings')"><i class="ti ti-settings"></i> Innstillinger</button>
   </div>
@@ -276,6 +278,7 @@ input:focus-visible,select:focus-visible,button:focus-visible,[role="button"]:fo
       <label for="modal-name">Navn</label><input type="text" id="modal-name" />
       <label for="modal-qty">Antall</label><input type="number" id="modal-qty" min="1" />
       <label for="modal-cat">Kategori</label><select id="modal-cat"></select>
+      <button class="btn-ghost" style="width:100%;margin-top:4px" onclick="flyttTilDiverse()"><i class="ti ti-arrow-right"></i> Flytt til Diverse</button>
       <div class="modal-actions">
         <button class="btn-danger" onclick="deleteFromModal()">Slett</button>
         <button class="btn-ghost" onclick="hideModal()">Avbryt</button>
@@ -310,6 +313,7 @@ input:focus-visible,select:focus-visible,button:focus-visible,[role="button"]:fo
       <input type="hidden" id="hist-modal-name" />
       <label for="hist-modal-display">Vare</label><input type="text" id="hist-modal-display" disabled style="opacity:.6" />
       <label for="hist-modal-cat">Kategori</label><select id="hist-modal-cat"></select>
+      <button class="btn-ghost" style="width:100%;margin-top:4px" onclick="flyttHistTilDiverse()"><i class="ti ti-arrow-right"></i> Flytt til Diverse (ut av statistikk)</button>
       <div class="modal-actions">
         <button class="btn-ghost" onclick="hideHistModal()">Avbryt</button>
         <button class="btn-primary" onclick="saveHistModal()">Lagre</button>
@@ -598,6 +602,26 @@ function openEditModal(id){
   populateCatSelect('modal-cat',item.cat);
   document.getElementById('modal').style.display='flex';
   setTimeout(()=>document.getElementById('modal-name').focus(),50);
+}
+function flyttTilDiverse(){
+  const id=parseInt(document.getElementById('modal-id').value,10);
+  const item=data.items.find(i=>i.id===id);if(!item)return;
+  data.other=data.other||[];
+  const eks=data.other.find(o=>o.name.toLowerCase()===item.name.toLowerCase()&&!o.checked);
+  if(eks)eks.qty=(eks.qty||1)+(item.qty||1);
+  else data.other.push({id:nextId++,name:item.name,place:'Annet',qty:item.qty||1,note:'',url:'',prio:false,checked:false,added:todayStr()});
+  data.items=data.items.filter(i=>i.id!==id);
+  hideModal();save();render();setStatus('Flyttet til Diverse ✓','ok');
+}
+function flyttHistTilDiverse(){
+  const name=document.getElementById('hist-modal-name').value;
+  const h=(data.history||[]).find(x=>x.name===name);if(!h)return;
+  data.otherHistory=data.otherHistory||[];
+  const eks=data.otherHistory.find(x=>x.name.toLowerCase()===name.toLowerCase());
+  if(eks){eks.count=(eks.count||1)+(h.count||1);if(!eks.place)eks.place='Annet';if(h.last&&(!eks.last||h.last>eks.last))eks.last=h.last;}
+  else data.otherHistory.push({name:h.name,place:'Annet',count:h.count||1,last:h.last||todayStr()});
+  data.history=data.history.filter(x=>x.name!==name);
+  hideHistModal();save();render();setStatus('Flyttet «'+h.name+'» til Diverse ✓','ok');
 }
 function hideModal(){document.getElementById('modal').style.display='none';}
 function saveModal(){
@@ -1029,6 +1053,9 @@ function render(){
   const unchecked=data.items.filter(i=>!i.checked);
   const checked=data.items.filter(i=>i.checked);
   document.getElementById('count-badge').textContent=unchecked.length+' varer';
+  const divVenter=(data.other||[]).filter(o=>!o.checked).length;
+  const ob=document.getElementById('other-badge');
+  if(ob){ob.textContent=divVenter;ob.style.display=divVenter?'':'none';}
   populateCatSelect('new-cat',document.getElementById('new-cat').value);
   if(currentView==='list')renderList(unchecked,checked);
   else if(currentView==='other')renderOther();
@@ -1278,7 +1305,7 @@ Object.assign(window,{addCategory,addFromTemplate,addItem,addOther,addPlace,
 addTemplateItem,clearCheckedOther,completeShop,deleteFromModal,deleteFromOtherModal,
 deleteItem,deleteOther,deleteTemplate,doManualMerge,doMerge,hideCatModal,hideHistModal,
 hideMergeModal,hideModal,hideOtherModal,hideOtherSuggest,hideSuggest,manualPreview,
-openEditModal,openMergeModal,openOtherDetaljer,openOtherModal,otherNameLookup,render,
+flyttTilDiverse,flyttHistTilDiverse,openEditModal,openMergeModal,openOtherDetaljer,openOtherModal,otherNameLookup,render,
 renderOther,saveHistModal,saveModal,saveOtherModal,saveOtherModalAndNew,
 setView,suggestInput,suggestOther,toggleCheck,toggleOther,toggleShowChecked,toggleSort,toggleTheme});
 
