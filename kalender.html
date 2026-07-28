@@ -27,6 +27,13 @@
 .dag.idag .dag-nr{color:var(--accent-text)}
 .hpille{display:block;font-size:9.5px;line-height:1.35;color:#fff;border-radius:4px;padding:0 3px;margin-top:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .hmer{font-size:9px;color:var(--text3);margin-top:1px}
+.hpille.eks{opacity:.85;font-style:italic}
+.hrad.eks-rad{opacity:.9}
+.koble-rad{text-align:center;margin-top:8px}
+.ab-rad{display:flex;align-items:center;gap:8px;padding:7px 0;border-bottom:1px solid var(--border2)}
+.ab-rad:last-child{border-bottom:none}
+.ab-rad .navn{flex:1;min-width:0;font-size:13px}
+.ab-rad .url{font-size:10.5px;color:var(--text4);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .dagpanel{margin-top:14px}
 .dag-tittel{font-size:14px;font-weight:700;margin-bottom:8px;text-transform:capitalize}
 .hrad{display:flex;align-items:center;gap:9px;padding:8px 0;border-bottom:1px solid var(--border2)}
@@ -67,6 +74,7 @@
     </div>
     <div class="ukedager"><div>Man</div><div>Tir</div><div>Ons</div><div>Tor</div><div>Fre</div><div>Lør</div><div>Søn</div></div>
     <div class="kal-grid" id="grid"></div>
+    <div class="koble-rad"><button class="btn-lenke" id="abonner-btn"><i class="ti ti-calendar-share"></i> Eksterne kalendere</button></div>
   </div>
 
   <div class="card dagpanel" id="dagpanel" style="display:none">
@@ -86,6 +94,22 @@
     </div>
   </div>
 
+  <div class="modal-bg" id="abonner-modal" style="display:none">
+    <div class="modal">
+      <p class="modal-title"><i class="ti ti-calendar-share" style="color:var(--accent-text)"></i> Eksterne kalendere</p>
+      <p style="font-size:11.5px;color:var(--text3);line-height:1.5;margin-bottom:10px">Lim inn den <b>hemmelige iCal-URL-en</b> (Google Kalender → Innstillinger → velg kalenderen → «Hemmelig adresse i iCal-format»). Hendelsene hentes automatisk og vises grått og skrivebeskyttet. Det kan ta opptil en time før nye dukker opp.</p>
+      <div id="abonner-liste"></div>
+      <label for="ab-navn">Navn</label>
+      <input class="hinput" id="ab-navn" maxlength="30" placeholder="F.eks. Google, Spond, barnehagen" />
+      <label for="ab-url">iCal-URL (.ics)</label>
+      <input class="hinput" id="ab-url" placeholder="https://calendar.google.com/.../basic.ics" inputmode="url" autocapitalize="off" autocorrect="off" spellcheck="false" />
+      <div class="modal-actions">
+        <button class="btn-ghost" id="ab-lukk">Lukk</button>
+        <button class="btn-primary" id="ab-legg">Legg til</button>
+      </div>
+    </div>
+  </div>
+
   <div class="status-bar" id="status-bar"></div>
 </div>
 
@@ -101,7 +125,9 @@ document.getElementById('theme-btn').addEventListener('click', toggleTheme);
 const APP='kalender';
 const MND=['januar','februar','mars','april','mai','juni','juli','august','september','oktober','november','desember'];
 let FAMILIE=null, data=null, dataLoaded=false, sistSkrevet='', personer=[];
-let visAar, visMnd, valgtDato=null, redigerId=null, mittNavn='', apenKommentar=null;
+let visAar, visMnd, valgtDato=null, redigerId=null, mittNavn='', apenKommentar=null, apenEksport=null;
+let eksterne=[], abonnement=[], eksMapCache={};
+const EKS_FARGE='#6d7a74';
 
 function normaliser(d){
   const b=d||{};
@@ -123,6 +149,10 @@ async function load(){
     const p=await dbGet(FAMILIE,'personer');
     personer=[...(p?.voksne||[]),...((p?.barn||[]).map(b=>b.navn))].filter(Boolean);
     data=normaliser(await dbGet(FAMILIE,APP));
+    abonnement=await dbGet(FAMILIE,'kalender_abonnement');
+    if(!Array.isArray(abonnement))abonnement=[];
+    eksMapCache=await dbGet(FAMILIE,'kalender_eksterne')||{};
+    flatUtEksterne(eksMapCache);
     dataLoaded=true;
     setStatus('');
     startListen();
@@ -164,6 +194,42 @@ function fyllHvem(){
 function farge(hvem){return hvem?personFarge(hvem):'var(--accent)';}
 function toStr(y,m,d){return y+'-'+String(m+1).padStart(2,'0')+'-'+String(d).padStart(2,'0');}
 function hendelserPa(dato){return data.hendelser.filter(h=>h.dato===dato).sort((a,b)=>(a.tid||'99').localeCompare(b.tid||'99'));}
+function eksternePa(dato){return eksterne.filter(e=>e.dato===dato).sort((a,b)=>(a.tid||'99').localeCompare(b.tid||'99'));}
+function flatUtEksterne(eksMap){
+  eksterne=[];
+  const m=eksMap||{};
+  abonnement.forEach(a=>{(m[a.id]||[]).forEach(ev=>{ if(ev&&ev.dato&&ev.tittel)eksterne.push({tittel:ev.tittel,dato:ev.dato,tid:ev.tid||'',kilde:a.navn||'Ekstern'}); });});
+}
+// ── Eksport ut (Google-lenke + .ics) ──
+function fmtG(dt){const p=n=>String(n).padStart(2,'0');return dt.getFullYear()+p(dt.getMonth()+1)+p(dt.getDate())+'T'+p(dt.getHours())+p(dt.getMinutes())+'00';}
+function googleUrl(h){
+  const dd=h.dato.replace(/-/g,''); let dates;
+  if(h.tid){const st=new Date(h.dato+'T'+h.tid+':00');const en=new Date(st.getTime()+3600000);dates=fmtG(st)+'/'+fmtG(en);}
+  else{const nd=new Date(h.dato+'T12:00:00');nd.setDate(nd.getDate()+1);const p=n=>String(n).padStart(2,'0');dates=dd+'/'+nd.getFullYear()+p(nd.getMonth()+1)+p(nd.getDate());}
+  return 'https://calendar.google.com/calendar/render?action=TEMPLATE&text='+encodeURIComponent(h.tittel)+'&dates='+dates+(h.notat?'&details='+encodeURIComponent(h.notat):'');
+}
+function icsEsc(x){return String(x||'').replace(/([,;\\])/g,'\\$1').replace(/\n/g,'\\n');}
+function byggIcs(h){
+  const p=n=>String(n).padStart(2,'0'); let dt;
+  if(h.tid){const st=new Date(h.dato+'T'+h.tid+':00');const en=new Date(st.getTime()+3600000);
+    const f=x=>x.getFullYear()+p(x.getMonth()+1)+p(x.getDate())+'T'+p(x.getHours())+p(x.getMinutes())+'00';
+    dt='DTSTART:'+f(st)+'\r\nDTEND:'+f(en);
+  }else{const nd=new Date(h.dato+'T12:00:00');nd.setDate(nd.getDate()+1);
+    dt='DTSTART;VALUE=DATE:'+h.dato.replace(/-/g,'')+'\r\nDTEND;VALUE=DATE:'+nd.getFullYear()+p(nd.getMonth()+1)+p(nd.getDate());}
+  return ['BEGIN:VCALENDAR','VERSION:2.0','PRODID:-//Hjemmebasen//NO','BEGIN:VEVENT','UID:hb-'+h.id+'@hjemmebasen','SUMMARY:'+icsEsc(h.tittel),dt,h.notat?'DESCRIPTION:'+icsEsc(h.notat):null,'END:VEVENT','END:VCALENDAR'].filter(Boolean).join('\r\n');
+}
+function lastNedIcs(h){
+  const blob=new Blob([byggIcs(h)],{type:'text/calendar'});
+  const a=document.createElement('a');a.href=URL.createObjectURL(blob);
+  a.download=(h.tittel||'hendelse').replace(/[^\w-]+/g,'_').slice(0,40)+'.ics';
+  document.body.appendChild(a);a.click();setTimeout(()=>{URL.revokeObjectURL(a.href);a.remove();},100);
+}
+function eksportBoks(h){
+  return '<div class="komm-boks"><div style="display:flex;gap:6px;flex-wrap:wrap">'
+    +'<a class="btn-ghost" style="flex:1;width:auto;text-decoration:none;text-align:center" href="'+googleUrl(h)+'" target="_blank" rel="noopener"><i class="ti ti-calendar-plus"></i> Google Kalender</a>'
+    +'<button class="btn-ghost" style="flex:1;width:auto" data-ics="'+h.id+'"><i class="ti ti-download"></i> Last ned (.ics)</button>'
+    +'</div><p style="font-size:10.5px;color:var(--text4);margin-top:6px">.ics åpner i Apple/Outlook/Google. Google-knappen legger til direkte.</p></div>';
+}
 
 function render(){
   document.getElementById('mnd-label').textContent=MND[visMnd].charAt(0).toUpperCase()+MND[visMnd].slice(1)+' '+visAar;
@@ -175,10 +241,10 @@ function render(){
   for(let i=0;i<offset;i++)celler+='<div class="dag tom"></div>';
   for(let d=1;d<=dager;d++){
     const ds=toStr(visAar,visMnd,d);
-    const hs=hendelserPa(ds);
-    const piller=hs.slice(0,2).map(h=>
-      '<span class="hpille" style="background:'+farge(h.hvem)+'">'+(h.tid?esc(h.tid)+' ':'')+esc(h.tittel)+'</span>').join('');
-    const mer=hs.length>2?'<div class="hmer">+'+(hs.length-2)+' til</div>':'';
+    const alle=[...hendelserPa(ds).map(h=>({...h,_f:farge(h.hvem)})),...eksternePa(ds).map(e=>({...e,_f:EKS_FARGE,_eks:true}))];
+    const piller=alle.slice(0,2).map(h=>
+      '<span class="hpille'+(h._eks?' eks':'')+'" style="background:'+h._f+'">'+(h.tid?esc(h.tid)+' ':'')+esc(h.tittel)+'</span>').join('');
+    const mer=alle.length>2?'<div class="hmer">+'+(alle.length-2)+' til</div>':'';
     celler+='<div class="dag'+(ds===idag?' idag':'')+(ds===valgtDato?' valgt':'')+'" data-dato="'+ds+'">'
       +'<div class="dag-nr">'+d+'</div>'+piller+mer+'</div>';
   }
@@ -208,14 +274,21 @@ function renderDag(){
   document.getElementById('dag-tittel').textContent=
     dt.toLocaleDateString('nb-NO',{weekday:'long',day:'numeric',month:'long'});
   const hs=hendelserPa(valgtDato);
-  document.getElementById('dag-hendelser').innerHTML=hs.map(h=>
+  const egne=hs.map(h=>
     '<div class="hrad"><span class="hprikk" style="background:'+farge(h.hvem)+'"></span>'
     +'<div class="hrad-main"><div class="hrad-tittel">'+(h.tid?esc(h.tid)+' · ':'')+esc(h.tittel)+'</div>'
     +'<div class="hrad-sub">'+(h.hvem?esc(h.hvem):'Hele familien')+(h.notat?' · '+esc(h.notat):'')+'</div></div>'
+    +'<button class="icon-btn" data-eksport="'+h.id+'" title="Legg til i din kalender" aria-label="Legg til i din kalender"><i class="ti ti-calendar-plus"></i></button>'
     +'<button class="icon-btn komm-knapp" data-komm="'+h.id+'" title="Kommentarer" aria-label="Kommentarer"><i class="ti ti-message-circle"></i>'+(h.kommentarer.length?'<span class="komm-tall">'+h.kommentarer.length+'</span>':'')+'</button>'
     +'<button class="icon-btn" data-rediger="'+h.id+'" title="Rediger"><i class="ti ti-edit"></i></button>'
     +'<button class="icon-btn danger" data-slett="'+h.id+'" title="Slett"><i class="ti ti-trash"></i></button></div>'
-    +(apenKommentar===h.id?kommentarBoks(h):'')).join('')
+    +(apenKommentar===h.id?kommentarBoks(h):'')
+    +(apenEksport===h.id?eksportBoks(h):'')).join('');
+  const eks=eksternePa(valgtDato).map(e=>
+    '<div class="hrad eks-rad"><span class="hprikk" style="background:'+EKS_FARGE+'"></span>'
+    +'<div class="hrad-main"><div class="hrad-tittel">'+(e.tid?esc(e.tid)+' · ':'')+esc(e.tittel)+'</div>'
+    +'<div class="hrad-sub"><i class="ti ti-calendar" style="font-size:10px"></i> '+esc(e.kilde)+'</div></div></div>').join('');
+  document.getElementById('dag-hendelser').innerHTML=(egne+eks)
     ||'<div class="empty-state" style="padding:.5rem">Ingenting planlagt denne dagen.</div>';
 }
 
@@ -273,6 +346,10 @@ document.getElementById('dag-hendelser').addEventListener('keydown',e=>{
   if(e.key==='Enter'&&e.target.id==='komm-inp'&&apenKommentar!=null)sendKommentar(apenKommentar);
 });
 document.getElementById('dag-hendelser').addEventListener('click',async e=>{
+  const et=e.target.closest('[data-eksport]');
+  if(et){apenEksport=apenEksport===parseInt(et.dataset.eksport)?null:parseInt(et.dataset.eksport);renderDag();return;}
+  const ic=e.target.closest('[data-ics]');
+  if(ic){const h=data.hendelser.find(x=>x.id===parseInt(ic.dataset.ics));if(h)lastNedIcs(h);return;}
   const kt=e.target.closest('[data-komm]');
   if(kt){apenKommentar=apenKommentar===parseInt(kt.dataset.komm)?null:parseInt(kt.dataset.komm);renderDag();return;}
   const sk=e.target.closest('[data-send-komm]');
@@ -298,6 +375,47 @@ document.getElementById('dag-hendelser').addEventListener('click',async e=>{
     if(redigerId===parseInt(s.dataset.slett))nullstillSkjema();
     await save();render();
   }
+});
+
+// ── Eksterne kalendere (abonnement) ──
+function renderAbonner(){
+  document.getElementById('abonner-liste').innerHTML=abonnement.length?abonnement.map(a=>
+    '<div class="ab-rad"><div class="navn"><div>'+esc(a.navn||'Uten navn')+'</div><div class="url">'+esc(a.url||'')+'</div></div>'
+    +'<button class="hrow-del" data-ab-del="'+esc(String(a.id))+'" title="Fjern">×</button></div>').join('')
+    :'<div class="empty-state" style="padding:.5rem">Ingen eksterne kalendere ennå.</div>';
+}
+async function lagreAbonnement(){
+  await dbSet(FAMILIE,'kalender_abonnement',abonnement);
+}
+document.getElementById('abonner-btn').addEventListener('click',()=>{
+  renderAbonner();
+  document.getElementById('ab-navn').value='';document.getElementById('ab-url').value='';
+  document.getElementById('abonner-modal').style.display='flex';
+});
+document.getElementById('ab-lukk').addEventListener('click',()=>{document.getElementById('abonner-modal').style.display='none';});
+document.getElementById('abonner-modal').addEventListener('click',e=>{if(e.target.id==='abonner-modal')e.currentTarget.style.display='none';});
+document.getElementById('ab-legg').addEventListener('click',async()=>{
+  const navn=document.getElementById('ab-navn').value.trim();
+  const url=document.getElementById('ab-url').value.trim();
+  if(!navn||!url){setStatus('Fyll inn navn og URL','err');return;}
+  if(!/^https?:\/\//.test(url)){setStatus('URL-en må starte med http(s)://','err');return;}
+  const id=String(Math.max(0,...abonnement.map(a=>parseInt(a.id)||0))+1);
+  abonnement.push({id,navn,url});
+  try{await lagreAbonnement();setStatus('Lagt til – hendelsene hentes ved neste synk (opptil en time) ✓','ok');}
+  catch(e){abonnement.pop();setStatus('Kunne ikke lagre – prøv igjen','err');return;}
+  renderAbonner();
+});
+document.getElementById('abonner-liste').addEventListener('click',async e=>{
+  const d=e.target.closest('[data-ab-del]');
+  if(!d)return;
+  if(!confirm('Fjerne denne eksterne kalenderen?'))return;
+  const id=d.dataset.abDel;
+  const forr=abonnement;
+  abonnement=abonnement.filter(a=>String(a.id)!==id);
+  try{await lagreAbonnement();}catch(e){abonnement=forr;setStatus('Kunne ikke lagre – prøv igjen','err');return;}
+  flatUtEksterne(eksMapCache); // re-flat fra gjenværende abonnement
+  renderAbonner();render();
+  setStatus('Fjernet ✓','ok');
 });
 
 load();
