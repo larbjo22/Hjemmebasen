@@ -61,6 +61,23 @@
   </div>
 </div>
 
+<!-- Endre medlem-modal -->
+<div class="modal-bg" id="endre-modal" style="display:none">
+  <div class="modal">
+    <p class="modal-title">Endre medlem</p>
+    <input type="hidden" id="em-uid" />
+    <label for="em-navn">Navn</label>
+    <input class="hinput" id="em-navn" maxlength="40" />
+    <label for="em-fam">Husstand</label>
+    <select class="hinput" id="em-fam"></select>
+    <p style="font-size:11px;color:var(--text3);margin-top:6px;line-height:1.5">E-post og passord kan ikke endres herfra (Firebase-begrensning i nettleseren). Medlemmet kan endre passordet sitt selv i appen (Min profil), eller du kan sende «reset».</p>
+    <div class="modal-actions">
+      <button class="btn-ghost" id="em-avbryt">Avbryt</button>
+      <button class="btn-primary" id="em-lagre">Lagre</button>
+    </div>
+  </div>
+</div>
+
 <script type="module">
 import { firebaseConfig } from './felles/firebase-init.js';
 import { requireAuth, auth, db, glemtPassord } from './felles/auth.js';
@@ -112,6 +129,7 @@ function render() {
       '<div class="hrow medlem-rad">'
       + '<div class="hrow-main"><div class="hrow-title">' + esc(b.navn || b.epost) + '</div>'
       + '<div class="hrow-sub">' + esc(b.epost || '') + ' · ' + sistSettTxt(b.sistSett) + '</div></div>'
+      + '<button class="btn-lenke" data-endre="' + uid + '"><i class="ti ti-edit"></i> endre</button>'
       + '<button class="btn-lenke" data-reset="' + esc(b.epost || '') + '"><i class="ti ti-mail"></i> reset</button>'
       + '<button class="hrow-del" data-fjern="' + uid + '" data-navn="' + esc(b.navn || b.epost || '') + '" title="Fjern tilgang">×</button>'
       + '</div>'
@@ -136,6 +154,7 @@ function render() {
   // Hendelser (ingen inline onclick med brukerdata – alt via data-attributter)
   el.querySelectorAll('.appbryter').forEach(b => b.addEventListener('click', () => vippApp(b.dataset.fid, b.dataset.app)));
   el.querySelectorAll('[data-nybruker]').forEach(b => b.addEventListener('click', () => aapneBrukerModal(b.dataset.nybruker)));
+  el.querySelectorAll('[data-endre]').forEach(b => b.addEventListener('click', () => aapneEndreModal(b.dataset.endre)));
   el.querySelectorAll('[data-reset]').forEach(b => b.addEventListener('click', () => sendReset(b.dataset.reset)));
   el.querySelectorAll('[data-fjern]').forEach(b => b.addEventListener('click', () => fjernTilgang(b.dataset.fjern, b.dataset.navn)));
   el.querySelectorAll('[data-eksport]').forEach(b => b.addEventListener('click', () => eksporterHusstand(b.dataset.eksport)));
@@ -181,6 +200,31 @@ async function vippApp(fid, app) {
 }
 
 // ── Medlemmer ──
+function aapneEndreModal(uid) {
+  const b = brukere[uid];
+  if (!b) return;
+  document.getElementById('em-uid').value = uid;
+  document.getElementById('em-navn').value = b.navn || '';
+  document.getElementById('em-fam').innerHTML = Object.keys(familier).map(fid =>
+    '<option value="' + esc(fid) + '"' + (fid === b.familieId ? ' selected' : '') + '>'
+    + esc((familier[fid] && familier[fid].meta && familier[fid].meta.navn) || fid) + '</option>').join('');
+  document.getElementById('endre-modal').style.display = 'flex';
+}
+async function lagreEndre() {
+  const uid = document.getElementById('em-uid').value;
+  const navn = document.getElementById('em-navn').value.trim();
+  const fam = document.getElementById('em-fam').value;
+  if (!uid || !navn) { setStatus('Fyll inn navn', 'err'); return; }
+  try {
+    await update(ref(db, 'brukere/' + uid), { navn, familieId: fam });
+    document.getElementById('endre-modal').style.display = 'none';
+    setStatus('Medlem oppdatert ✓', 'ok');
+    await lastAlt();
+  } catch (e) { setStatus('Kunne ikke lagre – ' + (e.message || 'prøv igjen'), 'err'); }
+}
+document.getElementById('em-avbryt').addEventListener('click', () => { document.getElementById('endre-modal').style.display = 'none'; });
+document.getElementById('em-lagre').addEventListener('click', lagreEndre);
+
 function aapneBrukerModal(fid) {
   modalFamilieId = fid;
   document.getElementById('bm-fam').textContent = familier[fid]?.meta?.navn || fid;

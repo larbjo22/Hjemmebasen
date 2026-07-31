@@ -148,6 +148,12 @@
       <p style="font-size:11.5px;color:var(--text3);margin:2px 0 8px">Få en morgen-oppsummering (dagens oppgaver, middag, kalender) på denne enheten. På iPhone må appen først ligge på Hjem-skjermen.</p>
       <button class="btn-ghost" id="varsler-btn"><i class="ti ti-bell"></i> Slå på varsler på denne enheten</button>
     </div>
+    <div id="passord-seksjon" style="border-top:1px solid var(--border);margin-top:12px;padding-top:12px">
+      <div style="font-size:13px;font-weight:600;margin-bottom:6px">Endre passord</div>
+      <input type="password" id="pw-naa" class="hinput" placeholder="Nåværende passord" autocomplete="current-password" style="margin-bottom:6px" />
+      <input type="password" id="pw-nytt" class="hinput" placeholder="Nytt passord (min. 8 tegn)" autocomplete="new-password" style="margin-bottom:8px" />
+      <button class="btn-ghost" id="pw-endre"><i class="ti ti-key"></i> Endre passord</button>
+    </div>
     <div class="modal-actions">
       <button class="btn-ghost" id="profil-lukk">Lukk</button>
     </div>
@@ -171,7 +177,8 @@
 </div>
 
 <script type="module">
-import { requireAuth, loggUt, db } from './felles/auth.js';
+import { requireAuth, loggUt, db, auth } from './felles/auth.js';
+import { EmailAuthProvider, reauthenticateWithCredential, updatePassword } from 'https://www.gstatic.com/firebasejs/10.14.1/firebase-auth.js';
 import { esc, todayStr, initTheme, toggleTheme, setStatus, avatarHtml, avatarKey, finnAvatar, bildeTilAvatar } from './felles/ui.js';
 import { APP_NAVN, APP_IKON } from './felles/seed.js';
 import { varslerStottet, varslerTillatt, aktiverVarsler } from './felles/push.js';
@@ -644,6 +651,27 @@ document.getElementById('meny-profil').addEventListener('click', () => {
 });
 document.getElementById('profil-lukk').addEventListener('click', () => {
   document.getElementById('profil-modal').style.display = 'none';
+});
+document.getElementById('pw-endre').addEventListener('click', async () => {
+  const naa = document.getElementById('pw-naa').value;
+  const nytt = document.getElementById('pw-nytt').value;
+  if (!naa) { setStatus('Skriv inn nåværende passord', 'err'); return; }
+  if (nytt.length < 8) { setStatus('Nytt passord må ha minst 8 tegn', 'err'); return; }
+  const btn = document.getElementById('pw-endre');
+  btn.disabled = true;
+  try {
+    await reauthenticateWithCredential(auth.currentUser, EmailAuthProvider.credential(user.email, naa));
+    await updatePassword(auth.currentUser, nytt);
+    document.getElementById('pw-naa').value = ''; document.getElementById('pw-nytt').value = '';
+    setStatus('Passord endret ✓', 'ok');
+  } catch (e) {
+    const t = (e.code === 'auth/invalid-credential' || e.code === 'auth/wrong-password') ? 'Nåværende passord er feil'
+      : e.code === 'auth/weak-password' ? 'Nytt passord er for svakt'
+      : e.code === 'auth/too-many-requests' ? 'For mange forsøk – vent litt'
+      : 'Kunne ikke endre passord – prøv igjen';
+    setStatus(t, 'err');
+  }
+  btn.disabled = false;
 });
 async function oppdaterVarslerKnapp() {
   const btn = document.getElementById('varsler-btn');
