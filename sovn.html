@@ -163,6 +163,9 @@ input:focus-visible,select:focus-visible,button:focus-visible,textarea:focus-vis
 /* Estimat-linje */
 #estimate-line{font-size:12px;text-align:center;min-height:16px;display:flex;align-items:center;justify-content:center;gap:5px}
 #estimate-line i{font-size:13px}
+.vindu-rad{display:flex;gap:6px;justify-content:center;margin-top:7px;flex-wrap:wrap}
+.vindu-chip{font-size:11.5px;font-weight:600;padding:5px 11px;border-radius:14px;border:1px solid var(--border);background:var(--surface2);color:var(--text2);cursor:pointer}
+.vindu-chip.on{background:var(--accent-bg);border-color:var(--accent-border);color:var(--accent-text)}
 
 /* 24-timers tidslinje */
 .timeline{position:relative;height:26px;background:var(--awake-bg);border-radius:7px;overflow:hidden;border:1px solid var(--border2)}
@@ -328,6 +331,7 @@ body.embed .info-row{padding:10px 14px}
     </div>
 
     <div id="estimate-line"></div>
+    <div class="vindu-rad" id="vindu-overstyr"></div>
 
     <button class="vaer-shortcut" onclick="setView('vaer')"><i class="ti ti-shirt"></i> <span id="vaer-shortcut-txt">Hva skal barnet ha på seg?</span><i class="ti ti-chevron-right" style="margin-left:auto"></i></button>
   </div>
@@ -493,11 +497,62 @@ function ageMonths(barn=aktivBarn){
 }
 function ageRef(barn=aktivBarn){const m=ageMonths(barn);if(m===null)return null;return AGE_REF.find(r=>m<=r.max)||AGE_REF[AGE_REF.length-1];}
 function suggestedWakeMin(){const r=ageRef();if(!r)return DEFAULT_SETTINGS.wakeWindowMin;return Math.round((r.wakeMin[0]+r.wakeMin[1])/2/15)*15;}
-// Hvilket våkenvindu er barnet i nå? Indeks = antall lurer fullført i dag. Siste = før natt.
+// Barnets egen typiske lur-søvn per dag (snitt av dager med logget lur,
+// siste 14 dager, i dag ekskludert). Null hvis vi ikke har nok data.
+function typiskLurSovnMs(dager=14){
+  const na=Date.now(), fra=na-dager*86400000, idag=dayKey(na), perDag={};
+  data.sessions.forEach(sx=>{
+    if(sx.start<fra||sessionKind(sx.start)!=='lur')return;
+    const k=dayKey(sx.start);
+    if(k===idag)return;
+    perDag[k]=(perDag[k]||0)+Math.max(0,Math.min(sx.end,na)-sx.start);
+  });
+  const v=Object.values(perDag);
+  return v.length?v.reduce((a,b)=>a+b,0)/v.length:null;
+}
+// Hvor mye lur-søvn mangler i dag sammenlignet med det typiske?
+function lurGjeldMs(){
+  const typisk=typiskLurSovnMs();
+  if(typisk===null)return 0;
+  return Math.max(0,typisk-sleepMsOnDay(dayKey(Date.now()),'lur'));
+}
+// Manuell overstyring av hvilket vindu vi er i (gjelder kun inneværende dag)
+function aktivOverstyring(){
+  const o=data.vinduOverstyr;
+  if(!o||o.dag!==dayKey(Date.now()))return null;
+  return (o.modus==='natt'||o.modus==='lur')?o.modus:null;
+}
+async function settOverstyring(modus){
+  if(aktivOverstyring()===modus)data.vinduOverstyr=null; // trykk igjen slår av
+  else data.vinduOverstyr={dag:dayKey(Date.now()),modus};
+  await save();render();
+}
+
+// Hvilket våkenvindu er barnet i nå?
+// Utgangspunkt: indeks = antall lurer fullført i dag (siste = før natt).
+// I tillegg: (a) manuell overstyring vinner, og (b) på en kort luredag
+// forkortes før-natt-vinduet – lite dagsøvn gir tidligere leggetid.
 function currentWakeWin(){
   const w=(data.settings.wakeWins&&data.settings.wakeWins.length)?data.settings.wakeWins:[data.settings.wakeWindowMin||210];
-  const idx=Math.min(napsOnDay(dayKey(Date.now())),w.length-1);
-  return {min:w[idx],idx,isBed:idx>=w.length-1,n:w.length};
+  const ov=aktivOverstyring();
+  let idx=Math.min(napsOnDay(dayKey(Date.now())),w.length-1);
+  if(ov==='natt')idx=w.length-1;
+  else if(ov==='lur')idx=Math.min(idx,Math.max(0,w.length-2));
+  let isBed=idx>=w.length-1;
+  let min=w[idx], justert=0;
+  if(isBed){
+    const gjeld=lurGjeldMs();
+    // Halvparten av lur-underskuddet, maks 90 min, avrundet til 5
+    if(gjeld>5*60000)justert=Math.min(90,Math.round(gjeld/60000*0.5/5)*5);
+    min=Math.max(30,min-justert);
+  }else{
+    // Lander anslaget etter at natta har begynt? Da er det leggetid, ikke en
+    // lur – kun etiketten endres, tiden skyves aldri senere.
+    const maal=(data.since||Date.now())+min*60000;
+    const nattStart=new Date(maal); nattStart.setHours(nightStartH(),0,0,0);
+    if(maal>=nattStart.getTime())isBed=true;
+  }
+  return {min,idx,isBed,n:w.length,justert,overstyrt:ov};
 }
 
 // ── Dato/varighet ────────────────────────────────────────────
@@ -688,6 +743,20 @@ function saveSettings(){
   save();render();
 }
 // ── Våkenvinduer (fleksibel liste, siste = før natt) ──
+// Chips for å overstyre hvilket vindu appen regner med (dagens plan avviker ofte)
+function tegnVinduOverstyr(cw){
+  const el=document.getElementById('vindu-overstyr');
+  if(!el)return;
+  if(cw.n<2){el.innerHTML='';return;}
+  const ov=cw.overstyrt;
+  el.innerHTML='<button class="vindu-chip'+(ov==='natt'?' on':'')+'" data-ov="natt" title="Bruk før natt-vinduet nå">Siste lur er tatt</button>'
+    +'<button class="vindu-chip'+(ov==='lur'?' on':'')+'" data-ov="lur" title="Regn med én lur til før natten">Én lur til i dag</button>';
+}
+document.addEventListener('click',e=>{
+  const b=e.target.closest('#vindu-overstyr [data-ov]');
+  if(b)settOverstyring(b.dataset.ov);
+});
+
 function wakeWinLabel(i,n){return i===n-1?'🌙 Før natt':'Vindu '+(i+1);}
 function renderWakeWins(){
   const el=document.getElementById('wakewin-list');if(!el)return;
@@ -909,10 +978,14 @@ function renderHome(){
     const what=cw.isBed?'leggetid':'neste lur';
     const ic=cw.isBed?'ti-moon':'ti-zzz';
     const winLbl=cw.n>1?' · '+wakeWinLabel(cw.idx,cw.n).replace('🌙 ','')+' '+fmtDur(cw.min*60000):'';
-    est.innerHTML='<i class="ti '+ic+'"></i> '+(over?('Anbefalt '+what+' passert ('+fmtTime(target)+')'):('Anbefalt '+what+' ~'+fmtTime(target)))+winLbl;
+    const hvorfor=(cw.justert?' <span style="color:var(--awake-text)">−'+cw.justert+' min (kort luredag)</span>':'')
+      +(cw.overstyrt?' <span style="color:var(--accent-text)">· manuelt satt</span>':'');
+    est.innerHTML='<i class="ti '+ic+'"></i> '+(over?('Anbefalt '+what+' passert ('+fmtTime(target)+')'):('Anbefalt '+what+' ~'+fmtTime(target)))+winLbl+hvorfor;
     est.style.color=over?wakeColor(1):'var(--text3)';
+    tegnVinduOverstyr(cw);
   }else{
     est.innerHTML='';
+    document.getElementById('vindu-overstyr').innerHTML='';
   }
 
   // Angre-knapp etter en handling
