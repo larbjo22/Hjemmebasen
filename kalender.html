@@ -95,6 +95,9 @@ import { dbGet, dbSet, dbListen } from './felles/storage.js';
 import { esc, todayStr, initTheme, toggleTheme, setStatus, personFarge } from './felles/ui.js';
 import { monterNav } from './felles/nav.js';
 
+import { monterHjelp } from './felles/hjelp.js';
+monterHjelp('kalender');
+
 initTheme();
 document.getElementById('theme-btn').addEventListener('click', toggleTheme);
 

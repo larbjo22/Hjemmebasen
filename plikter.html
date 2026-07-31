@@ -344,6 +344,9 @@ function getWeekNumber(d){const date=new Date(d);date.setHours(0,0,0,0);date.set
 
 // ── Status / tema ────────────────────────────────────────────
 const APP_KEY='plikter';
+import { monterHjelp } from './felles/hjelp.js';
+monterHjelp('plikter');
+
 initTheme();
 
 function kidColor(name){let h=0;for(let i=0;i<name.length;i++)h=(h+name.charCodeAt(i))%KID_COLORS.length;return KID_COLORS[h];}
