@@ -350,9 +350,12 @@ function tegnKpiBarn(f){
   const b=barnListe().find(x=>String(x.id)===String(id));
   const blob=(fam.sovn||{})[id];
   let okt=0,ms=0,netter=0;
+  const loggedeDager=new Set();
   (blob?.sessions||[]).forEach(s2=>{
     if(s2.start<f.ms)return;
     okt++; ms+=Math.max(0,s2.end-s2.start);
+    const d=new Date(s2.start); d.setHours(0,0,0,0);
+    loggedeDager.add(dStr(d));
     const h=new Date(s2.start).getHours();
     if(h>=nattTimer(blob)||h<morgenTimer(blob))netter++;
   });
@@ -360,9 +363,11 @@ function tegnKpiBarn(f){
   const dos=(fam.helse?.doser||[]).filter(d=>String(d.barn)===String(id)&&d.ts>=f.ms).length;
   const syk=(fam.helse?.syk||[]).filter(x=>String(x.barn)===String(id)&&x.date>=f.str).length;
   const tenner=Object.keys((fam.vekst?.tenner||{})[id]||{}).length;
-  const dager=Math.max(1,Math.round((Date.now()-f.ms)/86400000));
+  // Snitt regnes på dager med faktisk logg – ikke hele perioden. Ellers
+  // ville et par uloggede dager gjort snittet misvisende lavt i en rapport.
+  const dager=Math.max(1,loggedeDager.size);
   const kort=[
-    {t:okt,l:'søvnøkter'},{t:(ms/3600000/dager).toFixed(1).replace('.',',')+' t',l:'søvn per døgn (snitt)'},
+    {t:okt,l:'søvnøkter'},{t:(ms/3600000/dager).toFixed(1).replace('.',',')+' t',l:'snitt per døgn ('+loggedeDager.size+' dager logget)'},
     {t:netter,l:'nattesøvn-økter'},{t:mal,l:'vekstmålinger'},
     {t:dos,l:'medisindoser'},{t:syk+' / '+tenner,l:'sykedager / tenner'},
   ];
