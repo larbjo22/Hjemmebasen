@@ -1,0 +1,31 @@
+# Henter eksterne iCal-kalendere (Google/Spond/barnehage) inn i Hjemmebasen.
+#
+# Bruker samme secret som push:
+#   FCM_SERVICE_ACCOUNT = service-account-JSON (Firebase Console → Project
+#                         settings → Service accounts → Generate new private key)
+# DB-URL er offentlig og hardkodet som default i scriptet.
+#
+# Abonnementene legges inn i appen (Kalender → «Eksterne kalendere»).
+
+name: Synk eksterne kalendere
+
+on:
+  schedule:
+    - cron: '15 */2 * * *'   # hver 2. time (offset :15 for å spre last)
+  workflow_dispatch: {}       # og manuelt fra Actions-fanen
+
+jobs:
+  sync:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+      - name: Installer avhengigheter
+        run: npm init -y >/dev/null 2>&1 && npm install node-ical firebase-admin@12 --no-audit --no-fund
+      - name: Hent og skriv eksterne hendelser
+        env:
+          FCM_SERVICE_ACCOUNT: ${{ secrets.FCM_SERVICE_ACCOUNT }}
+          FIREBASE_DB_URL: ${{ secrets.FIREBASE_DB_URL }}
+        run: node scripts/sync-ics.mjs
