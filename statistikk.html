@@ -48,20 +48,57 @@
 .eksport-rad{display:flex;gap:6px;flex-wrap:wrap}
 .eksport-rad button{flex:1 1 46%;font-size:12px}
 .merk{font-size:11px;color:var(--text4);line-height:1.5;margin-top:8px}
+.omfang{display:flex;gap:5px;flex-wrap:wrap;margin-bottom:12px}
+.omfang button{font-size:12px;font-weight:600;padding:6px 12px;border-radius:14px;border:1px solid var(--border);background:var(--surface2);color:var(--text2);cursor:pointer;display:inline-flex;align-items:center;gap:6px}
+.omfang button.on{background:var(--accent-bg);border-color:var(--accent-border);color:var(--accent-text)}
+
+/* Tabeller (tall for lege/helsestasjon) */
+.tabell{width:100%;border-collapse:collapse;font-size:12px;margin-top:4px}
+.tabell th{text-align:left;font-size:10.5px;text-transform:uppercase;letter-spacing:.04em;color:var(--text3);font-weight:600;padding:5px 6px;border-bottom:1px solid var(--border)}
+.tabell td{padding:5px 6px;border-bottom:1px solid var(--border2)}
+.tabell tr:last-child td{border-bottom:none}
+.tabell td.tall{text-align:right;font-variant-numeric:tabular-nums;white-space:nowrap}
+
+/* Rapport-topp: kun i utskrift */
+#rapport-topp{display:none}
+#rapport-topp .r-tittel{font-size:19px;font-weight:800}
+#rapport-topp .r-sub{font-size:12px;color:#555;margin-top:3px}
+#rapport-topp hr{border:none;border-top:2px solid #2e5d4f;margin:8px 0 14px}
 @media(min-width:700px){.fw{max-width:680px}}
 
-/* Utskrift / lagre som PDF */
+/* Utskrift / lagre som PDF – egen rapportlayout */
 @media print{
-  body{background:#fff;color:#000}
-  .app-nav,.periode,.top-right,#eksport-kort,.status-bar,#hjelp-btn{display:none!important}
-  .card{break-inside:avoid;border-color:#ccc;box-shadow:none}
-  .fw{max-width:none}
+  /* Tving lyst tema: mørk modus ville printet mørke flater */
+  :root,[data-theme="dark"],[data-theme="light"]{
+    --bg:#fff;--surface:#fff;--surface2:#f1f1ef;--text:#111;--text2:#333;--text3:#555;--text4:#6b6b6b;
+    --border:#cfcfcf;--border2:#e4e4e4;--accent:#2e5d4f;--accent-bg:#eaf0ed;--accent-border:#c5d8d0;
+    --accent-text:#2e5d4f;--green:#2e7d54;--danger:#b3392b;
+  }
+  /* Uten denne dropper nettleseren bakgrunnsfarger – alle søylene forsvinner */
+  *{-webkit-print-color-adjust:exact!important;print-color-adjust:exact!important}
+  @page{margin:14mm}
+  html,body{background:#fff!important;color:#111!important}
+  .app-nav,.periode,.omfang,.top-bar,#eksport-kort,.status-bar,#hjelp-btn,#theme-btn{display:none!important}
+  #rapport-topp{display:block!important}
+  .fw{max-width:none;padding:0}
+  .card{break-inside:avoid;page-break-inside:avoid;box-shadow:none;margin-bottom:12px}
+  .card-title{break-after:avoid;page-break-after:avoid}
+  .delt{break-after:avoid;page-break-after:avoid}
+  .tabell{break-inside:auto}
+  .tabell tr{break-inside:avoid;page-break-inside:avoid}
+  .barn-tittel{break-after:avoid}
+  a[href]:after{content:none!important}
 }
 </style>
 <link rel="stylesheet" href="felles/gran.css">
 </head>
 <body>
 <div class="fw">
+  <div id="rapport-topp">
+    <div class="r-tittel" id="r-tittel">Hjemmebasen – rapport</div>
+    <div class="r-sub" id="r-sub"></div>
+    <hr>
+  </div>
   <div class="top-bar">
     <h1 class="app-title"><i class="ti ti-chart-histogram"></i> Statistikk</h1>
     <div class="top-right">
@@ -76,30 +113,33 @@
     <button data-p="alt">Alt</button>
   </div>
 
-  <div class="card">
+  <div class="omfang" id="omfang"></div>
+
+  <div class="card" id="kort-kpi">
     <div class="card-title"><i class="ti ti-number"></i> Nøkkeltall</div>
     <div class="kpi-grid" id="kpi"></div>
     <p class="merk" id="periode-merk"></p>
   </div>
 
-  <div class="card">
+  <div class="card" id="kort-aktivitet">
     <div class="card-title"><i class="ti ti-calendar-stats"></i> Aktivitet per uke</div>
     <div id="aktivitet"></div>
   </div>
 
-  <div class="card">
+  <div class="card" id="kort-personer">
     <div class="card-title"><i class="ti ti-users"></i> Hvem gjør hva</div>
     <div id="personer"></div>
   </div>
 
   <div id="barna"></div>
+  <div id="tabeller"></div>
 
-  <div class="card">
+  <div class="card" id="kort-helse">
     <div class="card-title"><i class="ti ti-first-aid-kit"></i> Helse</div>
     <div id="helse"></div>
   </div>
 
-  <div class="card">
+  <div class="card" id="kort-mat">
     <div class="card-title"><i class="ti ti-tools-kitchen-2"></i> Mat og handel</div>
     <div id="mat"></div>
   </div>
@@ -136,7 +176,7 @@ monterHjelp('statistikk');
 initTheme();
 document.getElementById('theme-btn').addEventListener('click', toggleTheme);
 
-let FAMILIE=null, fam={}, avatarer={}, periode='30';
+let FAMILIE=null, fam={}, avatarer={}, periode='30', omfang='alt';
 const GRONN='#2e5d4f', OKER='#b45309', BLA='#1a56db', LILLA='#7b1fa2';
 
 // ── Periode ──────────────────────────────────────────────────
@@ -166,6 +206,7 @@ async function load(){
     avatarer=fam.avatarer||{};
     setStatus('');
   }catch(e){setStatus('Kunne ikke laste – '+(e.message||'prøv igjen'),'err');return;}
+  tegnOmfang();
   render();
 }
 
@@ -235,18 +276,57 @@ function isoUke(d){
 }
 function barnListe(){return (fam.personer?.barn||[]).filter(b=>b.navn);}
 function barnNavn(id){const b=barnListe().find(x=>String(x.id)===String(id));return b?b.navn:'Barn';}
+function alderVed(fodt,dato){
+  if(!fodt)return '';
+  const mnd=Math.floor((new Date((dato||dStr(new Date()))+'T12:00:00')-new Date(fodt+'T12:00:00'))/(30.44*86400000));
+  if(mnd<0)return '';
+  if(mnd<24)return mnd+' mnd';
+  const aar=Math.floor(mnd/12);
+  return aar+' år'+(mnd%12?' '+(mnd%12)+' mnd':'');
+}
 function nattTimer(blob){return blob?.settings?.nightStart??18;}
 function morgenTimer(blob){return blob?.settings?.nightEnd??5;}
 
 // ── Render ───────────────────────────────────────────────────
+function tegnOmfang(){
+  const barn=barnListe();
+  const el=document.getElementById('omfang');
+  if(!barn.length){el.innerHTML='';return;}
+  el.innerHTML='<button data-o="alt"'+(omfang==='alt'?' class="on"':'')+'><i class="ti ti-home"></i> Hele husstanden</button>'
+    +barn.map(b=>'<button data-o="'+esc(String(b.id))+'"'+(String(omfang)===String(b.id)?' class="on"':'')+'>'
+      +avatarHtml(b.navn,finnAvatar(avatarer,b.navn),18)+esc(b.navn)+'</button>').join('');
+}
+document.getElementById('omfang').addEventListener('click',e=>{
+  const b=e.target.closest('[data-o]');
+  if(b){omfang=b.dataset.o;tegnOmfang();render();}
+});
+
+// Topptekst som kun vises i utskrift/PDF
+function tegnRapportTopp(){
+  const navn=fam.meta?.navn||'Husstanden';
+  const barn=barnListe().find(b=>String(b.id)===String(omfang));
+  const hvem=barn?barn.navn+(barn.fodt?' (født '+new Date(barn.fodt+'T12:00:00').toLocaleDateString('nb-NO')+', '+alderVed(barn.fodt)+')':''):'hele husstanden';
+  document.getElementById('r-tittel').textContent=navn+' – rapport';
+  document.getElementById('r-sub').textContent='Gjelder '+hvem+' · '+periodeNavn()
+    +' · generert '+new Date().toLocaleDateString('nb-NO',{day:'numeric',month:'long',year:'numeric'});
+}
+
 function render(){
   document.querySelectorAll('#periode button').forEach(b=>b.classList.toggle('on',b.dataset.p===periode));
   const f=fra();
+  const barnFokus=omfang!=='alt';
   document.getElementById('periode-merk').textContent='Tall for '+periodeNavn()+'.';
-  tegnKpi(f); tegnAktivitet(f); tegnPersoner(f); tegnBarna(f); tegnHelse(f); tegnMat(f);
+  // Husholdnings-kortene er ikke relevante i en barnerapport
+  ['kort-aktivitet','kort-personer','kort-mat'].forEach(id=>{
+    const el=document.getElementById(id); if(el)el.style.display=barnFokus?'none':'';
+  });
+  tegnRapportTopp();
+  tegnKpi(f); tegnBarna(f); tegnHelse(f); tegnTabeller(f);
+  if(!barnFokus){tegnAktivitet(f); tegnPersoner(f); tegnMat(f);}
 }
 
 function tegnKpi(f){
+  if(omfang!=='alt'){tegnKpiBarn(f);return;}
   const opg=(fam.oppgaver?.archive||[]).filter(t=>t.completedDate&&t.completedDate>=f.str).length;
   const mid=(fam.middag?.meals||[]).filter(m=>m.date&&m.date>=f.str).length;
   const plk=(fam.plikter?.log||[]).filter(l=>l.date&&l.date>=f.str&&!l.pending).length;
@@ -263,6 +343,33 @@ function tegnKpi(f){
   ];
   document.getElementById('kpi').innerHTML=kort.map(k=>
     '<div class="kpi"><div class="tall">'+esc(String(k.t))+'</div><div class="lbl">'+esc(k.l)+'</div></div>').join('');
+}
+
+function tegnKpiBarn(f){
+  const id=omfang;
+  const b=barnListe().find(x=>String(x.id)===String(id));
+  const blob=(fam.sovn||{})[id];
+  let okt=0,ms=0,netter=0;
+  (blob?.sessions||[]).forEach(s2=>{
+    if(s2.start<f.ms)return;
+    okt++; ms+=Math.max(0,s2.end-s2.start);
+    const h=new Date(s2.start).getHours();
+    if(h>=nattTimer(blob)||h<morgenTimer(blob))netter++;
+  });
+  const mal=(fam.vekst?.maalinger||[]).filter(m=>String(m.barn)===String(id)&&m.dato>=f.str).length;
+  const dos=(fam.helse?.doser||[]).filter(d=>String(d.barn)===String(id)&&d.ts>=f.ms).length;
+  const syk=(fam.helse?.syk||[]).filter(x=>String(x.barn)===String(id)&&x.date>=f.str).length;
+  const tenner=Object.keys((fam.vekst?.tenner||{})[id]||{}).length;
+  const dager=Math.max(1,Math.round((Date.now()-f.ms)/86400000));
+  const kort=[
+    {t:okt,l:'søvnøkter'},{t:(ms/3600000/dager).toFixed(1).replace('.',',')+' t',l:'søvn per døgn (snitt)'},
+    {t:netter,l:'nattesøvn-økter'},{t:mal,l:'vekstmålinger'},
+    {t:dos,l:'medisindoser'},{t:syk+' / '+tenner,l:'sykedager / tenner'},
+  ];
+  document.getElementById('kpi').innerHTML=kort.map(k=>
+    '<div class="kpi"><div class="tall">'+esc(String(k.t))+'</div><div class="lbl">'+esc(k.l)+'</div></div>').join('');
+  if(b&&b.fodt)document.getElementById('periode-merk').textContent=
+    'Tall for '+periodeNavn()+'. '+b.navn+' er '+alderVed(b.fodt)+' gammel.';
 }
 
 function tegnAktivitet(f){
@@ -301,7 +408,7 @@ function tegnPersoner(f){
 }
 
 function tegnBarna(f){
-  const barn=barnListe();
+  const barn=barnListe().filter(b=>omfang==='alt'||String(b.id)===String(omfang));
   const el=document.getElementById('barna');
   if(!barn.length){el.innerHTML='';return;}
   el.innerHTML=barn.map(b=>{
@@ -336,7 +443,8 @@ function tegnBarna(f){
 }
 
 function tegnHelse(f){
-  const doser=(fam.helse?.doser||[]).filter(d=>d.ts>=f.ms);
+  const kunBarn=omfang!=='alt';
+  const doser=(fam.helse?.doser||[]).filter(d=>d.ts>=f.ms&&(!kunBarn||String(d.barn)===String(omfang)));
   const meds=fam.helse?.medisiner||[];
   const el=document.getElementById('helse');
   const perMnd=new Map();
@@ -357,7 +465,7 @@ function tegnHelse(f){
   const medRader=Object.entries(perMed).map(([navn,v])=>({navn,verdi:v,tekst:v+' doser'})).sort((a,b)=>b.verdi-a.verdi);
   // Sykedager per barn
   const syk={};
-  (fam.helse?.syk||[]).forEach(s=>{if(s.date&&s.date>=f.str){const n=barnNavn(s.barn);syk[n]=(syk[n]||0)+1;}});
+  (fam.helse?.syk||[]).forEach(s=>{if(s.date&&s.date>=f.str&&(!kunBarn||String(s.barn)===String(omfang))){const n=barnNavn(s.barn);syk[n]=(syk[n]||0)+1;}});
   const sykRader=Object.entries(syk).map(([navn,v])=>({navn,verdi:v,tekst:v+' dager',farge:personFarge(navn)})).sort((a,b)=>b.verdi-a.verdi);
   el.innerHTML=mndBlokk
     +(medRader.length?'<div class="delt">Per medisin</div>'+stolper(medRader,OKER):'')
@@ -391,6 +499,86 @@ function tegnMat(f){
     +'<div class="delt">Handel per kategori</div>'+stolper(katRader,GRONN)
     +'<div class="delt">Fryseren nå</div><p class="merk">'+items.length+' varer registrert i fryseren akkurat nå. '
     +'Handleliste og fryser lagrer ikke historikk over tid, så disse tallene er totaler/øyeblikksbilde – ikke periodefiltrert.</p>';
+}
+
+// ── Tabeller med faktiske tall (barnerapport til lege/helsestasjon) ──
+function tegnTabeller(f){
+  const el=document.getElementById('tabeller');
+  if(omfang==='alt'){el.innerHTML='';return;}
+  const id=omfang;
+  const b=barnListe().find(x=>String(x.id)===String(id));
+  if(!b){el.innerHTML='';return;}
+  const fodt=b.fodt||'';
+  const tabell=(kols,rader,tomTekst)=>rader.length
+    ? '<table class="tabell"><thead><tr>'+kols.map((k,i)=>'<th'+(i?' class="tall"':'')+'>'+esc(k)+'</th>').join('')+'</tr></thead><tbody>'
+      +rader.map(r=>'<tr>'+r.map((c,i)=>'<td'+(i?' class="tall"':'')+'>'+esc(String(c))+'</td>').join('')+'</tr>').join('')
+      +'</tbody></table>'
+    : tom(tomTekst);
+
+  // Vekst
+  const m=(fam.vekst?.maalinger||[]).filter(x=>String(x.barn)===String(id)&&x.dato)
+    .sort((x,y)=>y.dato.localeCompare(x.dato));
+  const fmtD=d=>new Date(d+'T12:00:00').toLocaleDateString('nb-NO',{day:'numeric',month:'short',year:'2-digit'});
+  const vekstTab=tabell(['Dato','Alder','Høyde','Vekt','Sko'],
+    m.map(x=>[fmtD(x.dato),alderVed(fodt,x.dato),x.hoyde!=null&&x.hoyde!==''?x.hoyde+' cm':'–',
+      x.vekt!=null&&x.vekt!==''?String(x.vekt).replace('.',',')+' kg':'–',x.sko??'–']),
+    'Ingen målinger registrert.');
+
+  // Tenner
+  const t=(fam.vekst?.tenner||{})[id]||{};
+  const tennerTab=tabell(['Tann','Kom','Alder'],
+    Object.keys(t).sort((a,b2)=>(t[b2]||'').localeCompare(t[a]||''))
+      .map(fdi=>[fdi,fmtD(t[fdi]),alderVed(fodt,t[fdi])]),
+    'Ingen tenner registrert.');
+
+  // Søvn per uke
+  const blob=(fam.sovn||{})[id];
+  const uker=new Map();
+  (blob?.sessions||[]).forEach(sx=>{
+    if(sx.start<f.ms)return;
+    const d=new Date(sx.start); d.setHours(0,0,0,0);
+    const u=ukeNokkel(d);
+    if(!uker.has(u.n))uker.set(u.n,{merke:u.merke,ms:0,natt:0,lur:0,dager:new Set()});
+    const o=uker.get(u.n);
+    o.ms+=Math.max(0,sx.end-sx.start);
+    o.dager.add(dStr(d));
+    const h=new Date(sx.start).getHours();
+    if(h>=nattTimer(blob)||h<morgenTimer(blob))o.natt++; else o.lur++;
+  });
+  const sovnTab=tabell(['Uke','Snitt/døgn','Netter','Lurer'],
+    [...uker.entries()].sort((a,b2)=>b2[0].localeCompare(a[0])).map(([,u])=>
+      [u.merke,(u.ms/3600000/Math.max(1,u.dager.size)).toFixed(1).replace('.',',')+' t',u.natt,u.lur]),
+    'Ingen søvn logget i perioden.');
+
+  // Helse
+  const meds=fam.helse?.medisiner||[];
+  const doseTab=tabell(['Tidspunkt','Medisin','Dose'],
+    (fam.helse?.doser||[]).filter(d=>String(d.barn)===String(id)&&d.ts>=f.ms).sort((a,b2)=>b2.ts-a.ts)
+      .map(d=>{const md=meds.find(x=>x.id===d.med);
+        return [new Date(d.ts).toLocaleString('nb-NO',{day:'numeric',month:'short',hour:'2-digit',minute:'2-digit'}),
+          md?md.name:'–',d.dose??'–'];}),
+    'Ingen doser i perioden.');
+  const sykTab=tabell(['Dato','Alder','Notat'],
+    (fam.helse?.syk||[]).filter(x=>String(x.barn)===String(id)&&x.date>=f.str)
+      .sort((a,b2)=>(b2.date||'').localeCompare(a.date||''))
+      .map(x=>[fmtD(x.date),alderVed(fodt,x.date),x.note||'–']),
+    'Ingen sykedager i perioden.');
+  const vaksTab=tabell(['Dato','Vaksine'],
+    (fam.helse?.vaksiner||[]).filter(x=>String(x.barn)===String(id))
+      .sort((a,b2)=>(b2.date||'').localeCompare(a.date||''))
+      .map(x=>[x.date?fmtD(x.date):'–',x.name||'–']),
+    'Ingen vaksiner registrert.');
+
+  el.innerHTML='<div class="card"><div class="card-title"><i class="ti ti-table"></i> Tall for '+esc(b.navn)+'</div>'
+    +'<div class="delt">Vekstmålinger</div>'+vekstTab
+    +'<div class="delt">Tenner</div>'+tennerTab
+    +'<div class="delt">Søvn per uke</div>'+sovnTab
+    +'</div>'
+    +'<div class="card"><div class="card-title"><i class="ti ti-vaccine"></i> Helse for '+esc(b.navn)+'</div>'
+    +'<div class="delt">Medisindoser</div>'+doseTab
+    +'<div class="delt">Sykedager</div>'+sykTab
+    +'<div class="delt">Vaksiner</div>'+vaksTab
+    +'<p class="merk">Registrert av familien selv i Hjemmebasen – ikke en medisinsk journal.</p></div>';
 }
 
 document.getElementById('periode').addEventListener('click',e=>{

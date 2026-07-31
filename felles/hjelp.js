@@ -139,16 +139,6 @@ const HJELP = {
     ],
     tips: 'Dagens hendelser dukker opp i varslene på forsiden.',
   },
-  fordeling: {
-    tittel: 'Hvem gjør hva',
-    hva: 'En enkel oversikt over hvordan husarbeidet fordeler seg mellom de voksne.',
-    punkter: [
-      'Tallene bygger på det som er registrert i appene: fullførte oppgaver, hvem som lagde middag, godkjente plikter og beskjeder.',
-      'Velg periode øverst – denne uka, 30 dager eller i år.',
-      'Fargelinja viser fordelingen, og kortene under viser hva hver enkelt har gjort.',
-    ],
-    tips: 'Dette er en pekepinn, ikke en fasit – mye husarbeid registreres aldri i en app.',
-  },
   statistikk: {
     tittel: 'Statistikk',
     hva: 'Alt husstanden har registrert, framstilt med grafer – og mulighet for å laste ned dataene.',
