@@ -149,6 +149,17 @@ const HJELP = {
     ],
     tips: 'Dette er en pekepinn, ikke en fasit – mye husarbeid registreres aldri i en app.',
   },
+  statistikk: {
+    tittel: 'Statistikk',
+    hva: 'Alt husstanden har registrert, framstilt med grafer – og mulighet for å laste ned dataene.',
+    punkter: [
+      'Velg periode øverst: 30 dager, 3 måneder, i år eller hele historikken.',
+      '«Aktivitet per uke» viser fullførte oppgaver, godkjente plikter og planlagte middager side om side.',
+      'Hvert barn får egne kurver for høyde og vekt, søvn per døgn og antall tenner.',
+      'Eksport nederst: last ned per app som CSV (åpnes i Excel), alt som JSON, eller skriv ut / lagre som PDF.',
+    ],
+    tips: 'Handleliste og fryser lagrer ikke historikk over tid – de tallene er totaler og øyeblikksbilde, ikke periodefiltrert.',
+  },
   admin: {
     tittel: 'Administrasjon',
     hva: 'Her oppretter og styrer du husstandene og medlemmene deres.',

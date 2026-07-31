@@ -1,0 +1,480 @@
+<!DOCTYPE html>
+<html lang="no">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@2.44.0/tabler-icons.min.css">
+<link rel="manifest" href="manifest.webmanifest">
+<meta name="theme-color" content="#2e5d4f">
+<link rel="apple-touch-icon" href="ikoner/apple-touch-icon.png">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="mobile-web-app-capable" content="yes">
+<title>Statistikk</title>
+<link rel="stylesheet" href="felles/stil.css">
+<style>
+.periode{display:flex;gap:5px;margin-bottom:12px}
+.periode button{flex:1;font-size:12px;font-weight:600;padding:8px 4px;border-radius:10px;border:1px solid var(--border);background:var(--surface2);color:var(--text2);cursor:pointer}
+.periode button.on{background:var(--accent-bg);border-color:var(--accent-border);color:var(--accent-text)}
+
+/* Nøkkeltall */
+.kpi-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}
+.kpi{background:var(--surface2);border-radius:10px;padding:11px 8px;text-align:center}
+.kpi .tall{font-size:20px;font-weight:800;line-height:1.1}
+.kpi .lbl{font-size:10px;color:var(--text3);margin-top:3px;line-height:1.3}
+
+/* Søylediagram (CSS) */
+.sjy-wrap{display:flex;align-items:flex-end;gap:3px;height:110px;margin-bottom:4px}
+.sjy-kol{flex:1;min-width:0;display:flex;flex-direction:column;justify-content:flex-end;height:100%;gap:1px}
+.sjy-seg{border-radius:2px;min-height:1px}
+.sjy-akse{display:flex;gap:3px;font-size:8.5px;color:var(--text4)}
+.sjy-akse span{flex:1;min-width:0;text-align:center;overflow:hidden;white-space:nowrap}
+.tegn{display:flex;gap:10px;flex-wrap:wrap;font-size:11px;color:var(--text3);margin-top:6px}
+.tegn i{width:9px;height:9px;border-radius:2px;display:inline-block;margin-right:4px}
+
+/* Liggende stolper (topplister) */
+.stolpe{margin-bottom:7px}
+.stolpe-topp{display:flex;font-size:12px;margin-bottom:2px;gap:8px}
+.stolpe-navn{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.stolpe-verdi{color:var(--text3);font-weight:600;white-space:nowrap}
+.stolpe-spor{height:7px;background:var(--surface2);border-radius:4px;overflow:hidden}
+.stolpe-fyll{height:100%;border-radius:4px}
+
+/* Kurver */
+.kurve{width:100%;height:auto;display:block}
+.kurve-tom{font-size:12px;color:var(--text4);padding:10px 0;text-align:center}
+.barn-tittel{display:flex;align-items:center;gap:9px;font-size:14px;font-weight:700;margin:2px 0 10px}
+.delt{font-size:11px;font-weight:600;color:var(--text3);text-transform:uppercase;letter-spacing:.05em;margin:12px 0 6px}
+.eksport-rad{display:flex;gap:6px;flex-wrap:wrap}
+.eksport-rad button{flex:1 1 46%;font-size:12px}
+.merk{font-size:11px;color:var(--text4);line-height:1.5;margin-top:8px}
+@media(min-width:700px){.fw{max-width:680px}}
+
+/* Utskrift / lagre som PDF */
+@media print{
+  body{background:#fff;color:#000}
+  .app-nav,.periode,.top-right,#eksport-kort,.status-bar,#hjelp-btn{display:none!important}
+  .card{break-inside:avoid;border-color:#ccc;box-shadow:none}
+  .fw{max-width:none}
+}
+</style>
+<link rel="stylesheet" href="felles/gran.css">
+</head>
+<body>
+<div class="fw">
+  <div class="top-bar">
+    <h1 class="app-title"><i class="ti ti-chart-histogram"></i> Statistikk</h1>
+    <div class="top-right">
+      <button class="icon-btn" id="theme-btn"></button>
+    </div>
+  </div>
+
+  <div class="periode" id="periode">
+    <button data-p="30" class="on">30 dager</button>
+    <button data-p="90">3 mnd</button>
+    <button data-p="aar">I år</button>
+    <button data-p="alt">Alt</button>
+  </div>
+
+  <div class="card">
+    <div class="card-title"><i class="ti ti-number"></i> Nøkkeltall</div>
+    <div class="kpi-grid" id="kpi"></div>
+    <p class="merk" id="periode-merk"></p>
+  </div>
+
+  <div class="card">
+    <div class="card-title"><i class="ti ti-calendar-stats"></i> Aktivitet per uke</div>
+    <div id="aktivitet"></div>
+  </div>
+
+  <div class="card">
+    <div class="card-title"><i class="ti ti-users"></i> Hvem gjør hva</div>
+    <div id="personer"></div>
+  </div>
+
+  <div id="barna"></div>
+
+  <div class="card">
+    <div class="card-title"><i class="ti ti-first-aid-kit"></i> Helse</div>
+    <div id="helse"></div>
+  </div>
+
+  <div class="card">
+    <div class="card-title"><i class="ti ti-tools-kitchen-2"></i> Mat og handel</div>
+    <div id="mat"></div>
+  </div>
+
+  <div class="card" id="eksport-kort">
+    <div class="card-title"><i class="ti ti-download"></i> Eksporter data</div>
+    <div class="eksport-rad">
+      <button class="btn-ghost" data-eks="json"><i class="ti ti-file-code"></i> Alt (JSON)</button>
+      <button class="btn-ghost" data-eks="oppgaver"><i class="ti ti-file-spreadsheet"></i> Oppgaver (CSV)</button>
+      <button class="btn-ghost" data-eks="plikter"><i class="ti ti-file-spreadsheet"></i> Plikter (CSV)</button>
+      <button class="btn-ghost" data-eks="sovn"><i class="ti ti-file-spreadsheet"></i> Søvn (CSV)</button>
+      <button class="btn-ghost" data-eks="vekst"><i class="ti ti-file-spreadsheet"></i> Vekst (CSV)</button>
+      <button class="btn-ghost" data-eks="helse"><i class="ti ti-file-spreadsheet"></i> Helse (CSV)</button>
+      <button class="btn-ghost" data-eks="middag"><i class="ti ti-file-spreadsheet"></i> Middag (CSV)</button>
+      <button class="btn-ghost" data-eks="handleliste"><i class="ti ti-file-spreadsheet"></i> Handleliste (CSV)</button>
+      <button class="btn-ghost" data-eks="kalender"><i class="ti ti-file-spreadsheet"></i> Kalender (CSV)</button>
+      <button class="btn-ghost" data-eks="print"><i class="ti ti-printer"></i> Skriv ut / PDF</button>
+    </div>
+    <p class="merk">CSV åpnes i Excel/Numbers. «Alt (JSON)» er hele husstandens data – nyttig som egen sikkerhetskopi. Utskrift tar med grafene, ikke knappene.</p>
+  </div>
+
+  <div class="status-bar" id="status-bar"></div>
+</div>
+
+<script type="module">
+import { requireAuth, db } from './felles/auth.js';
+import { ref, get } from 'https://www.gstatic.com/firebasejs/10.14.1/firebase-database.js';
+import { esc, initTheme, toggleTheme, setStatus, personFarge, avatarHtml, finnAvatar } from './felles/ui.js';
+import { monterNav } from './felles/nav.js';
+
+import { monterHjelp } from './felles/hjelp.js';
+monterHjelp('statistikk');
+
+initTheme();
+document.getElementById('theme-btn').addEventListener('click', toggleTheme);
+
+let FAMILIE=null, fam={}, avatarer={}, periode='30';
+const GRONN='#2e5d4f', OKER='#b45309', BLA='#1a56db', LILLA='#7b1fa2';
+
+// ── Periode ──────────────────────────────────────────────────
+function pad(n){return String(n).padStart(2,'0');}
+function dStr(d){return d.getFullYear()+'-'+pad(d.getMonth()+1)+'-'+pad(d.getDate());}
+function fra(){
+  const d=new Date(); d.setHours(0,0,0,0);
+  if(periode==='30')d.setDate(d.getDate()-30);
+  else if(periode==='90')d.setDate(d.getDate()-90);
+  else if(periode==='aar')d.setMonth(0,1);
+  else d.setFullYear(d.getFullYear()-50); // «alt»
+  return {ms:d.getTime(),str:dStr(d)};
+}
+function periodeNavn(){
+  return periode==='30'?'siste 30 dager':periode==='90'?'siste 3 måneder':periode==='aar'?'i år':'hele historikken';
+}
+
+async function load(){
+  setStatus('Laster...');
+  try{
+    const ctx=await requireAuth();
+    if(!ctx.familieId){setStatus('Ingen husstand – kontakt administrator','err');return;}
+    FAMILIE=ctx.familieId;
+    monterNav(FAMILIE,null);
+    const snap=await get(ref(db,'familier/'+FAMILIE));
+    fam=snap.exists()?snap.val():{};
+    avatarer=fam.avatarer||{};
+    setStatus('');
+  }catch(e){setStatus('Kunne ikke laste – '+(e.message||'prøv igjen'),'err');return;}
+  render();
+}
+
+// ── Diagram-hjelpere ─────────────────────────────────────────
+function tom(t){return '<div class="kurve-tom">'+esc(t)+'</div>';}
+
+// Stablede søyler: kolonner=[{merke, deler:[{verdi,farge}]}]
+function soyler(kolonner,tegnforklaring){
+  const maks=Math.max(1,...kolonner.map(k=>k.deler.reduce((s,d)=>s+d.verdi,0)));
+  const bars=kolonner.map(k=>'<div class="sjy-kol" title="'+esc(k.merke)+': '+k.deler.reduce((s,d)=>s+d.verdi,0)+'">'
+    +k.deler.filter(d=>d.verdi>0).map(d=>'<div class="sjy-seg" style="height:'+(d.verdi/maks*100)+'%;background:'+d.farge+'"></div>').join('')
+    +'</div>').join('');
+  const akse=kolonner.map((k,i)=>'<span>'+(kolonner.length<=8||i%2===0?esc(k.merke):'')+'</span>').join('');
+  const tf=(tegnforklaring||[]).map(t=>'<span><i style="background:'+t.farge+'"></i>'+esc(t.navn)+'</span>').join('');
+  return '<div class="sjy-wrap">'+bars+'</div><div class="sjy-akse">'+akse+'</div>'
+    +(tf?'<div class="tegn">'+tf+'</div>':'');
+}
+
+// Liggende stolper: rader=[{navn, verdi, tekst?, farge?}]
+function stolper(rader,farge){
+  if(!rader.length)return tom('Ingen data i perioden.');
+  const maks=Math.max(1,...rader.map(r=>r.verdi));
+  return rader.map(r=>'<div class="stolpe"><div class="stolpe-topp"><span class="stolpe-navn">'+esc(r.navn)+'</span>'
+    +'<span class="stolpe-verdi">'+esc(r.tekst!=null?r.tekst:String(r.verdi))+'</span></div>'
+    +'<div class="stolpe-spor"><div class="stolpe-fyll" style="width:'+Math.round(r.verdi/maks*100)+'%;background:'+(r.farge||farge||GRONN)+'"></div></div></div>').join('');
+}
+
+// Linjekurve over tid: punkter=[{t:epoch, v:tall}]
+function kurve(punkter,{farge=GRONN,enhet=''}={}){
+  if(punkter.length<2)return tom(punkter.length?'Trenger minst to målinger for en kurve.':'Ingen målinger ennå.');
+  const W=320,H=140,PL=34,PR=8,PT=10,PB=20;
+  const ts=punkter.map(p=>p.t), vs=punkter.map(p=>p.v);
+  const t0=Math.min(...ts), t1=Math.max(...ts);
+  let v0=Math.min(...vs), v1=Math.max(...vs);
+  if(v1===v0){v1=v0+1;v0=Math.max(0,v0-1);}
+  const marg=(v1-v0)*0.12; v0-=marg; v1+=marg;
+  const x=t=>PL+(t1===t0?0.5:(t-t0)/(t1-t0))*(W-PL-PR);
+  const y=v=>PT+(1-(v-v0)/(v1-v0))*(H-PT-PB);
+  const d=punkter.map((p,i)=>(i?'L':'M')+x(p.t).toFixed(1)+' '+y(p.v).toFixed(1)).join(' ');
+  const prikker=punkter.map(p=>'<circle cx="'+x(p.t).toFixed(1)+'" cy="'+y(p.v).toFixed(1)+'" r="2.6" fill="'+farge+'"></circle>').join('');
+  const yv=[v1,(v0+v1)/2,v0].map(v=>'<text x="'+(PL-5)+'" y="'+(y(v)+3).toFixed(1)+'" font-size="8" text-anchor="end" fill="currentColor" opacity=".55">'
+    +(Math.round(v*10)/10).toString().replace('.',',')+'</text>'
+    +'<line x1="'+PL+'" y1="'+y(v).toFixed(1)+'" x2="'+(W-PR)+'" y2="'+y(v).toFixed(1)+'" stroke="currentColor" opacity=".12"></line>').join('');
+  const fd=new Date(t0), sd=new Date(t1);
+  const xt='<text x="'+PL+'" y="'+(H-6)+'" font-size="8" fill="currentColor" opacity=".55">'+pad(fd.getDate())+'.'+pad(fd.getMonth()+1)+'.'+String(fd.getFullYear()).slice(2)+'</text>'
+    +'<text x="'+(W-PR)+'" y="'+(H-6)+'" font-size="8" text-anchor="end" fill="currentColor" opacity=".55">'+pad(sd.getDate())+'.'+pad(sd.getMonth()+1)+'.'+String(sd.getFullYear()).slice(2)+'</text>';
+  const sist=punkter[punkter.length-1];
+  return '<svg class="kurve" viewBox="0 0 '+W+' '+H+'" role="img" aria-label="Kurve">'+yv
+    +'<path d="'+d+'" fill="none" stroke="'+farge+'" stroke-width="2" stroke-linejoin="round" stroke-linecap="round"></path>'
+    +prikker+xt+'</svg>'
+    +'<div style="font-size:11px;color:var(--text3);text-align:right;margin-top:-4px">Siste: <b>'
+    +String(sist.v).replace('.',',')+(enhet?' '+esc(enhet):'')+'</b></div>';
+}
+
+// ── Datahjelpere ─────────────────────────────────────────────
+function ukeNokkel(d){
+  // ISO-uke som «ukenr» – nok for gruppering/merking
+  const t=new Date(d.getFullYear(),d.getMonth(),d.getDate());
+  const dag=(t.getDay()+6)%7; t.setDate(t.getDate()-dag);
+  return {n:dStr(t),merke:'u'+isoUke(t)};
+}
+function isoUke(d){
+  const t=new Date(d.getFullYear(),d.getMonth(),d.getDate());
+  t.setDate(t.getDate()+3-((t.getDay()+6)%7));
+  const uke1=new Date(t.getFullYear(),0,4);
+  return 1+Math.round(((t-uke1)/86400000-3+((uke1.getDay()+6)%7))/7);
+}
+function barnListe(){return (fam.personer?.barn||[]).filter(b=>b.navn);}
+function barnNavn(id){const b=barnListe().find(x=>String(x.id)===String(id));return b?b.navn:'Barn';}
+function nattTimer(blob){return blob?.settings?.nightStart??18;}
+function morgenTimer(blob){return blob?.settings?.nightEnd??5;}
+
+// ── Render ───────────────────────────────────────────────────
+function render(){
+  document.querySelectorAll('#periode button').forEach(b=>b.classList.toggle('on',b.dataset.p===periode));
+  const f=fra();
+  document.getElementById('periode-merk').textContent='Tall for '+periodeNavn()+'.';
+  tegnKpi(f); tegnAktivitet(f); tegnPersoner(f); tegnBarna(f); tegnHelse(f); tegnMat(f);
+}
+
+function tegnKpi(f){
+  const opg=(fam.oppgaver?.archive||[]).filter(t=>t.completedDate&&t.completedDate>=f.str).length;
+  const mid=(fam.middag?.meals||[]).filter(m=>m.date&&m.date>=f.str).length;
+  const plk=(fam.plikter?.log||[]).filter(l=>l.date&&l.date>=f.str&&!l.pending).length;
+  let okt=0,sovnMs=0;
+  Object.values(fam.sovn||{}).forEach(b=>(b?.sessions||[]).forEach(s=>{
+    if(s.start>=f.ms){okt++;sovnMs+=Math.max(0,s.end-s.start);}
+  }));
+  const mal=(fam.vekst?.maalinger||[]).filter(m=>m.dato&&m.dato>=f.str).length;
+  const hend=(fam.kalender?.hendelser||[]).filter(h=>h.dato&&h.dato>=f.str).length;
+  const kort=[
+    {t:opg,l:'oppgaver fullført'},{t:mid,l:'middager planlagt'},{t:plk,l:'plikter godkjent'},
+    {t:okt,l:'søvnøkter logget'},{t:Math.round(sovnMs/3600000)+' t',l:'søvn registrert'},
+    {t:mal+hend,l:'målinger og hendelser'},
+  ];
+  document.getElementById('kpi').innerHTML=kort.map(k=>
+    '<div class="kpi"><div class="tall">'+esc(String(k.t))+'</div><div class="lbl">'+esc(k.l)+'</div></div>').join('');
+}
+
+function tegnAktivitet(f){
+  // Grupper per uke: oppgaver, plikter, middager
+  const uker=new Map();
+  const leggTil=(dato,felt)=>{
+    if(!dato||dato<f.str)return;
+    const d=new Date(dato+'T12:00:00'); if(isNaN(d))return;
+    const u=ukeNokkel(d);
+    if(!uker.has(u.n))uker.set(u.n,{merke:u.merke,oppgaver:0,plikter:0,middager:0});
+    uker.get(u.n)[felt]++;
+  };
+  (fam.oppgaver?.archive||[]).forEach(t=>leggTil(t.completedDate,'oppgaver'));
+  (fam.plikter?.log||[]).forEach(l=>{if(!l.pending)leggTil(l.date,'plikter');});
+  (fam.middag?.meals||[]).forEach(m=>leggTil(m.date,'middager'));
+  const el=document.getElementById('aktivitet');
+  if(!uker.size){el.innerHTML=tom('Ingen registrert aktivitet i perioden.');return;}
+  const sortert=[...uker.entries()].sort((a,b)=>a[0].localeCompare(b[0])).slice(-16);
+  el.innerHTML=soyler(sortert.map(([,u])=>({merke:u.merke,deler:[
+    {verdi:u.oppgaver,farge:GRONN},{verdi:u.plikter,farge:OKER},{verdi:u.middager,farge:BLA},
+  ]})),[{navn:'Oppgaver',farge:GRONN},{navn:'Plikter',farge:OKER},{navn:'Middager',farge:BLA}]);
+}
+
+function tegnPersoner(f){
+  const p={};
+  const sikre=n=>{if(n&&!p[n])p[n]={sum:0,d:[]};return p[n];};
+  (fam.personer?.voksne||[]).filter(Boolean).forEach(sikre);
+  (fam.oppgaver?.archive||[]).forEach(t=>{if(t.doneBy&&t.completedDate>=f.str){const o=sikre(t.doneBy);o.sum++;}});
+  (fam.middag?.meals||[]).forEach(m=>{if(m.cook&&m.date>=f.str){const o=sikre(m.cook);o.sum++;}});
+  (fam.plikter?.log||[]).forEach(l=>{if(l.godkjentAv&&l.date>=f.str){const o=sikre(l.godkjentAv);o.sum++;}});
+  (fam.beskjeder?.lapper||[]).forEach(l=>{if(l.fra&&l.ts>=f.ms){const o=sikre(l.fra);o.sum++;}});
+  const rader=Object.entries(p).map(([navn,o])=>({navn,verdi:o.sum,tekst:o.sum+' registrert',farge:personFarge(navn)}))
+    .sort((a,b)=>b.verdi-a.verdi);
+  document.getElementById('personer').innerHTML=stolper(rader)
+    +'<p class="merk">Bygger på det som er registrert i appene – en pekepinn, ikke en fasit.</p>';
+}
+
+function tegnBarna(f){
+  const barn=barnListe();
+  const el=document.getElementById('barna');
+  if(!barn.length){el.innerHTML='';return;}
+  el.innerHTML=barn.map(b=>{
+    const m=(fam.vekst?.maalinger||[]).filter(x=>String(x.barn)===String(b.id)&&x.dato)
+      .sort((x,y)=>x.dato.localeCompare(y.dato));
+    const tid=d=>new Date(d+'T12:00:00').getTime();
+    const hoyde=m.filter(x=>x.hoyde!=null&&x.hoyde!=='').map(x=>({t:tid(x.dato),v:parseFloat(x.hoyde)}));
+    const vekt=m.filter(x=>x.vekt!=null&&x.vekt!=='').map(x=>({t:tid(x.dato),v:parseFloat(x.vekt)}));
+    const tenner=Object.keys((fam.vekst?.tenner||{})[b.id]||{}).length;
+
+    // Søvn per døgn (siste 30 døgn i perioden)
+    const blob=(fam.sovn||{})[b.id];
+    const perDag=new Map();
+    (blob?.sessions||[]).forEach(s=>{
+      if(s.start<f.ms)return;
+      const d=new Date(s.start); d.setHours(0,0,0,0);
+      const k=dStr(d);
+      perDag.set(k,(perDag.get(k)||0)+Math.max(0,s.end-s.start));
+    });
+    const dager=[...perDag.entries()].sort((a,b2)=>a[0].localeCompare(b2[0])).slice(-30);
+    const sovnBlokk=dager.length
+      ? soyler(dager.map(([k,ms])=>({merke:k.slice(8),deler:[{verdi:+(ms/3600000).toFixed(1),farge:LILLA}]})),
+          [{navn:'Timer søvn per døgn',farge:LILLA}])
+      : tom('Ingen søvn logget i perioden.');
+
+    return '<div class="card"><div class="barn-tittel">'+avatarHtml(b.navn,finnAvatar(avatarer,b.navn),30)+esc(b.navn)+'</div>'
+      +'<div class="delt">Høyde</div>'+kurve(hoyde,{farge:GRONN,enhet:'cm'})
+      +'<div class="delt">Vekt</div>'+kurve(vekt,{farge:BLA,enhet:'kg'})
+      +'<div class="delt">Søvn per døgn</div>'+sovnBlokk
+      +'<p class="merk">'+tenner+' av 20 melketenner registrert.</p></div>';
+  }).join('');
+}
+
+function tegnHelse(f){
+  const doser=(fam.helse?.doser||[]).filter(d=>d.ts>=f.ms);
+  const meds=fam.helse?.medisiner||[];
+  const el=document.getElementById('helse');
+  const perMnd=new Map();
+  doser.forEach(d=>{
+    const dt=new Date(d.ts);
+    const k=dt.getFullYear()+'-'+pad(dt.getMonth()+1);
+    perMnd.set(k,(perMnd.get(k)||0)+1);
+  });
+  const MND=['jan','feb','mar','apr','mai','jun','jul','aug','sep','okt','nov','des'];
+  const mndBlokk=perMnd.size
+    ? soyler([...perMnd.entries()].sort((a,b)=>a[0].localeCompare(b[0])).slice(-12)
+        .map(([k,v])=>({merke:MND[parseInt(k.slice(5),10)-1],deler:[{verdi:v,farge:OKER}]})),
+        [{navn:'Medisindoser per måned',farge:OKER}])
+    : tom('Ingen doser i perioden.');
+  // Doser per medisin
+  const perMed={};
+  doser.forEach(d=>{const m=meds.find(x=>x.id===d.med);const n=m?m.name:'Ukjent';perMed[n]=(perMed[n]||0)+1;});
+  const medRader=Object.entries(perMed).map(([navn,v])=>({navn,verdi:v,tekst:v+' doser'})).sort((a,b)=>b.verdi-a.verdi);
+  // Sykedager per barn
+  const syk={};
+  (fam.helse?.syk||[]).forEach(s=>{if(s.date&&s.date>=f.str){const n=barnNavn(s.barn);syk[n]=(syk[n]||0)+1;}});
+  const sykRader=Object.entries(syk).map(([navn,v])=>({navn,verdi:v,tekst:v+' dager',farge:personFarge(navn)})).sort((a,b)=>b.verdi-a.verdi);
+  el.innerHTML=mndBlokk
+    +(medRader.length?'<div class="delt">Per medisin</div>'+stolper(medRader,OKER):'')
+    +'<div class="delt">Sykedager</div>'+(sykRader.length?stolper(sykRader):tom('Ingen sykedager registrert i perioden.'));
+}
+
+function tegnMat(f){
+  const meals=(fam.middag?.meals||[]).filter(m=>m.date&&m.date>=f.str);
+  // Topp middager
+  const antall={};
+  meals.forEach(m=>{if(m.meal)antall[m.meal]=(antall[m.meal]||0)+1;});
+  const topp=Object.entries(antall).map(([navn,v])=>({navn,verdi:v,tekst:v+'×'}))
+    .sort((a,b)=>b.verdi-a.verdi).slice(0,10);
+  // Hvem lager
+  const kokk={};
+  meals.forEach(m=>{const k=m.cook||'Ikke satt';kokk[k]=(kokk[k]||0)+1;});
+  const kokkRader=Object.entries(kokk).map(([navn,v])=>({navn,verdi:v,tekst:v+' middager',farge:navn==='Ikke satt'?'var(--text4)':personFarge(navn)}))
+    .sort((a,b)=>b.verdi-a.verdi);
+  // Handleliste-historikk (aggregert – ikke tidsserie)
+  const hist=[...(fam.handleliste?.history||[])].sort((a,b)=>(b.count||0)-(a.count||0)).slice(0,12)
+    .map(h=>({navn:h.name,verdi:h.count||0,tekst:(h.count||0)+'×'}));
+  const kat={};
+  (fam.handleliste?.history||[]).forEach(h=>{const k=h.cat||'Annet';kat[k]=(kat[k]||0)+(h.count||0);});
+  const katRader=Object.entries(kat).map(([navn,v])=>({navn,verdi:v,tekst:String(v)})).sort((a,b)=>b.verdi-a.verdi).slice(0,8);
+  // Fryser (øyeblikksbilde)
+  const items=fam.fryser?.items||[];
+  document.getElementById('mat').innerHTML=
+    '<div class="delt">Mest spiste middager</div>'+stolper(topp,BLA)
+    +'<div class="delt">Hvem lager maten</div>'+stolper(kokkRader)
+    +'<div class="delt">Mest kjøpte varer (hele historikken)</div>'+stolper(hist,GRONN)
+    +'<div class="delt">Handel per kategori</div>'+stolper(katRader,GRONN)
+    +'<div class="delt">Fryseren nå</div><p class="merk">'+items.length+' varer registrert i fryseren akkurat nå. '
+    +'Handleliste og fryser lagrer ikke historikk over tid, så disse tallene er totaler/øyeblikksbilde – ikke periodefiltrert.</p>';
+}
+
+document.getElementById('periode').addEventListener('click',e=>{
+  const b=e.target.closest('[data-p]');
+  if(b){periode=b.dataset.p;render();}
+});
+
+// ── Eksport ──────────────────────────────────────────────────
+function lastNed(navn,innhold,mime){
+  const blob=new Blob([innhold],{type:mime+';charset=utf-8'});
+  const a=document.createElement('a');
+  a.href=URL.createObjectURL(blob); a.download=navn;
+  document.body.appendChild(a); a.click();
+  setTimeout(()=>{URL.revokeObjectURL(a.href);a.remove();},100);
+}
+function csvFelt(v){
+  const s=v==null?'':String(v);
+  return /[";\n]/.test(s)?'"'+s.replace(/"/g,'""')+'"':s;
+}
+function csv(rader,kolonner){
+  // Semikolon: åpner rett i norsk Excel
+  return '﻿'+[kolonner.join(';'),...rader.map(r=>r.map(csvFelt).join(';'))].join('\r\n');
+}
+function tid(ms){const d=new Date(ms);return dStr(d)+' '+pad(d.getHours())+':'+pad(d.getMinutes());}
+
+const EKSPORT={
+  oppgaver:()=>({navn:'oppgaver.csv',data:csv((fam.oppgaver?.archive||[]).map(t=>
+    [t.completedDate||'',t.title||'',t.cat||'',t.who||'',t.doneBy||'',t.prio||'']),
+    ['Fullført','Oppgave','Kategori','Tildelt','Gjort av','Prioritet'])}),
+  plikter:()=>{
+    const ch=(fam.plikter?.chores||[]);
+    return {navn:'plikter.csv',data:csv((fam.plikter?.log||[]).map(l=>{
+      const c=ch.find(x=>x.id===l.choreId);
+      const k=(fam.plikter?.kids||[]).find(x=>x.id===l.kidId);
+      return [l.date||'',k?k.name:'',c?c.name:'',l.points||0,l.pending?'venter':'godkjent',l.godkjentAv||''];
+    }),['Dato','Barn','Plikt','Poeng','Status','Godkjent av'])};
+  },
+  sovn:()=>{
+    const rader=[];
+    Object.entries(fam.sovn||{}).forEach(([id,b])=>(b?.sessions||[]).forEach(s=>{
+      rader.push([barnNavn(id),tid(s.start),tid(s.end),((s.end-s.start)/3600000).toFixed(2).replace('.',','),
+        (new Date(s.start).getHours()>=nattTimer(b)||new Date(s.start).getHours()<morgenTimer(b))?'natt':'lur',s.note||'']);
+    }));
+    rader.sort((a,b)=>a[1].localeCompare(b[1]));
+    return {navn:'sovn.csv',data:csv(rader,['Barn','Sovnet','Våknet','Timer','Type','Notat'])};
+  },
+  vekst:()=>({navn:'vekst.csv',data:csv((fam.vekst?.maalinger||[]).sort((a,b)=>(a.dato||'').localeCompare(b.dato||''))
+    .map(m=>[m.dato||'',barnNavn(m.barn),m.hoyde??'',m.vekt??'',m.sko??'',m.av||'']),
+    ['Dato','Barn','Høyde (cm)','Vekt (kg)','Skostørrelse','Loggført av'])}),
+  helse:()=>{
+    const meds=fam.helse?.medisiner||[];
+    const rader=(fam.helse?.doser||[]).sort((a,b)=>a.ts-b.ts).map(d=>{
+      const m=meds.find(x=>x.id===d.med);
+      return [tid(d.ts),barnNavn(d.barn),m?m.name:'',d.dose??''];
+    });
+    return {navn:'helse-doser.csv',data:csv(rader,['Tidspunkt','Barn','Medisin','Dose'])};
+  },
+  middag:()=>({navn:'middag.csv',data:csv((fam.middag?.meals||[]).sort((a,b)=>(a.date||'').localeCompare(b.date||''))
+    .map(m=>[m.date||'',m.meal||'',m.cook||'',m.note||'']),['Dato','Middag','Hvem lagde','Notat'])}),
+  handleliste:()=>({navn:'handleliste-historikk.csv',data:csv((fam.handleliste?.history||[])
+    .sort((a,b)=>(b.count||0)-(a.count||0)).map(h=>[h.name||'',h.cat||'',h.count||0,h.last||'']),
+    ['Vare','Kategori','Antall ganger kjøpt','Sist kjøpt'])}),
+  kalender:()=>({navn:'kalender.csv',data:csv((fam.kalender?.hendelser||[])
+    .sort((a,b)=>(a.dato||'').localeCompare(b.dato||'')).map(h=>[h.dato||'',h.tid||'',h.tittel||'',h.hvem||'',h.notat||'']),
+    ['Dato','Tid','Hendelse','Hvem','Notat'])}),
+};
+
+document.getElementById('eksport-kort').addEventListener('click',e=>{
+  const b=e.target.closest('[data-eks]');
+  if(!b)return;
+  const hva=b.dataset.eks;
+  if(hva==='print'){window.print();return;}
+  if(hva==='json'){
+    lastNed('hjemmebasen-'+dStr(new Date())+'.json',JSON.stringify(fam,null,2),'application/json');
+    setStatus('Lastet ned ✓','ok');return;
+  }
+  const f=EKSPORT[hva];
+  if(!f)return;
+  const {navn,data}=f();
+  lastNed(navn,data,'text/csv');
+  setStatus('Lastet ned '+navn+' ✓','ok');
+});
+
+load();
+</script>
+</body>
+</html>
