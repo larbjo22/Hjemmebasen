@@ -64,6 +64,9 @@ import { ref, get } from 'https://www.gstatic.com/firebasejs/10.14.1/firebase-da
 import { esc, initTheme, toggleTheme, setStatus, personFarge, avatarHtml, finnAvatar } from './felles/ui.js';
 import { monterNav } from './felles/nav.js';
 
+import { monterHjelp } from './felles/hjelp.js';
+monterHjelp('fordeling');
+
 initTheme();
 document.getElementById('theme-btn').addEventListener('click', toggleTheme);
 

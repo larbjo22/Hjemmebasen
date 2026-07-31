@@ -87,6 +87,9 @@ import { initializeApp, deleteApp } from 'https://www.gstatic.com/firebasejs/10.
 import { getAuth, createUserWithEmailAndPassword, signOut } from 'https://www.gstatic.com/firebasejs/10.14.1/firebase-auth.js';
 import { ref, get, set, update, remove, push } from 'https://www.gstatic.com/firebasejs/10.14.1/firebase-database.js';
 
+import { monterHjelp } from './felles/hjelp.js';
+monterHjelp('admin');
+
 initTheme();
 document.getElementById('theme-btn').addEventListener('click', toggleTheme);
 

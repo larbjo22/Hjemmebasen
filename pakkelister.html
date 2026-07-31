@@ -114,6 +114,9 @@ import { dbGet, dbSet, dbListen } from './felles/storage.js';
 import { esc, initTheme, toggleTheme, setStatus } from './felles/ui.js';
 import { monterNav } from './felles/nav.js';
 
+import { monterHjelp } from './felles/hjelp.js';
+monterHjelp('pakkelister');
+
 initTheme();
 document.getElementById('theme-btn').addEventListener('click', toggleTheme);
 

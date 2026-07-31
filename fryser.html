@@ -693,6 +693,9 @@ function renderItem(item){
 
 // ── Fargetema ────────────────────────────────────────────────
 const APP_KEY='fryser';
+import { monterHjelp } from './felles/hjelp.js';
+monterHjelp('fryser');
+
 initTheme();
 
 // ── Delegerte lyttere (unngår brukerdata i inline onclick – XSS-sikkert) ──
