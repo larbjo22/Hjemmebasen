@@ -2,157 +2,16 @@
 <html lang="no">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
-<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@2.44.0/tabler-icons.min.css">
-<link rel="manifest" href="manifest.webmanifest">
-<meta name="theme-color" content="#2e5d4f">
-<link rel="apple-touch-icon" href="ikoner/apple-touch-icon.png">
-<meta name="apple-mobile-web-app-capable" content="yes">
-<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-<meta name="mobile-web-app-capable" content="yes">
-<title>Hvem gjør hva</title>
-<link rel="stylesheet" href="felles/stil.css">
-<style>
-.periode{display:flex;gap:6px;margin-bottom:12px}
-.periode button{flex:1;font-size:12.5px;font-weight:600;padding:8px;border-radius:10px;border:1px solid var(--border);background:var(--surface2);color:var(--text2);cursor:pointer}
-.periode button.on{background:var(--accent-bg);border-color:var(--accent-border);color:var(--accent-text)}
-.balanse{display:flex;height:34px;border-radius:10px;overflow:hidden;border:1px solid var(--border);margin-bottom:6px}
-.balanse-seg{display:flex;align-items:center;justify-content:center;color:#fff;font-size:11px;font-weight:700;min-width:0;white-space:nowrap;overflow:hidden}
-.balanse-tom{font-size:12px;color:var(--text3);text-align:center;padding:10px}
-.disclaimer{font-size:11px;color:var(--text4);line-height:1.5;margin:2px 0 14px}
-.pkort{display:flex;align-items:center;gap:12px;background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:12px;margin-bottom:8px}
-.pkort .navn{font-size:15px;font-weight:700}
-.pkort .sum{font-size:11px;color:var(--text3);margin-top:1px}
-.pkort .tall{margin-left:auto;text-align:right}
-.pkort .tall .stor{font-size:24px;font-weight:800;line-height:1}
-.pkort .tall .lbl{font-size:10px;color:var(--text3)}
-.brekk{display:flex;gap:8px;flex-wrap:wrap;margin-top:5px}
-.brekk span{font-size:11px;color:var(--text2);display:inline-flex;align-items:center;gap:3px}
-.brekk i{color:var(--accent-text);font-size:12px}
-@media(min-width:700px){.fw{max-width:560px}}
-</style>
-<link rel="stylesheet" href="felles/gran.css">
+<title>Hvem gjør hva – flyttet</title>
+<!-- «Hvem gjør hva» er nå en seksjon i statistikksiden. Denne fila står
+     igjen som videresending for gamle lenker og bokmerker. -->
+<meta http-equiv="refresh" content="0; url=statistikk.html">
+<link rel="canonical" href="statistikk.html">
 </head>
 <body>
-<div class="fw">
-  <div class="top-bar">
-    <h1 class="app-title"><i class="ti ti-scale"></i> Hvem gjør hva</h1>
-    <div class="top-right">
-      <button class="icon-btn" id="theme-btn"></button>
-    </div>
-  </div>
-
-  <div class="periode" id="periode">
-    <button data-p="uke" class="on">Denne uka</button>
-    <button data-p="30">30 dager</button>
-    <button data-p="aar">I år</button>
-  </div>
-
-  <div class="card">
-    <div class="card-title">Fordeling mellom de voksne</div>
-    <div id="balanse"></div>
-    <p class="disclaimer">Bare det som er registrert i appen teller med (fullførte oppgaver, hvem som lagde middag, godkjente plikter, beskjeder på tavla). Dette er en pekepinn – ikke en fasit på hvem som gjør mest.</p>
-  </div>
-
-  <div id="personer"></div>
-  <div class="status-bar" id="status-bar"></div>
-</div>
-
-<script type="module">
-import { requireAuth, db } from './felles/auth.js';
-import { ref, get } from 'https://www.gstatic.com/firebasejs/10.14.1/firebase-database.js';
-import { esc, initTheme, toggleTheme, setStatus, personFarge, avatarHtml, finnAvatar } from './felles/ui.js';
-import { monterNav } from './felles/nav.js';
-
-import { monterHjelp } from './felles/hjelp.js';
-monterHjelp('fordeling');
-
-initTheme();
-document.getElementById('theme-btn').addEventListener('click', toggleTheme);
-
-let FAMILIE=null, fam=null, avatarer={}, periode='uke';
-
-// ── Periodestart som lokal YYYY-MM-DD ──
-function toStr(d){return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');}
-function fraDato(){
-  const d=new Date();
-  if(periode==='uke'){const wd=(d.getDay()+6)%7;d.setDate(d.getDate()-wd);} // mandag
-  else if(periode==='30'){d.setDate(d.getDate()-30);}
-  else {d.setMonth(0,1);} // 1. januar
-  d.setHours(0,0,0,0);
-  return {str:toStr(d),ms:d.getTime()};
-}
-
-async function load(){
-  setStatus('Laster...');
-  try{
-    const ctx=await requireAuth();
-    if(!ctx.familieId){setStatus('Ingen husstand – kontakt administrator','err');return;}
-    FAMILIE=ctx.familieId;
-    monterNav(FAMILIE,null);
-    // Hele familie-noden i én lesning (dashbordet leser flere apper)
-    const snap=await get(ref(db,'familier/'+FAMILIE));
-    fam=snap.exists()?snap.val():{};
-    avatarer=fam.avatarer||{};
-    setStatus('');
-  }catch(e){setStatus('Kunne ikke laste – '+(e.message||'prøv igjen'),'err');return;}
-  render();
-}
-
-function beregn(){
-  const {str:fra,ms:fraMs}=fraDato();
-  const voksne=(fam.personer?.voksne||[]).filter(Boolean);
-  const p={}; // navn -> {oppg,middag,godkj,beskjed}
-  const sikre=n=>{if(n&&!p[n])p[n]={oppg:0,middag:0,godkj:0,beskjed:0};return p[n];};
-  voksne.forEach(sikre); // vis alltid de voksne, også med 0
-
-  (fam.oppgaver?.archive||[]).forEach(t=>{ if(t.doneBy&&t.completedDate&&t.completedDate>=fra)sikre(t.doneBy).oppg++; });
-  (fam.middag?.meals||[]).forEach(m=>{ if(m.cook&&m.date&&m.date>=fra)sikre(m.cook).middag++; });
-  (fam.plikter?.log||[]).forEach(l=>{ if(l.godkjentAv&&l.date&&l.date>=fra)sikre(l.godkjentAv).godkj++; });
-  (fam.beskjeder?.lapper||[]).forEach(l=>{ if(l.fra&&l.ts>=fraMs)sikre(l.fra).beskjed++; });
-
-  const rader=Object.entries(p).map(([navn,d])=>({navn,...d,sum:d.oppg+d.middag+d.godkj+d.beskjed}));
-  rader.sort((a,b)=>b.sum-a.sum||a.navn.localeCompare(b.navn,'nb'));
-  return {rader,voksne};
-}
-
-function render(){
-  document.querySelectorAll('#periode button').forEach(b=>b.classList.toggle('on',b.dataset.p===periode));
-  const {rader,voksne}=beregn();
-
-  // Balanse-bar: kun de voksne (mental load-fordelingen)
-  const voksenRader=rader.filter(r=>voksne.includes(r.navn));
-  const totalV=voksenRader.reduce((s,r)=>s+r.sum,0);
-  const bal=document.getElementById('balanse');
-  if(!totalV){
-    bal.innerHTML='<div class="balanse-tom">Ingenting registrert i denne perioden ennå.</div>';
-  }else{
-    bal.innerHTML='<div class="balanse">'+voksenRader.filter(r=>r.sum>0).map(r=>{
-      const pct=Math.round(r.sum/totalV*100);
-      return '<div class="balanse-seg" style="width:'+pct+'%;background:'+personFarge(r.navn)+'" title="'+esc(r.navn)+': '+pct+'%">'+(pct>=12?esc(r.navn.split(' ')[0])+' '+pct+'%':'')+'</div>';
-    }).join('')+'</div>';
-  }
-
-  // Personkort (alle som har bidratt + alle voksne)
-  document.getElementById('personer').innerHTML=rader.map(r=>{
-    const deler=[];
-    if(r.oppg)deler.push('<span><i class="ti ti-checkbox"></i>'+r.oppg+' oppgave'+(r.oppg===1?'':'r')+'</span>');
-    if(r.middag)deler.push('<span><i class="ti ti-tools-kitchen-2"></i>'+r.middag+' middag'+(r.middag===1?'':'er')+'</span>');
-    if(r.godkj)deler.push('<span><i class="ti ti-star"></i>'+r.godkj+' godkjent'+(r.godkj===1?'':'e')+'</span>');
-    if(r.beskjed)deler.push('<span><i class="ti ti-pin"></i>'+r.beskjed+' beskjed'+(r.beskjed===1?'':'er')+'</span>');
-    return '<div class="pkort">'+avatarHtml(r.navn,finnAvatar(avatarer,r.navn),40)
-      +'<div style="min-width:0"><div class="navn">'+esc(r.navn)+'</div>'
-      +'<div class="brekk">'+(deler.join('')||'<span style="color:var(--text4)">ingenting registrert ennå</span>')+'</div></div>'
-      +'<div class="tall"><div class="stor">'+r.sum+'</div><div class="lbl">registrert</div></div></div>';
-  }).join('')||'<div class="empty-state">Ingen voksne registrert i husstanden ennå.</div>';
-}
-
-document.getElementById('periode').addEventListener('click',e=>{
-  const b=e.target.closest('[data-p]');
-  if(b){periode=b.dataset.p;render();}
-});
-
-load();
-</script>
+<p style="font-family:system-ui,sans-serif;padding:2rem;text-align:center">
+  «Hvem gjør hva» ligger nå i <a href="statistikk.html">Statistikk</a>.
+</p>
+<script>location.replace('statistikk.html');</script>
 </body>
 </html>

@@ -139,15 +139,16 @@ const HJELP = {
     ],
     tips: 'Dagens hendelser dukker opp i varslene på forsiden.',
   },
-  fordeling: {
-    tittel: 'Hvem gjør hva',
-    hva: 'En enkel oversikt over hvordan husarbeidet fordeler seg mellom de voksne.',
+  statistikk: {
+    tittel: 'Statistikk',
+    hva: 'Alt husstanden har registrert, framstilt med grafer – og mulighet for å laste ned dataene.',
     punkter: [
-      'Tallene bygger på det som er registrert i appene: fullførte oppgaver, hvem som lagde middag, godkjente plikter og beskjeder.',
-      'Velg periode øverst – denne uka, 30 dager eller i år.',
-      'Fargelinja viser fordelingen, og kortene under viser hva hver enkelt har gjort.',
+      'Velg periode øverst: 30 dager, 3 måneder, i år eller hele historikken.',
+      '«Aktivitet per uke» viser fullførte oppgaver, godkjente plikter og planlagte middager side om side.',
+      'Hvert barn får egne kurver for høyde og vekt, søvn per døgn og antall tenner.',
+      'Eksport nederst: last ned per app som CSV (åpnes i Excel), alt som JSON, eller skriv ut / lagre som PDF.',
     ],
-    tips: 'Dette er en pekepinn, ikke en fasit – mye husarbeid registreres aldri i en app.',
+    tips: 'Handleliste og fryser lagrer ikke historikk over tid – de tallene er totaler og øyeblikksbilde, ikke periodefiltrert.',
   },
   admin: {
     tittel: 'Administrasjon',
