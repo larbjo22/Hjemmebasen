@@ -63,7 +63,7 @@ monterHjelp('onboarding');
 initTheme();
 
 const { familieId } = await requireAuth();
-if (!familieId) location.replace('index.html');
+if (!familieId) location.replace('hjem.html');
 
 // Eksisterende data (dbGet markerer nodene som lest → trygt å skrive)
 const meta = (await dbGet(familieId, 'meta')) || {};
@@ -277,7 +277,7 @@ async function fullfor() {
       const folk = [...(oppgaver.people || []), ...st.voksne].filter((v, i, a) => a.indexOf(v) === i);
       await dbSet(familieId, 'oppgaver', { ...oppgaver, people: folk });
     }
-    location.replace('index.html');
+    location.replace('hjem.html');
   } catch (e) {
     setStatus('Kunne ikke lagre: ' + (e.message || 'prøv igjen'), 'err');
     btn.disabled = false; btn.textContent = 'Start Hjemmebasen';

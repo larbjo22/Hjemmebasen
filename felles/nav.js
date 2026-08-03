@@ -34,7 +34,7 @@ export async function monterNav(familieId, aktivApp) {
   const bar = document.createElement('nav');
   bar.className = 'app-nav';
   bar.setAttribute('aria-label', 'Apper');
-  bar.innerHTML = '<a class="nav-hjem" href="index.html"><i class="ti ti-home"></i> Hjem</a>'
+  bar.innerHTML = '<a class="nav-hjem" href="hjem.html"><i class="ti ti-home"></i> Hjem</a>'
     + aktive.map(a =>
         '<a class="nav-app' + (a === aktivApp ? ' on' : '') + '" href="' + a + '.html" title="' + APP_NAVN[a] + '" aria-label="' + APP_NAVN[a] + '">'
         + '<i class="ti ' + APP_IKON[a] + '"></i></a>').join('');

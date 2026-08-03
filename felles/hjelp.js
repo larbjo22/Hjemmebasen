@@ -5,9 +5,9 @@
 // (uavhengig av appens innebygde CSS).
 
 const HJELP = {
-  index: {
-    tittel: 'Forsiden',
-    hva: 'Forsiden er oversikten din: en hilsen, varsler om det som trenger deg nå, og en flis per app med live status.',
+  hjem: {
+    tittel: 'Hjem',
+    hva: 'Hjem-siden er oversikten din: en hilsen, varsler om det som trenger deg nå, og en flis per app med live status.',
     punkter: [
       'Varslene øverst viser det som haster – oppgaver på overtid, hvem som sover, fryservarer som går ut, dagens middag, ferske beskjeder og neste medisindose.',
       'Trykk på en flis for å åpne appen. Flisene viser status uten at du åpner dem.',

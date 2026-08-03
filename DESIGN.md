@@ -47,9 +47,10 @@ mobilen med egne data per husstand. administratoren administrerer tilgang.
 │ GitHub Pages      │     │ Firebase (gratis Spark-plan)  │
 │ (offentlig repo)  │     │  Auth: e-post/passord         │
 │                   │────▶│  Realtime DB: JSON per familie│
-│ index.html (nav)  │     │  Security rules: familie-     │
-│ login.html        │     │  isolasjon + admin-rolle      │
-│ onboarding.html   │     └──────────────────────────────┘
+│ index.html (om)   │     │  Security rules: familie-     │
+│ hjem.html (nav)   │     │  isolasjon + admin-rolle      │
+│ login.html        │     └──────────────────────────────┘
+│ onboarding.html   │
 │ admin.html        │     ┌──────────────────────────────┐
 │ 7 apper           │────▶│ Met.no API (vær, gratis)      │
 │ felles/*.js       │     └──────────────────────────────┘
@@ -126,7 +127,7 @@ all sikkerhet ligger i security rules (§7).
 E-post/passord (`signInWithEmailAndPassword`), sesjon huskes per enhet.
 Ingen selvregistrering – brukere opprettes av admin. «Glemt passord» →
 reset-e-post. Etter innlogging: `brukere/<uid>` → har familie? → er
-`meta.onboardet`? → `onboarding.html` eller `index.html`.
+`meta.onboardet`? → `onboarding.html` eller `hjem.html`.
 
 ### 4.2 `onboarding.html` – veiviser ved første innlogging i huset
 Steg (lagres samlet til slutt, med mulighet for å gå tilbake):
@@ -138,7 +139,7 @@ Steg (lagres samlet til slutt, med mulighet for å gå tilbake):
    søvn foreslås kun hvis barn under 3 år)
 6. **Ferdig** – seed-data skrives (§6), `meta.onboardet = true` → launcher
 
-### 4.3 `index.html` – launcher/hjemside
+### 4.3 `hjem.html` – launcher/hjemside
 - App-brett med kun **husets aktiverte apper**
 - Topplinje: familienavn + ⚙️ (bytt passord, rediger personer/sted/apper
   – gjenbruker onboarding-stegene enkeltvis, logg ut)

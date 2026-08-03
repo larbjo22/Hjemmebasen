@@ -21,7 +21,8 @@ administratoren. Kan administrere alle husstander og medlemmer. Definert i `admi
 _Avoid_: superbruker, eier
 
 **Launcher**:
-Hjemsiden (`index.html`) med app-brettet. Viser kun husstandens aktiverte apper.
+Hjem-siden (`hjem.html`) med app-brettet. Viser kun husstandens aktiverte apper.
+Rotadressen (`index.html`) er den offentlige forsiden, ikke launcheren.
 _Avoid_: dashboard, forside, oversikt
 
 **Onboarding**:

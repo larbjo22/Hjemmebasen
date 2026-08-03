@@ -41,7 +41,7 @@
     </div>
     <div class="glemt"><button class="btn-lenke" id="glemt-btn">Glemt passord?</button></div>
     <div class="glemt" style="margin-top:6px"><a class="btn-lenke" href="bli-med.html" style="text-decoration:underline">Har du fått en invitasjonskode?</a></div>
-    <div class="glemt" style="margin-top:6px"><a class="btn-lenke" href="om.html" style="text-decoration:underline">Hva er Hjemmebasen?</a></div>
+    <div class="glemt" style="margin-top:6px"><a class="btn-lenke" href="index.html" style="text-decoration:underline">Hva er Hjemmebasen?</a></div>
   </div>
   <div class="status-bar" id="status-bar"></div>
 </div>
@@ -64,7 +64,7 @@ if (new URLSearchParams(location.search).get('feil') === 'ingen-tilgang') {
 }
 
 // Allerede innlogget → rett til launcheren
-onAuthStateChanged(auth, user => { if (user && !feilEl.textContent) location.replace('index.html'); });
+onAuthStateChanged(auth, user => { if (user && !feilEl.textContent) location.replace('hjem.html'); });
 
 const FEILTEKST = {
   'auth/invalid-credential': 'Feil e-post eller passord.',
@@ -83,7 +83,7 @@ async function inn() {
   feilEl.style.display = 'none'; feilEl.textContent = '';
   try {
     await loggInn(epost, passord);
-    location.replace('index.html');
+    location.replace('hjem.html');
   } catch (e) {
     visFeil(FEILTEKST[e.code] || 'Innlogging feilet. Prøv igjen.');
     btn.disabled = false; btn.textContent = 'Logg inn';
