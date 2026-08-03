@@ -99,14 +99,14 @@ document.getElementById('bli-med-btn').addEventListener('click', async () => {
     }
     // Har kontoen allerede en husstand? Da er alt i orden – gå hjem.
     const eksisterende = await get(ref(db, 'brukere/' + cred.user.uid)).catch(() => null);
-    if (eksisterende && eksisterende.exists()) { location.replace('index.html'); return; }
+    if (eksisterende && eksisterende.exists()) { location.replace('hjem.html'); return; }
     // Security rules validerer koden mot husstandens invitasjonskode –
     // feil kode gir «permission denied», ingen datatilgang lekker.
     await set(ref(db, 'brukere/' + cred.user.uid), {
       familieId, navn, epost, kode,
       opprettet: Date.now(), sistSett: 0,
     });
-    location.replace('index.html');
+    location.replace('hjem.html');
   } catch (e) {
     const tekst = e.code === 'auth/email-already-in-use' ? 'E-posten er i bruk med et annet passord.'
       : e.code === 'auth/invalid-credential' ? 'E-posten er alt i bruk – og passordet stemmer ikke med den kontoen.'

@@ -15,6 +15,17 @@ export const auth = getAuth(app);
 auth.languageCode = 'nb'; // Firebase-e-poster (passord-reset) sendes på norsk
 export const db = getDatabase(app);
 
+// Husker på enheten at noen har vært innlogget her. Forsiden (index.html) er
+// offentlig og laster ikke Firebase; den leser dette flagget for å vise
+// «Åpne appen» i stedet for «Logg inn». Rent kosmetisk – all reell tilgang
+// avgjøres av Firebase og security rules.
+function settInnloggetFlagg(pa) {
+  try {
+    if (pa) localStorage.setItem('hb-innlogget', '1');
+    else localStorage.removeItem('hb-innlogget');
+  } catch (e) { /* localStorage sperret (privat modus) – flagget kan droppes */ }
+}
+
 // Venter på at Firebase har avgjort innloggingsstatus (én gang).
 function ventPaaAuth() {
   return new Promise(resolve => {
@@ -24,11 +35,12 @@ function ventPaaAuth() {
 
 // Krever innlogget bruker. Returnerer {user, medlem, erAdmin, familieId}.
 // - Ikke innlogget → redirect til login.html
-// - adminKreves og ikke admin → redirect til index.html
+// - adminKreves og ikke admin → redirect til hjem.html
 // - Innlogget men uten medlemskap (og ikke admin) → 'ingen-tilgang'-callback
 export async function requireAuth({ adminKreves = false, utenTilgang = null } = {}) {
   const user = await ventPaaAuth();
-  if (!user) { location.replace('login.html'); return new Promise(() => {}); }
+  if (!user) { settInnloggetFlagg(false); location.replace('login.html'); return new Promise(() => {}); }
+  settInnloggetFlagg(true);
 
   const [medlemSnap, adminSnap] = await Promise.all([
     get(ref(db, 'brukere/' + user.uid)).catch(() => null),
@@ -37,7 +49,7 @@ export async function requireAuth({ adminKreves = false, utenTilgang = null } = 
   const medlem = medlemSnap && medlemSnap.exists() ? medlemSnap.val() : null;
   const erAdmin = !!(adminSnap && adminSnap.val() === true);
 
-  if (adminKreves && !erAdmin) { location.replace('index.html'); return new Promise(() => {}); }
+  if (adminKreves && !erAdmin) { location.replace('hjem.html'); return new Promise(() => {}); }
   if (!medlem && !erAdmin) {
     if (typeof utenTilgang === 'function') { utenTilgang(user); return new Promise(() => {}); }
     location.replace('login.html?feil=ingen-tilgang');
@@ -55,6 +67,7 @@ export async function loggInn(epost, passord) {
 }
 
 export function loggUt() {
+  settInnloggetFlagg(false);
   return signOut(auth).then(() => location.replace('login.html'));
 }
 

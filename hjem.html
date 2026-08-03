@@ -1,0 +1,752 @@
+<!DOCTYPE html>
+<html lang="no">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@2.44.0/tabler-icons.min.css">
+<link rel="manifest" href="manifest.webmanifest">
+<meta name="theme-color" content="#2e5d4f">
+<link rel="apple-touch-icon" href="ikoner/apple-touch-icon.png">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="mobile-web-app-capable" content="yes">
+<title>Hjemmebasen</title>
+<link rel="stylesheet" href="felles/stil.css">
+<style>
+/* Hilsen */
+.hilsen{margin:2px 0 12px}
+.hilsen h2{font-size:20px;font-weight:800;line-height:1.25}
+.hilsen p{font-size:12px;color:var(--text3);margin-top:2px}
+
+/* Varslingsfeed */
+.varsler{margin-bottom:14px;display:flex;flex-direction:column;gap:6px}
+.varsel{display:flex;align-items:center;gap:10px;padding:10px 12px;border-radius:12px;border:1px solid var(--border);background:var(--surface);text-decoration:none;color:var(--text);font-size:13px;line-height:1.4}
+.varsel .v-ikon{font-size:18px;flex-shrink:0;color:var(--accent-text)}
+.varsel.rod .v-ikon{color:var(--danger)}
+.varsel.oransje .v-ikon{color:var(--varsle,var(--accent-text))}
+.varsel .v-tekst{flex:1;min-width:0}
+.varsel .v-pil{color:var(--text4);flex-shrink:0}
+.varsel .v-lukk{border:none;background:none;color:var(--text4);font-size:17px;line-height:1;cursor:pointer;padding:0 2px;flex-shrink:0}
+.varsel.rod{border-color:rgba(229,62,62,.45);background:rgba(229,62,62,.07)}
+.varsel.oransje{border-color:var(--accent-border);background:var(--accent-bg)}
+.varsel.gronn{border-color:rgba(22,163,74,.35)}
+
+/* Install-hint */
+.hint-banner{display:none;align-items:flex-start;gap:10px;background:var(--accent-bg);border:1px solid var(--accent-border);border-radius:12px;padding:10px 12px;font-size:12.5px;color:var(--accent-text);line-height:1.5;margin-bottom:12px;transition:opacity .22s var(--ease-out),transform .22s var(--ease-out),display .22s allow-discrete}
+.hint-banner[style*="none"]{opacity:0;transform:translateY(6px)}
+.hint-banner button{border:none;background:none;color:inherit;cursor:pointer;font-size:15px;padding:0;flex-shrink:0}
+
+/* Fire-once entré (fyrer kun ved første display-flip, ikke på 60s-rerender) */
+.hilsen{transition:opacity .22s var(--ease-out),transform .22s var(--ease-out)}
+@starting-style{
+  .hilsen[style*="block"]{opacity:0;transform:translateY(6px)}
+  .hint-banner[style*="flex"]{opacity:0;transform:translateY(6px)}
+}
+/* Redusert bevegelse: behold fade/farge, dropp forskyvning/skalering på forsidens flater */
+@media(prefers-reduced-motion:reduce){
+  #meny,#meny[style*="none"],.app-tile:active,.icon-btn:active,.dash-check:active,
+  .hilsen,.hint-banner,.hint-banner[style*="none"]{transform:none!important}
+}
+
+/* Dashbord-fliser med statuslinje */
+.app-tile{text-align:left;padding:14px;display:flex;align-items:center;gap:12px;transition:transform .14s var(--ease-out),background-color .14s var(--ease-out)}
+.app-tile:active{transform:scale(.97)}
+.icon-btn{transition:transform .14s var(--ease-out),background-color .15s var(--ease-out)}
+.icon-btn:active{transform:scale(.92)}
+.app-tile .ikon-chip{width:44px;height:44px;font-size:22px}
+.tile-tekst{flex:1;min-width:0}
+.app-tile .navn{display:block}
+.tile-status{display:block;font-size:11.5px;color:var(--text3);margin-top:3px;line-height:1.4;overflow:hidden;text-overflow:ellipsis}
+.tile-status.varsel{color:var(--accent-text);font-weight:600}
+.tile-linje{display:flex;align-items:center;gap:6px;font-size:12px;color:var(--text2);margin-top:4px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.tile-linje.overtid{color:var(--danger)}
+.dash-check{width:20px;height:20px;border-radius:50%;border:1.5px solid var(--border);background:transparent;color:var(--text4);cursor:pointer;font-size:11px;line-height:1;flex-shrink:0;padding:0;transition:border-color .15s var(--ease-out),color .15s var(--ease-out),transform .14s var(--ease-out)}
+.dash-check:active{transform:scale(.92)}
+@media(hover:hover) and (pointer:fine){.dash-check:hover{border-color:var(--accent);color:var(--accent)}}
+.app-tile.kommer .tile-status{font-style:italic}
+.admin-lenke{display:block;text-align:center;margin-top:14px;font-size:12px;color:var(--text3);text-decoration:none}
+@media(hover:hover) and (pointer:fine){.admin-lenke:hover{color:var(--accent-text)}}
+#meny{position:absolute;right:0;top:34px;background:var(--surface);border:1px solid var(--border);border-radius:10px;box-shadow:0 6px 24px rgba(0,0,0,.12);z-index:50;min-width:170px;overflow:hidden;transform-origin:top right;transition:opacity .18s var(--ease-out),transform .18s var(--ease-out),display .18s allow-discrete}
+#meny[style*="none"]{opacity:0;transform:scale(.96)}
+@starting-style{#meny{opacity:0;transform:scale(.96)}}
+#meny a,#meny button{display:block;width:100%;text-align:left;padding:10px 14px;font-size:13px;border:none;background:none;color:var(--text);cursor:pointer;text-decoration:none}
+@media(hover:hover) and (pointer:fine){#meny a:hover,#meny button:hover{background:var(--surface2)}}
+/* PC: bredere brett og flere kolonner */
+@media(min-width:700px){
+  .fw{max-width:760px}
+  .app-grid{grid-template-columns:repeat(3,1fr);gap:12px}
+}
+@media(min-width:1100px){
+  .fw{max-width:980px}
+  .app-grid{grid-template-columns:repeat(4,1fr)}
+}
+</style>
+<link rel="stylesheet" href="felles/gran.css">
+</head>
+<body>
+<div class="fw">
+  <div class="top-bar" style="position:relative">
+    <p class="app-title"><i class="ti ti-home"></i> <span id="fam-navn">Hjemmebasen</span></p>
+    <div class="top-right">
+      <button class="icon-btn" id="theme-btn"></button>
+      <button class="icon-btn" id="meny-btn" aria-label="Meny"><i class="ti ti-settings"></i></button>
+      <div id="meny" style="display:none">
+        <button id="meny-profil">Min profil &amp; bilder</button>
+        <a href="statistikk.html" id="meny-statistikk">Statistikk</a>
+        <button id="meny-inviter">Inviter til husstanden</button>
+        <button id="meny-tilpass">Tilpass forsiden</button>
+        <a href="onboarding.html" id="meny-oppsett">Endre oppsett</a>
+        <button id="logg-ut-btn">Logg ut</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="hilsen" id="hilsen" style="display:none;flex-direction:row;align-items:center;gap:12px">
+    <span id="hilsen-avatar"></span>
+    <div>
+      <h2 id="hilsen-tittel"></h2>
+      <p id="hilsen-dato"></p>
+    </div>
+  </div>
+
+  <div class="hint-banner" id="install-hint">
+    <i class="ti ti-device-mobile" style="font-size:18px;color:var(--accent-text)"></i>
+    <span id="install-hint-tekst">Legg Hjemmebasen på Hjem-skjermen for ekte app-følelse.</span>
+    <button id="install-hint-lukk" aria-label="Lukk">×</button>
+  </div>
+
+  <div class="varsler" id="varsler"></div>
+
+  <div class="app-grid" id="app-grid"></div>
+
+  <a class="admin-lenke" id="admin-lenke" href="admin.html" style="display:none"><i class="ti ti-tool"></i> Administrer husstander</a>
+  <div class="status-bar" id="status-bar"></div>
+</div>
+
+<!-- Inviter til husstanden -->
+<div class="modal-bg" id="inviter-modal" style="display:none">
+  <div class="modal">
+    <p class="modal-title"><i class="ti ti-mail-forward" style="color:var(--accent-text)"></i> Inviter til husstanden</p>
+    <p style="font-size:12.5px;color:var(--text2);line-height:1.5;margin-bottom:10px">
+      Del lenken under – den nye lager sin egen innlogging og havner rett i husstanden deres.
+      Koden kan når som helst byttes eller deaktiveres.</p>
+    <div id="inviter-innhold"></div>
+    <div class="modal-actions">
+      <button class="btn-ghost" id="inviter-lukk">Lukk</button>
+    </div>
+  </div>
+</div>
+
+<!-- Min profil & bilder -->
+<div class="modal-bg" id="profil-modal" style="display:none">
+  <div class="modal">
+    <p class="modal-title"><i class="ti ti-user-circle" style="color:var(--accent-text)"></i> Min profil &amp; bilder</p>
+    <p style="font-size:11.5px;color:var(--text3);margin-bottom:10px">Last opp bilder så blir appene mer personlige. Bildene deles i husstanden og vises overalt navnet dukker opp.</p>
+    <div id="profil-liste"></div>
+    <div id="varsler-seksjon" style="border-top:1px solid var(--border);margin-top:12px;padding-top:12px">
+      <div style="font-size:13px;font-weight:600">Push-varsler</div>
+      <p style="font-size:11.5px;color:var(--text3);margin:2px 0 8px">Få en morgen-oppsummering (dagens oppgaver, middag, kalender) på denne enheten. På iPhone må appen først ligge på Hjem-skjermen.</p>
+      <button class="btn-ghost" id="varsler-btn"><i class="ti ti-bell"></i> Slå på varsler på denne enheten</button>
+    </div>
+    <div id="passord-seksjon" style="border-top:1px solid var(--border);margin-top:12px;padding-top:12px">
+      <div style="font-size:13px;font-weight:600;margin-bottom:6px">Endre passord</div>
+      <input type="password" id="pw-naa" class="hinput" placeholder="Nåværende passord" autocomplete="current-password" style="margin-bottom:6px" />
+      <input type="password" id="pw-nytt" class="hinput" placeholder="Nytt passord (min. 8 tegn)" autocomplete="new-password" style="margin-bottom:8px" />
+      <button class="btn-ghost" id="pw-endre"><i class="ti ti-key"></i> Endre passord</button>
+    </div>
+    <div class="modal-actions">
+      <button class="btn-ghost" id="profil-lukk">Lukk</button>
+    </div>
+  </div>
+</div>
+
+<!-- Tilpass forsiden -->
+<div class="modal-bg" id="tilpass-modal" style="display:none">
+  <div class="modal">
+    <p class="modal-title"><i class="ti ti-adjustments" style="color:var(--accent-text)"></i> Tilpass forsiden</p>
+    <p style="font-size:11.5px;color:var(--text3);margin-bottom:8px">Gjelder bare deg – rekkefølge på appene og hvilke varsler du vil se.</p>
+    <div style="font-size:11px;font-weight:600;color:var(--text2);text-transform:uppercase;letter-spacing:.05em;margin-bottom:4px">Apprekkefølge</div>
+    <div id="tilpass-apper"></div>
+    <div style="font-size:11px;font-weight:600;color:var(--text2);text-transform:uppercase;letter-spacing:.05em;margin:12px 0 4px">Varsler på forsiden</div>
+    <div id="tilpass-varsler"></div>
+    <div class="modal-actions">
+      <button class="btn-ghost" id="tilpass-avbryt">Avbryt</button>
+      <button class="btn-primary" id="tilpass-lagre">Lagre</button>
+    </div>
+  </div>
+</div>
+
+<script type="module">
+import { requireAuth, loggUt, db, auth } from './felles/auth.js';
+import { EmailAuthProvider, reauthenticateWithCredential, updatePassword } from 'https://www.gstatic.com/firebasejs/10.14.1/firebase-auth.js';
+import { esc, todayStr, initTheme, toggleTheme, setStatus, avatarHtml, avatarKey, finnAvatar, bildeTilAvatar } from './felles/ui.js';
+import { APP_NAVN, APP_IKON } from './felles/seed.js';
+import { varslerStottet, varslerTillatt, aktiverVarsler } from './felles/push.js';
+import { ref, onValue, set } from 'https://www.gstatic.com/firebasejs/10.14.1/firebase-database.js';
+
+import { monterHjelp } from './felles/hjelp.js';
+monterHjelp('hjem');
+
+initTheme();
+document.getElementById('theme-btn').addEventListener('click', toggleTheme);
+document.getElementById('meny-btn').addEventListener('click', () => {
+  const m = document.getElementById('meny');
+  m.style.display = m.style.display === 'none' ? 'block' : 'none';
+});
+document.getElementById('logg-ut-btn').addEventListener('click', loggUt);
+
+const BYGGET = new Set(['kalender', 'handleliste', 'middag', 'oppgaver', 'fryser', 'plikter', 'sovn', 'helse', 'beskjeder', 'pakkelister', 'vekst']);
+const UKEDAG = ['søndag', 'mandag', 'tirsdag', 'onsdag', 'torsdag', 'fredag', 'lørdag'];
+
+const { user, erAdmin, familieId, medlem } = await requireAuth();
+let innst = medlem?.innstillinger || {}; // per-bruker: rekkefolge + varselAv
+let sisteFam = null; // siste familie-snapshot (deles av hilsen, dashbord, profil)
+if (erAdmin) document.getElementById('admin-lenke').style.display = 'block';
+
+// ── Personlig hilsen ──
+function visHilsen() {
+  const navn = (medlem?.navn || '').split(' ')[0];
+  const t = new Date().getHours();
+  const frase = t < 5 ? 'God natt' : t < 10 ? 'God morgen' : t < 18 ? 'Hei' : 'God kveld';
+  document.getElementById('hilsen-tittel').textContent = frase + (navn ? ', ' + navn : '');
+  document.getElementById('hilsen-avatar').innerHTML =
+    avatarHtml(medlem?.navn || navn, finnAvatar(sisteFam?.avatarer, medlem?.navn || navn), 48);
+  const d = new Date();
+  document.getElementById('hilsen-dato').textContent =
+    UKEDAG[d.getDay()].charAt(0).toUpperCase() + UKEDAG[d.getDay()].slice(1) + ' '
+    + d.toLocaleDateString('nb-NO', { day: 'numeric', month: 'long' }) + ' · her er dine apper';
+  document.getElementById('hilsen').style.display = 'block';
+}
+
+// ── Install-hint (PWA) ──
+(function installHint() {
+  const standalone = window.matchMedia('(display-mode: standalone)').matches || navigator.standalone === true;
+  if (standalone || localStorage.getItem('hjemmebasen_installhint') === 'lukket') return;
+  const ios = /iphone|ipad|ipod/i.test(navigator.userAgent);
+  document.getElementById('install-hint-tekst').innerHTML = ios
+    ? 'Legg Hjemmebasen på Hjem-skjermen: trykk <b>Del-knappen</b> (firkant med pil) → <b>«Legg til på Hjem-skjerm»</b>.'
+    : 'Legg Hjemmebasen på Hjem-skjermen: åpne nettleser-menyen → <b>«Legg til på startsiden»</b> / <b>«Installer app»</b>.';
+  document.getElementById('install-hint').style.display = 'flex';
+  document.getElementById('install-hint-lukk').addEventListener('click', () => {
+    localStorage.setItem('hjemmebasen_installhint', 'lukket');
+    document.getElementById('install-hint').style.display = 'none';
+  });
+})();
+
+if (!familieId) {
+  document.getElementById('app-grid').innerHTML =
+    '<div class="empty-state" style="grid-column:1/-1">Du er administrator uten egen husstand.<br>Bruk admin-siden for å opprette husstander.</div>';
+  document.getElementById('meny-oppsett').style.display = 'none';
+} else {
+  visHilsen();
+  onValue(ref(db, 'familier/' + familieId), snap => {
+    const fam = snap.exists() ? snap.val() : {};
+    const meta = fam.meta || {};
+    if (!meta.onboardet) { location.replace('onboarding.html'); return; }
+    document.getElementById('fam-navn').textContent = meta.navn || 'Hjemmebasen';
+    document.title = meta.navn ? meta.navn + ' – Hjemmebasen' : 'Hjemmebasen';
+    tegnVarsler(fam, meta);
+    tegnDashbord(fam, meta);
+    visHilsen(); // oppdater hilsen-avatar når husstanden (med bilder) er lastet
+  });
+}
+
+// ── Hjelpere ──
+function dagerMellom(a, b) { return Math.floor((new Date(a) - new Date(b)) / 86400000); }
+function klokke(ts) { const d = new Date(ts); return String(d.getHours()).padStart(2, '0') + ':' + String(d.getMinutes()).padStart(2, '0'); }
+function varighet(ms) {
+  const t = Math.floor(ms / 3600000), m = Math.round(ms % 3600000 / 60000);
+  return (t > 0 ? t + ' t ' : '') + (m > 0 || t === 0 ? m + ' min' : '');
+}
+function barnNavn(fam, id) { return (fam.personer?.barn || []).find(b => String(b.id) === String(id))?.navn || 'barnet'; }
+function fristTekst(dato) {
+  const d = dagerMellom(dato, todayStr());
+  if (d === 0) return 'i dag';
+  if (d === 1) return 'i morgen';
+  if (d <= 6) return UKEDAG[new Date(dato + 'T12:00:00').getDay()];
+  return new Date(dato + 'T12:00:00').toLocaleDateString('nb-NO', { day: 'numeric', month: 'short' });
+}
+
+// ── Varslingsfeed: «hva trenger deg nå?» ─────────────────────
+function tegnVarsler(fam, meta) {
+  const apper = meta.apper || {};
+  const aktiv = a => apper[a] !== false && !(innst.varselAv || {})[a];
+  const v = []; // {prio: 1 rød, 2 oransje, 3 info/grønn, ikon, tekst, href}
+
+  try {
+    // Oppgaver: overtid + frister nær i tid
+    if (aktiv('oppgaver')) {
+      const aapne = (fam.oppgaver?.tasks || []).filter(t => !t.done && t.date);
+      const overtid = aapne.filter(t => t.date < todayStr());
+      if (overtid.length) v.push({ prio: 1, ikon: 'ti-alert-triangle', href: 'oppgaver.html',
+        tekst: overtid.length === 1 ? '1 oppgave er på overtid: «' + overtid[0].title + '»' : overtid.length + ' oppgaver er på overtid' });
+      const snart = aapne.filter(t => t.date >= todayStr() && dagerMellom(t.date, todayStr()) <= 6);
+      if (snart.length) {
+        const seneste = snart.map(t => t.date).sort().pop();
+        v.push({ prio: 2, ikon: 'ti-circle-check', href: 'oppgaver.html',
+          tekst: snart.length === 1 ? '«' + snart[0].title + '» har frist ' + fristTekst(snart[0].date)
+            : snart.length + ' oppgaver må gjøres innen ' + fristTekst(seneste) });
+      }
+    }
+    // Søvn: hvem sover / er våken, og hvor lenge
+    if (aktiv('sovn')) {
+      Object.entries(fam.sovn || {}).forEach(([id, blob]) => {
+        if (!blob || !blob.since) return;
+        const navn = barnNavn(fam, id);
+        if (blob.state === 'sleeping') v.push({ prio: 3, ikon: 'ti-zzz', href: 'sovn.html',
+          tekst: navn + ' sover nå – har sovet i ' + varighet(Date.now() - blob.since) + ' (siden ' + klokke(blob.since) + ')' });
+        else if (blob.sessions?.length) v.push({ prio: 3, ikon: 'ti-sun', href: 'sovn.html',
+          tekst: navn + ' er våken – våken i ' + varighet(Date.now() - blob.since) });
+      });
+    }
+    // Fryser: utløp og bruk opp
+    if (aktiv('fryser')) {
+      const items = fam.fryser?.items || [];
+      const utlop = items.filter(i => i.expiry && dagerMellom(i.expiry, todayStr()) <= 14 && dagerMellom(i.expiry, todayStr()) >= -30);
+      if (utlop.length) v.push({ prio: 2, ikon: 'ti-snowflake', href: 'fryser.html',
+        tekst: (utlop.length === 1 ? '«' + utlop[0].name + '» går ut snart' : utlop.length + ' fryservarer går ut snart: '
+          + utlop.slice(0, 3).map(i => i.name).join(', ') + (utlop.length > 3 ? '…' : '')) });
+      const gamle = items.filter(i => !i.expiry && i.added && dagerMellom(todayStr(), i.added) >= 90);
+      if (gamle.length) v.push({ prio: 3, ikon: 'ti-snowflake', href: 'fryser.html',
+        tekst: gamle.length + (gamle.length === 1 ? ' fryservare' : ' fryservarer') + ' bør brukes opp (over 90 dager)' });
+    }
+    // Kalender: hendelser i dag
+    if (aktiv('kalender')) {
+      const idagH = (fam.kalender?.hendelser || []).filter(h => h.dato === todayStr())
+        .sort((a, b) => (a.tid || '99').localeCompare(b.tid || '99'));
+      idagH.forEach(h => v.push({ prio: 2, ikon: 'ti-calendar', href: 'kalender.html',
+        tekst: 'I dag' + (h.tid ? ' kl ' + h.tid : '') + ': ' + h.tittel + (h.hvem ? ' (' + h.hvem + ')' : '') }));
+    }
+    // Middag i dag
+    if (aktiv('middag')) {
+      const idag = (fam.middag?.meals || []).find(m => m.date === todayStr());
+      if (idag) v.push({ prio: 3, ikon: 'ti-tools-kitchen-2', href: 'middag.html',
+        tekst: 'I dag til middag: ' + idag.meal + (idag.cook ? ' (' + idag.cook + ' lager)' : '') });
+      else v.push({ prio: 3, ikon: 'ti-tools-kitchen-2', href: 'middag.html', tekst: 'Ingen middag planlagt i dag – spinn ruletten?' });
+    }
+    // Ferske beskjeder på tavla (siste 24 t) – minus utløpte og de du har skjult
+    if (aktiv('beskjeder')) {
+      const skjulte = innst.skjulteLapper || {};
+      const lapper = (fam.beskjeder?.lapper || [])
+        .filter(l => Date.now() - l.ts < 86400000)
+        .filter(l => !(l.utlop && Date.now() > l.utlop))
+        .filter(l => !skjulte[l.id + '_' + l.ts])
+        .sort((a, b) => b.ts - a.ts);
+      if (lapper.length) v.push({ prio: 3, ikon: 'ti-pin', href: 'beskjeder.html', skjul: lapper[0].id + '_' + lapper[0].ts,
+        tekst: lapper[0].fra + ': «' + lapper[0].tekst + '»' + (lapper.length > 1 ? ' (+' + (lapper.length - 1) + ' til)' : '') });
+    }
+    // Helse: neste dose
+    if (aktiv('helse')) {
+      const doser = fam.helse?.doser || [];
+      const meds = fam.helse?.medisiner || [];
+      const now = Date.now();
+      const sist = {};
+      doser.filter(x => now - x.ts < 48 * 3600000).forEach(x => {
+        const k = x.barn + ':' + x.med;
+        if (!sist[k] || x.ts > sist[k].ts) sist[k] = x;
+      });
+      Object.values(sist).forEach(x => {
+        const med = meds.find(m => m.id === x.med); if (!med) return;
+        const okAt = x.ts + med.intervalH * 3600000;
+        if (now < okAt) v.push({ prio: 2, ikon: 'ti-pill', href: 'helse.html',
+          tekst: barnNavn(fam, x.barn) + ': neste ' + med.name + ' kan gis kl ' + klokke(okAt) + ' (om ' + varighet(okAt - now) + ')' });
+        else if (now - x.ts < 24 * 3600000) v.push({ prio: 2, ikon: 'ti-pill', href: 'helse.html',
+          tekst: barnNavn(fam, x.barn) + ': ' + med.name + ' kan gis nå ✓' });
+      });
+    }
+  } catch (e) { /* feeden skal aldri velte forsiden */ }
+
+  v.sort((a, b) => a.prio - b.prio);
+  document.getElementById('varsler').innerHTML = v.map(x =>
+    '<a class="varsel ' + (x.prio === 1 ? 'rod' : x.prio === 2 ? 'oransje' : 'gronn') + '" href="' + x.href + '">'
+    + '<span class="v-ikon"><i class="ti ' + x.ikon + '"></i></span><span class="v-tekst">' + esc(x.tekst) + '</span>'
+    + (x.skjul ? '<button class="v-lukk" data-skjul="' + x.skjul + '" title="Skjul for meg" aria-label="Skjul for meg">×</button>' : '<span class="v-pil">›</span>') + '</a>').join('');
+}
+
+// ── Status per app-flis ──
+function appStatus(app, fam) {
+  const d = fam[app];
+  try {
+    if (app === 'kalender') {
+      const hs = (d?.hendelser || []).filter(h => h.dato && h.dato >= todayStr()).sort((a, b) => a.dato.localeCompare(b.dato) || (a.tid || '99').localeCompare(b.tid || '99'));
+      if (!hs.length) return { txt: 'Ingen kommende hendelser' };
+      const n = hs[0];
+      return { txt: fristTekst(n.dato) + (n.tid ? ' ' + n.tid : '') + ': ' + n.tittel, varsel: n.dato === todayStr() };
+    }
+    if (app === 'handleliste') {
+      const uavh = (d?.items || []).filter(i => !i.checked);
+      const div = (d?.other || []).filter(o => !o.checked).length;
+      if (!uavh.length && !div) return { txt: 'Lista er tom ✓' };
+      return {
+        txt: uavh.length + ' å handle' + (div ? ' · ' + div + ' diverse' : ''), varsel: uavh.length > 0,
+        linjer: uavh.slice(0, 3).map(i => ({ id: i.id, tekst: i.name + (i.qty > 1 ? ' ×' + i.qty : ''), handling: 'hl-check' })),
+        flere: Math.max(0, uavh.length - 3),
+      };
+    }
+    if (app === 'middag') {
+      const meals = d?.meals || [];
+      const idag = meals.find(m => m.date === todayStr());
+      const im = new Date(); im.setDate(im.getDate() + 1);
+      const iStr = im.getFullYear() + '-' + String(im.getMonth() + 1).padStart(2, '0') + '-' + String(im.getDate()).padStart(2, '0');
+      const imorgen = meals.find(m => m.date === iStr);
+      const linjer = [];
+      if (idag) linjer.push({ tekst: 'I dag: ' + idag.meal });
+      if (imorgen) linjer.push({ tekst: 'I morgen: ' + imorgen.meal });
+      if (!idag) return { txt: 'Ingen middag planlagt i dag', linjer };
+      return { txt: '', varsel: true, linjer };
+    }
+    if (app === 'oppgaver') {
+      const aapne = (d?.tasks || []).filter(t => !t.done);
+      const forfalt = aapne.filter(t => t.date && t.date < todayStr()).length;
+      if (!aapne.length) return { txt: 'Alt gjort ✓' };
+      const sortert = [...aapne].sort((a, b) => (a.date || '9999') < (b.date || '9999') ? -1 : 1);
+      return {
+        txt: aapne.length + ' åpne' + (forfalt ? ' · ' + forfalt + ' på overtid' : ''), varsel: forfalt > 0,
+        linjer: sortert.slice(0, 3).map(t => ({ id: t.id, tekst: t.title, handling: t.repeat ? null : 'opg-check', overtid: !!(t.date && t.date < todayStr()) })),
+        flere: Math.max(0, aapne.length - 3),
+      };
+    }
+    if (app === 'fryser') {
+      const items = d?.items || [];
+      const brukOpp = items.filter(i => {
+        const alder = i.added ? dagerMellom(todayStr(), i.added) : null;
+        const utlop = i.expiry ? dagerMellom(i.expiry, todayStr()) : null;
+        return (alder !== null && alder >= 90) || (utlop !== null && utlop <= 30);
+      }).length;
+      if (!items.length) return { txt: 'Tom fryser' };
+      return { txt: items.length + ' varer' + (brukOpp ? ' · ' + brukOpp + ' bør brukes opp' : ''), varsel: brukOpp > 0 };
+    }
+    if (app === 'plikter') {
+      // Leser personregisteret (kilden), ikke bare appens lagrede liste
+      const regBarn = (fam.personer?.barn || []).filter(b => b.navn).length;
+      const barn = Math.max(regBarn, (d?.kids || []).length);
+      const plikter = (d?.chores || []).length;
+      if (!barn) return { txt: 'Ingen barn lagt til ennå' };
+      return { txt: barn + ' barn · ' + plikter + ' plikter' };
+    }
+    if (app === 'sovn') {
+      const barnReg = fam.personer?.barn || [];
+      const sover = Object.entries(fam.sovn || {}).filter(([, blob]) => blob?.state === 'sleeping');
+      if (sover.length) return { txt: sover.map(([id]) => barnNavn(fam, id)).join(' og ') + ' sover 💤 siden ' + klokke(sover[0][1].since), varsel: true };
+      if (!barnReg.length) return { txt: 'Ingen barn registrert' };
+      return { txt: 'Alle våkne ☀️' };
+    }
+    if (app === 'helse') {
+      const doser = fam.helse?.doser || [];
+      const meds = fam.helse?.medisiner || [];
+      const now = Date.now();
+      const aktive = doser.filter(x => now - x.ts < 48 * 3600000).sort((a, b) => b.ts - a.ts);
+      if (aktive.length) {
+        const dse = aktive[0];
+        const med = meds.find(m => m.id === dse.med);
+        if (med) {
+          const okAt = dse.ts + med.intervalH * 3600000;
+          if (now < okAt) return { txt: barnNavn(fam, dse.barn) + ': neste ' + med.name + ' kl ' + klokke(okAt), varsel: true };
+          return { txt: barnNavn(fam, dse.barn) + ': ' + med.name + ' kan gis nå ✓', varsel: true };
+        }
+      }
+      return { txt: 'Ingen aktive medisiner 💚' };
+    }
+    if (app === 'beskjeder') {
+      const lapper = (d?.lapper || []).filter(l => !(l.utlop && Date.now() > l.utlop));
+      if (!lapper.length) return { txt: 'Tavla er tom' };
+      const siste = [...lapper].sort((a, b) => b.ts - a.ts)[0];
+      return { txt: siste.fra + ': «' + siste.tekst + '»', varsel: Date.now() - siste.ts < 86400000 };
+    }
+    if (app === 'pakkelister') {
+      const lister = d?.lister || [];
+      const paagaar = lister.filter(l => (l.items || []).length && (l.items || []).some(i => i.pakket) && (l.items || []).some(i => !i.pakket));
+      if (paagaar.length) {
+        const l = paagaar[0];
+        return { txt: l.navn + ': ' + l.items.filter(i => i.pakket).length + '/' + l.items.length + ' pakket', varsel: true };
+      }
+      return { txt: lister.length ? lister.length + ' lister klare' : 'Ingen lister ennå' };
+    }
+    if (app === 'vekst') {
+      const ms = d?.maalinger || [];
+      if (!ms.length) return { txt: 'Ingen målinger ennå' };
+      const siste = [...ms].sort((a, b) => (b.dato || '').localeCompare(a.dato || ''))[0];
+      const navn = barnNavn(fam, siste.barn);
+      const deler = [siste.hoyde ? siste.hoyde + ' cm' : null, siste.vekt ? siste.vekt + ' kg' : null, siste.sko ? 'sko ' + siste.sko : null].filter(Boolean);
+      return { txt: 'Sist: ' + navn + ' – ' + deler.join(' · ') };
+    }
+  } catch (e) { /* defensivt */ }
+  return { txt: '' };
+}
+
+function tegnDashbord(fam, meta) {
+  sisteFam = fam;
+  const apper = meta.apper || {};
+  let aktive = Object.keys(APP_NAVN).filter(a => apper[a] !== false);
+  if (Array.isArray(innst.rekkefolge) && innst.rekkefolge.length) {
+    const idx = a => { const i = innst.rekkefolge.indexOf(a); return i === -1 ? 999 : i; };
+    aktive = [...aktive].sort((a, b) => idx(a) - idx(b));
+  }
+  document.getElementById('app-grid').innerHTML = aktive.map(a => {
+    if (BYGGET.has(a)) {
+      const s = appStatus(a, fam);
+      let inner = '';
+      if (s.txt) inner += '<span class="tile-status' + (s.varsel ? ' varsel' : '') + '">' + esc(s.txt) + '</span>';
+      if (s.linjer?.length) {
+        inner += s.linjer.map(l =>
+          '<span class="tile-linje' + (l.overtid ? ' overtid' : '') + '">'
+          + (l.handling ? '<button class="dash-check" data-handling="' + l.handling + '" data-id="' + l.id + '" title="Merk som gjort" aria-label="Merk som gjort">○</button>' : '')
+          + esc(l.tekst) + '</span>').join('');
+        if (s.flere) inner += '<span class="tile-status">+ ' + s.flere + ' til…</span>';
+      }
+      return '<a class="app-tile" href="' + a + '.html">'
+        + '<span class="ikon-chip"><i class="ti ' + APP_IKON[a] + '"></i></span>'
+        + '<span class="tile-tekst"><span class="navn">' + esc(APP_NAVN[a]) + '</span>' + inner + '</span></a>';
+    }
+    return '<div class="app-tile kommer">'
+      + '<span class="ikon-chip"><i class="ti ' + APP_IKON[a] + '"></i></span>'
+      + '<span class="tile-tekst"><span class="navn">' + esc(APP_NAVN[a]) + '</span>'
+      + '<span class="tile-status">kommer snart</span></span></div>';
+  }).join('') || '<div class="empty-state" style="grid-column:1/-1">Ingen apper er aktivert for husstanden.</div>';
+}
+
+// Skjul en tavle-beskjed fra MIN forside (lappen henger fortsatt på tavla)
+document.getElementById('varsler').addEventListener('click', async e => {
+  const b = e.target.closest('[data-skjul]');
+  if (!b) return;
+  e.preventDefault(); e.stopPropagation();
+  innst.skjulteLapper = { ...(innst.skjulteLapper || {}), [b.dataset.skjul]: true };
+  try { await set(ref(db, 'brukere/' + user.uid + '/innstillinger/skjulteLapper/' + b.dataset.skjul), true); } catch (err) { /* vis-skjuling virker uansett */ }
+  if (sisteFam) tegnVarsler(sisteFam, sisteFam.meta || {});
+});
+
+// ── Hurtighandlinger rett fra forsiden ──
+document.getElementById('app-grid').addEventListener('click', async e => {
+  const btn = e.target.closest('.dash-check');
+  if (!btn || !sisteFam || !familieId) return;
+  e.preventDefault(); e.stopPropagation();
+  btn.textContent = '✓'; btn.disabled = true;
+  try {
+    if (btn.dataset.handling === 'hl-check') {
+      const items = (sisteFam.handleliste?.items || []).map(i =>
+        i.id === parseInt(btn.dataset.id) ? { ...i, checked: true, av: (medlem?.navn || '').split(' ')[0] } : i);
+      await set(ref(db, 'familier/' + familieId + '/handleliste/items'), items);
+    } else if (btn.dataset.handling === 'opg-check') {
+      // Samme semantikk som oppgave-appens completeTask: arkiver + fjern.
+      // (Bare ikke-gjentakende oppgaver får avhuking her – se appStatus.)
+      const id = parseInt(btn.dataset.id);
+      const alle = sisteFam.oppgaver?.tasks || [];
+      const ferdig = alle.find(t => t.id === id);
+      if (ferdig) {
+        const tasks = alle.filter(t => t.id !== id);
+        const archive = [...(sisteFam.oppgaver?.archive || []), { ...ferdig, done: true, completedDate: todayStr(), doneBy: (medlem?.navn || '').split(' ')[0] }];
+        await set(ref(db, 'familier/' + familieId + '/oppgaver/tasks'), tasks);
+        await set(ref(db, 'familier/' + familieId + '/oppgaver/archive'), archive);
+      }
+    }
+  } catch (err) { btn.textContent = '○'; btn.disabled = false; }
+});
+
+// ── Inviter til husstanden ───────────────────────────────────
+function lagKode() {
+  const tegn = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789'; // uten lett-forvekslbare
+  return Array.from({ length: 6 }, () => tegn[Math.floor(Math.random() * tegn.length)]).join('');
+}
+function inviterLenke(kode) {
+  return location.origin + location.pathname.replace(/hjem\.html$/, '').replace(/\/$/, '') + '/bli-med.html?f=' + familieId + '&k=' + kode;
+}
+function tegnInviter() {
+  const kode = sisteFam?.meta?.invitasjonskode || null;
+  const el = document.getElementById('inviter-innhold');
+  if (!kode) {
+    el.innerHTML = '<button class="btn-primary" id="inv-lag">Lag invitasjonskode</button>';
+  } else {
+    const lenke = inviterLenke(kode);
+    el.innerHTML =
+      '<div style="text-align:center;font-size:24px;font-weight:800;letter-spacing:.2em;padding:10px;background:var(--surface2);border-radius:10px;margin-bottom:8px">' + esc(kode) + '</div>'
+      + '<input class="hinput" readonly value="' + esc(lenke) + '" style="font-size:11px" onclick="this.select()" />'
+      + '<div style="display:flex;gap:6px;margin-top:8px">'
+      + '<button class="btn-ghost" style="flex:1" id="inv-kopier"><i class="ti ti-copy"></i> Kopier lenke</button>'
+      + (navigator.share ? '<button class="btn-ghost" style="flex:1" id="inv-del"><i class="ti ti-share"></i> Del</button>' : '')
+      + '</div>'
+      + '<div style="display:flex;gap:6px;margin-top:6px">'
+      + '<button class="btn-lenke" id="inv-ny">Lag ny kode</button>'
+      + '<button class="btn-lenke" id="inv-slett" style="margin-left:auto;color:var(--danger)">Deaktiver invitasjon</button>'
+      + '</div>';
+  }
+  el.querySelector('#inv-lag')?.addEventListener('click', () => settKode(lagKode()));
+  el.querySelector('#inv-ny')?.addEventListener('click', () => settKode(lagKode()));
+  el.querySelector('#inv-slett')?.addEventListener('click', () => settKode(null));
+  el.querySelector('#inv-kopier')?.addEventListener('click', async () => {
+    await navigator.clipboard.writeText(inviterLenke(sisteFam.meta.invitasjonskode));
+    el.querySelector('#inv-kopier').textContent = '✓ Kopiert';
+  });
+  el.querySelector('#inv-del')?.addEventListener('click', () => navigator.share({
+    title: 'Bli med i ' + (sisteFam?.meta?.navn || 'husstanden vår'),
+    text: 'Bli med i husstanden vår på Hjemmebasen.',
+    url: inviterLenke(sisteFam.meta.invitasjonskode),
+  }).catch(() => {}));
+}
+async function settKode(kode) {
+  await set(ref(db, 'familier/' + familieId + '/meta/invitasjonskode'), kode);
+  if (sisteFam?.meta) sisteFam.meta.invitasjonskode = kode;
+  tegnInviter();
+}
+document.getElementById('meny-inviter').addEventListener('click', () => {
+  document.getElementById('meny').style.display = 'none';
+  tegnInviter();
+  document.getElementById('inviter-modal').style.display = 'flex';
+});
+document.getElementById('inviter-lukk').addEventListener('click', () => {
+  document.getElementById('inviter-modal').style.display = 'none';
+});
+
+// ── Min profil & bilder ──────────────────────────────────────
+// Personene: deg selv (fornavn) + husstandens barn. Bildene lagres
+// i familier/<id>/avatarer og deles med alle i husstanden.
+function profilPersoner() {
+  // Hele husstanden får en rad – alle kan ha bilde (delt i familien).
+  const mittFornavn = (medlem?.navn || '').split(' ')[0];
+  const rader = [], sett = new Set();
+  const leggTil = (navn, merke) => {
+    const k = (navn || '').trim().toLowerCase();
+    if (!k || sett.has(k)) return;
+    sett.add(k); rader.push({ navn: navn.trim(), merke });
+  };
+  if (mittFornavn) leggTil(mittFornavn, 'Deg');
+  (sisteFam?.personer?.voksne || []).forEach(v => leggTil(v, 'Voksen'));
+  (sisteFam?.personer?.barn || []).filter(b => b.navn).forEach(b => leggTil(b.navn, 'Barn'));
+  return rader;
+}
+function tegnProfil() {
+  const ava = sisteFam?.avatarer || {};
+  document.getElementById('profil-liste').innerHTML = profilPersoner().map(p =>
+    '<div class="hrow" style="gap:12px">'
+    + avatarHtml(p.navn, finnAvatar(ava, p.navn), 44)
+    + '<div class="hrow-main"><div class="hrow-title" style="font-weight:600">' + esc(p.navn) + '</div>'
+    + '<div class="hrow-sub">' + esc(p.merke) + '</div></div>'
+    + '<button class="btn-lenke" data-bilde="' + esc(p.navn) + '"><i class="ti ti-camera"></i> Bilde</button>'
+    + (finnAvatar(ava, p.navn) ? '<button class="btn-lenke" data-fjernbilde="' + esc(p.navn) + '" style="color:var(--danger)">Fjern</button>' : '')
+    + '</div>').join('') || '<div class="empty-state" style="padding:.6rem">Ingen personer å vise ennå.</div>';
+}
+async function lagreAvatar(navn, dataUrl) {
+  const key = avatarKey(navn);
+  await set(ref(db, 'familier/' + familieId + '/avatarer/' + key), dataUrl);
+  if (sisteFam) { sisteFam.avatarer = { ...(sisteFam.avatarer || {}) }; if (dataUrl) sisteFam.avatarer[key] = dataUrl; else delete sisteFam.avatarer[key]; }
+  tegnProfil(); visHilsen();
+}
+const bildeInput = document.createElement('input');
+bildeInput.type = 'file'; bildeInput.accept = 'image/*'; bildeInput.style.display = 'none';
+document.body.appendChild(bildeInput);
+let bildeForNavn = null;
+bildeInput.addEventListener('change', async () => {
+  const file = bildeInput.files[0]; bildeInput.value = '';
+  if (!file || !bildeForNavn) return;
+  try { setStatus('Behandler bilde...'); await lagreAvatar(bildeForNavn, await bildeTilAvatar(file)); setStatus('Bilde lagret ✓', 'ok'); }
+  catch (e) { setStatus('Kunne ikke lagre bildet – prøv et annet', 'err'); }
+});
+document.getElementById('profil-liste').addEventListener('click', async e => {
+  const b = e.target.closest('[data-bilde]');
+  if (b) { bildeForNavn = b.dataset.bilde; bildeInput.click(); return; }
+  const f = e.target.closest('[data-fjernbilde]');
+  if (f && confirm('Fjerne bildet til ' + f.dataset.fjernbilde + '?')) { await lagreAvatar(f.dataset.fjernbilde, null); setStatus('Bilde fjernet ✓', 'ok'); }
+});
+document.getElementById('meny-profil').addEventListener('click', () => {
+  document.getElementById('meny').style.display = 'none';
+  tegnProfil();
+  oppdaterVarslerKnapp();
+  document.getElementById('profil-modal').style.display = 'flex';
+});
+document.getElementById('profil-lukk').addEventListener('click', () => {
+  document.getElementById('profil-modal').style.display = 'none';
+});
+document.getElementById('pw-endre').addEventListener('click', async () => {
+  const naa = document.getElementById('pw-naa').value;
+  const nytt = document.getElementById('pw-nytt').value;
+  if (!naa) { setStatus('Skriv inn nåværende passord', 'err'); return; }
+  if (nytt.length < 8) { setStatus('Nytt passord må ha minst 8 tegn', 'err'); return; }
+  const btn = document.getElementById('pw-endre');
+  btn.disabled = true;
+  try {
+    await reauthenticateWithCredential(auth.currentUser, EmailAuthProvider.credential(user.email, naa));
+    await updatePassword(auth.currentUser, nytt);
+    document.getElementById('pw-naa').value = ''; document.getElementById('pw-nytt').value = '';
+    setStatus('Passord endret ✓', 'ok');
+  } catch (e) {
+    const t = (e.code === 'auth/invalid-credential' || e.code === 'auth/wrong-password') ? 'Nåværende passord er feil'
+      : e.code === 'auth/weak-password' ? 'Nytt passord er for svakt'
+      : e.code === 'auth/too-many-requests' ? 'For mange forsøk – vent litt'
+      : 'Kunne ikke endre passord – prøv igjen';
+    setStatus(t, 'err');
+  }
+  btn.disabled = false;
+});
+async function oppdaterVarslerKnapp() {
+  const btn = document.getElementById('varsler-btn');
+  if (!await varslerStottet()) { btn.disabled = true; btn.innerHTML = '<i class="ti ti-bell-off"></i> Varsler støttes ikke her'; return; }
+  if (varslerTillatt()) { btn.innerHTML = '<i class="ti ti-bell-check" style="color:var(--green)"></i> Varsler er på denne enheten'; }
+  else { btn.innerHTML = '<i class="ti ti-bell"></i> Slå på varsler på denne enheten'; }
+}
+document.getElementById('varsler-btn').addEventListener('click', async () => {
+  const btn = document.getElementById('varsler-btn');
+  btn.disabled = true; btn.textContent = 'Aktiverer...';
+  try {
+    await aktiverVarsler(familieId, user.uid, (medlem?.navn || '').split(' ')[0]);
+    setStatus('Varsler er på for denne enheten ✓', 'ok');
+  } catch (e) { setStatus(e.message || 'Kunne ikke slå på varsler', 'err'); }
+  btn.disabled = false; oppdaterVarslerKnapp();
+});
+
+// ── Tilpass forsiden (per bruker) ────────────────────────────
+let tilpassOrden = [];
+function tegnTilpass() {
+  const apper = sisteFam?.meta?.apper || {};
+  const aktive = Object.keys(APP_NAVN).filter(a => apper[a] !== false);
+  if (!tilpassOrden.length) {
+    const idx = a => { const i = (innst.rekkefolge || []).indexOf(a); return i === -1 ? 999 : i; };
+    tilpassOrden = [...aktive].sort((a, b) => idx(a) - idx(b));
+  }
+  document.getElementById('tilpass-apper').innerHTML = tilpassOrden.map((a, i) =>
+    '<div class="hrow"><i class="ti ' + APP_IKON[a] + '" style="font-size:17px;color:var(--accent-text)"></i>'
+    + '<div class="hrow-main"><div class="hrow-title" style="font-weight:500">' + esc(APP_NAVN[a]) + '</div></div>'
+    + '<button class="icon-btn" data-flytt="' + i + ':-1"' + (i === 0 ? ' disabled style="opacity:.3"' : '') + ' aria-label="Flytt opp">↑</button>'
+    + '<button class="icon-btn" data-flytt="' + i + ':1"' + (i === tilpassOrden.length - 1 ? ' disabled style="opacity:.3"' : '') + ' aria-label="Flytt ned">↓</button></div>').join('');
+  const av = innst.varselAv || {};
+  document.getElementById('tilpass-varsler').innerHTML = ['oppgaver', 'middag', 'sovn', 'helse', 'fryser', 'beskjeder']
+    .filter(a => apper[a] !== false)
+    .map(a => '<label class="hrow" style="cursor:pointer"><i class="ti ' + APP_IKON[a] + '" style="font-size:17px;color:var(--accent-text)"></i>'
+      + '<div class="hrow-main"><div class="hrow-title" style="font-weight:500">' + esc(APP_NAVN[a]) + '-varsler</div></div>'
+      + '<input type="checkbox" data-varsel="' + a + '"' + (av[a] ? '' : ' checked') + ' style="width:19px;height:19px;accent-color:var(--accent)"></label>').join('');
+}
+document.getElementById('tilpass-apper').addEventListener('click', e => {
+  const b = e.target.closest('[data-flytt]');
+  if (!b || b.disabled) return;
+  const [i, retning] = b.dataset.flytt.split(':').map(Number);
+  const j = i + retning;
+  [tilpassOrden[i], tilpassOrden[j]] = [tilpassOrden[j], tilpassOrden[i]];
+  tegnTilpass();
+});
+document.getElementById('meny-tilpass').addEventListener('click', () => {
+  document.getElementById('meny').style.display = 'none';
+  tilpassOrden = [];
+  tegnTilpass();
+  document.getElementById('tilpass-modal').style.display = 'flex';
+});
+document.getElementById('tilpass-avbryt').addEventListener('click', () => {
+  document.getElementById('tilpass-modal').style.display = 'none';
+});
+document.getElementById('tilpass-lagre').addEventListener('click', async () => {
+  const varselAv = {};
+  document.querySelectorAll('[data-varsel]').forEach(c => { if (!c.checked) varselAv[c.dataset.varsel] = true; });
+  innst = { ...innst, rekkefolge: tilpassOrden, varselAv };
+  await set(ref(db, 'brukere/' + user.uid + '/innstillinger'), innst);
+  document.getElementById('tilpass-modal').style.display = 'none';
+  if (sisteFam) { tegnVarsler(sisteFam, sisteFam.meta || {}); tegnDashbord(sisteFam, sisteFam.meta || {}); }
+});
+
+// Nedtellinger, «våken i X» og datobaserte fliser holder seg ferske
+// (også over midnatt – review-funn).
+setInterval(() => {
+  if (sisteFam) {
+    tegnVarsler(sisteFam, sisteFam.meta || {});
+    tegnDashbord(sisteFam, sisteFam.meta || {});
+  }
+}, 60000);
+</script>
+</body>
+</html>

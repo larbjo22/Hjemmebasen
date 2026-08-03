@@ -22,13 +22,13 @@ messaging.onBackgroundMessage(payload => {
     body: n.body || '',
     icon: 'ikoner/ikon-192.png',
     badge: 'ikoner/ikon-192.png',
-    data: { url: (payload.data && payload.data.url) || 'index.html' },
+    data: { url: (payload.data && payload.data.url) || 'hjem.html' },
   });
 });
 
 // Åpne appen når brukeren trykker på varselet
 self.addEventListener('notificationclick', event => {
   event.notification.close();
-  const url = (event.notification.data && event.notification.data.url) || 'index.html';
+  const url = (event.notification.data && event.notification.data.url) || 'hjem.html';
   event.waitUntil(clients.openWindow(url));
 });

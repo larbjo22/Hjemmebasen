@@ -3,7 +3,7 @@
   "short_name": "Hjemmebasen",
   "description": "Familiens apper – handleliste, middag, oppgaver, fryser, plikter, søvn og helse – samlet på ett sted.",
   "lang": "nb",
-  "start_url": "./index.html",
+  "start_url": "./hjem.html",
   "scope": "./",
   "display": "standalone",
   "background_color": "#151a18",
