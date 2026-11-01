@@ -146,6 +146,51 @@ input:focus-visible,select:focus-visible,button:focus-visible,textarea:focus-vis
 .archive-meta{font-size:11px;color:var(--text4);white-space:nowrap}
 .archive-repeat{font-size:10px;color:var(--accent)}
 /* Stat */
+/* ── Husfreden 🕊️ ── */
+.hf-seg{display:flex;gap:4px;background:var(--surface2);border-radius:8px;padding:3px;margin-bottom:8px}
+.hf-seg button{flex:1;padding:8px 6px;font-size:12px;font-weight:500;border-radius:6px;border:none;background:transparent;color:var(--text2);cursor:pointer}
+.hf-seg button.active{background:var(--accent);color:#fff}
+.hf-type{display:flex;gap:6px;margin-bottom:8px}
+.hf-type button{flex:1;padding:9px;font-size:13px;font-weight:600;border-radius:8px;border:1px solid var(--border);background:var(--surface2);color:var(--text2);cursor:pointer}
+.hf-type button.frust.active{background:var(--prio-high-bg);border-color:var(--prio-high-border);color:var(--prio-high)}
+.hf-type button.ros.active{background:rgba(34,197,94,.12);border-color:rgba(34,197,94,.45);color:var(--green)}
+.hf-lbl{font-size:11px;color:var(--text3);margin:6px 0 4px}
+.hf-link{font-size:11px;color:var(--text3);background:none;border:none;padding:0;text-decoration:underline;cursor:pointer}
+.hf-chips{display:flex;flex-wrap:wrap;gap:5px}
+.hf-chip{font-size:12px;padding:6px 10px;min-height:32px;border-radius:20px;border:1px solid var(--border);background:var(--surface2);color:var(--text2);cursor:pointer;white-space:nowrap}
+.hf-chip.active{background:var(--accent-bg);color:var(--accent-text);border-color:var(--accent-border);font-weight:600}
+.hf-chip.add{border-style:dashed}
+.hf-levels{display:flex;gap:4px}
+.hf-levels button{flex:1;font-size:20px;padding:4px 0;border-radius:8px;border:1px solid var(--border);background:var(--surface2);cursor:pointer;opacity:.55}
+.hf-levels button.active{opacity:1;border-color:var(--accent);background:var(--accent-bg)}
+.hf-me{font-size:11px;color:var(--text3);display:flex;align-items:center;gap:6px;margin-top:6px}
+.hf-me button{font-size:11px;padding:3px 9px;border-radius:10px;border:1px solid var(--border);background:var(--surface2);color:var(--text2);cursor:pointer}
+.hf-entry{background:var(--surface);border:1px solid var(--border2);border-radius:8px;padding:9px 11px;margin-bottom:6px}
+.hf-entry.frust{border-left:3px solid var(--prio-high)}
+.hf-entry.ros{border-left:3px solid var(--green)}
+.hf-entry.fixed{opacity:.75}
+.hf-head{display:flex;align-items:center;gap:6px;font-size:12px;color:var(--text2);flex-wrap:wrap}
+.hf-head b{color:var(--text)}
+.hf-time{margin-left:auto;font-size:10px;color:var(--text3)}
+.hf-text{font-size:13px;color:var(--text);margin-top:4px;line-height:1.35;overflow-wrap:anywhere}
+.hf-tags{display:flex;gap:6px;flex-wrap:wrap;margin-top:5px;font-size:10px}
+.hf-tag{padding:1px 7px;border-radius:10px;background:var(--surface2);color:var(--text3)}
+.hf-tag.ok{background:rgba(34,197,94,.12);color:var(--green)}
+.hf-acts{display:flex;gap:5px;flex-wrap:wrap;margin-top:7px}
+.hf-acts button{font-size:11px;padding:5px 10px;min-height:30px;border-radius:14px;border:1px solid var(--border);background:var(--surface2);color:var(--text2);cursor:pointer}
+.hf-acts button.go{border-color:var(--accent-border);color:var(--accent-text);background:var(--accent-bg)}
+.hf-comment{font-size:12px;color:var(--text2);margin-top:5px;padding:5px 8px;background:var(--surface2);border-radius:6px;overflow-wrap:anywhere}
+.hf-comment b{color:var(--text)}
+.hf-truce{background:var(--accent-bg);border:1px solid var(--accent-border);border-radius:10px;padding:12px;margin-bottom:.75rem;text-align:center;font-size:13px;color:var(--accent-text)}
+.hf-truce button{margin-top:8px}
+.hf-score{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:8px}
+.hf-pers{background:var(--surface2);border-radius:8px;padding:10px;text-align:center;position:relative;min-width:0}
+.hf-pers.win{outline:2px solid var(--accent)}
+.hf-pers .n{font-size:24px;font-weight:700;line-height:1;font-variant-numeric:tabular-nums}
+.hf-pers .who{font-size:12px;font-weight:600;margin-bottom:4px;overflow-wrap:anywhere}
+.hf-pers .brk{font-size:10px;color:var(--text3);margin-top:5px;line-height:1.5}
+.hf-line{font-size:12px;color:var(--text2);padding:3px 0;overflow-wrap:anywhere}
+.hf-empty{font-size:12px;color:var(--text3);text-align:center;padding:1.2rem .5rem}
 .stat-section{background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:12px;margin-bottom:10px}
 .stat-title{font-size:11px;font-weight:600;color:var(--text2);text-transform:uppercase;letter-spacing:.05em;margin-bottom:10px;display:flex;align-items:center;gap:6px}
 .stat-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px}
@@ -219,6 +264,7 @@ input:focus-visible,select:focus-visible,button:focus-visible,textarea:focus-vis
     <button class="tab" id="tab-week" onclick="setView('week')"><i class="ti ti-calendar-week"></i> Uke</button>
     <button class="tab" id="tab-archive" onclick="setView('archive')"><i class="ti ti-archive"></i> Arkiv</button>
     <button class="tab" id="tab-logg" onclick="setView('logg')"><i class="ti ti-tool"></i> Hus</button>
+    <button class="tab" id="tab-husfreden" onclick="setView('husfreden')" style="display:none" aria-label="Husfreden">🕊️ Fred</button>
     <button class="tab" id="tab-settings" onclick="setView('settings')"><i class="ti ti-settings"></i> Innstillinger</button>
   </div>
 
@@ -307,6 +353,33 @@ input:focus-visible,select:focus-visible,button:focus-visible,textarea:focus-vis
     <div id="maint-list"></div>
   </div>
 
+  <!-- Husfreden 🕊️ (valgfri, slås på i Innstillinger) -->
+  <div id="view-husfreden" style="display:none">
+    <div class="hf-seg">
+      <button id="hf-seg-logg" class="active" onclick="hfSetSub('logg')">🕊️ Husfreden</button>
+      <button id="hf-seg-uke" onclick="hfSetSub('uke')">🏆 Uka</button>
+    </div>
+    <div id="hf-sub-logg">
+      <div id="hf-truce"></div>
+      <div class="add-card" id="hf-add"></div>
+      <div id="hf-feed"></div>
+    </div>
+    <div id="hf-sub-uke" style="display:none">
+      <div class="week-nav">
+        <button class="week-btn" onclick="hfWeek(-1)" aria-label="Forrige uke">‹</button>
+        <span class="week-label" id="hf-week-label"></span>
+        <button class="week-btn" onclick="hfWeek(1)" aria-label="Neste uke">›</button>
+        <button class="today-btn" onclick="hfWeekNow()">Nå</button>
+      </div>
+      <div id="hf-week"></div>
+      <div class="stat-section" style="margin-top:10px">
+        <div class="stat-title">🏳️ Våpenhvile</div>
+        <p style="font-size:12px;color:var(--text3);margin:0 0 8px">Sett Husfreden på pause en periode (sykdom, tung uke, ferie). Da logges ingenting, og poengene står stille.</p>
+        <div id="hf-truce-ctrl"></div>
+      </div>
+    </div>
+  </div>
+
   <!-- Innstillinger -->
   <div id="view-settings" style="display:none">
     <div class="stat-section">
@@ -324,6 +397,13 @@ input:focus-visible,select:focus-visible,button:focus-visible,textarea:focus-vis
         <input type="text" id="new-person" placeholder="Nytt navn..." maxlength="30" />
         <button onclick="addPerson()">Legg til</button>
       </div>
+    </div>
+    <div class="stat-section">
+      <div class="stat-title">🕊️ Husfreden</div>
+      <label style="display:flex;align-items:flex-start;gap:10px;font-size:12px;color:var(--text2);line-height:1.45;cursor:pointer">
+        <input type="checkbox" id="hf-pa" onchange="hfSettPa(this.checked)" style="margin-top:2px;width:18px;height:18px;flex-shrink:0" />
+        <span>Vis fanen «Fred»: de voksne logger frustrasjoner og ros om hverandre (og barna), med poeng, «fikset»-knapp og ukesoppsummering. Gjelder hele husstanden – alle med innlogging ser innførslene. Ingen varsler.</span>
+      </label>
     </div>
     <div class="stat-section">
       <div class="stat-title"><i class="ti ti-tag"></i> Kategorier</div>
@@ -411,9 +491,11 @@ import { requireAuth } from './felles/auth.js';
 import { dbGet, dbSet, dbListen } from './felles/storage.js';
 import { esc, todayStr, initTheme, toggleTheme, setStatus } from './felles/ui.js';
 import { monterNav } from './felles/nav.js';
+import { visAngre } from './felles/angre.js';
 const APP='oppgaver';
 let FAMILIE=null;
 let MITT=''; // fornavnet til innlogget bruker – stemples på fullførte oppgaver
+let PERS={voksne:[],barn:[]}; // personregisteret (voksne/barn) – brukes av Husfreden
 
 const DEFAULT_CATS=['Hjem','Hage & Ute','Rengjøring','Handle','Familie','Annet'];
 const CAT_ICONS={'Hjem':'ti-home','Hage & Ute':'ti-plant','Rengjøring':'ti-vacuum','Handle':'ti-shopping-cart','Familie':'ti-heart','Annet':'ti-box'};
@@ -472,6 +554,11 @@ function normaliser(d){
   if(!Array.isArray(d.archive))d.archive=[];
   if(!Array.isArray(d.maintenance))d.maintenance=[];
   d.maintenance.forEach(m=>{if(!Array.isArray(m.dates))m.dates=[];});
+  // Husfreden: Firebase fjerner tomme arrays – default dem her
+  if(d.husfreden&&typeof d.husfreden==='object'){
+    if(!Array.isArray(d.husfreden.entries))d.husfreden.entries=[];
+    if(!Array.isArray(d.husfreden.cats))d.husfreden.cats=[];
+  }
   return d;
 }
 function adoptData(saved){
@@ -509,6 +596,7 @@ async function load(){
     // Personregisteret er kilden (ADR-0005): nye voksne flettes ALLTID inn.
     {
       const p=await dbGet(FAMILIE,'personer');
+      PERS={voksne:Array.isArray(p?.voksne)?p.voksne:[],barn:Array.isArray(p?.barn)?p.barn:[]};
       if(!Array.isArray(data.people))data.people=[];
       (p?.voksne||[]).forEach(v=>{if(!data.people.includes(v))data.people.push(v);});
     }
@@ -560,6 +648,8 @@ function isEditing(){
   if(inp&&inp.value.trim())return true;
   const inp2=document.getElementById('new-maint');
   if(inp2&&inp2.value.trim())return true;
+  const inp3=document.getElementById('hf-text');
+  if(inp3&&inp3.value.trim())return true;
   return ['modal','maint-modal'].some(id=>{
     const e=document.getElementById(id);return e&&e.style.display&&e.style.display!=='none';
   });
@@ -582,7 +672,7 @@ function startListen(){
 }
 
 // ── Views ────────────────────────────────────────────────────
-function setView(v){currentView=v;['tasks','week','archive','logg','settings'].forEach(x=>{document.getElementById('view-'+x).style.display=v===x?'block':'none';document.getElementById('tab-'+x).classList.toggle('active',v===x);});render();}
+function setView(v){if(v==='husfreden'&&!hfOn())v='tasks';currentView=v;['tasks','week','archive','logg','husfreden','settings'].forEach(x=>{document.getElementById('view-'+x).style.display=v===x?'block':'none';document.getElementById('tab-'+x).classList.toggle('active',v===x);});render();}
 let monthOffset=0;
 function changeWeek(dir){if(weekMode==='month')monthOffset+=dir;else weekOffset+=dir;renderWeek();}
 // «Nå»-knappen: navngitt funksjon fordi inline-tilordning ikke når modul-variabler.
@@ -685,6 +775,7 @@ function completeTask(id){
       note:task.note,done:false,created:todayStr(),order:computeOrderFor(nextDate||'')
     });
   }
+  hfFraOppgave(task); // Husfreden: fullført oppgave = forbedringspunktet er fikset
   data.tasks=data.tasks.filter(t=>t.id!==id);
   celebrate();
   save();render();
@@ -803,7 +894,9 @@ function render(){
   else if(currentView==='week')renderWeek();
   else if(currentView==='archive')renderArchive();
   else if(currentView==='logg')renderMaint();
+  else if(currentView==='husfreden'){if(hfOn())renderHusfreden();else setView('tasks');}
   else renderSettings();
+  oppdaterHfFane();
 }
 
 // ── Vedlikeholdslogg (huset) ─────────────────────────────────
@@ -1208,6 +1301,7 @@ function renderSettings(){
     +'</div>'
   ).join('');
 
+  const hfp=document.getElementById('hf-pa');if(hfp)hfp.checked=hfOn();
   // Min person-velger
   const mySel=document.getElementById('my-name');
   if(mySel)mySel.innerHTML='<option value="">— ingen —</option>'+data.people.map(p=>'<option value="'+esc(p)+'"'+(p===myName?' selected':'')+'>'+esc(p)+'</option>').join('');
@@ -1231,6 +1325,365 @@ document.getElementById('week-list').addEventListener('click',e=>{const c=e.targ
 document.addEventListener('keydown',e=>{
   if((e.key==='Enter'||e.key===' ')&&e.target.matches('[role="button"]')&&e.target.tagName!=='BUTTON'){e.preventDefault();e.target.click();}
 });
+// ── Husfreden 🕊️ ─────────────────────────────────────────────
+// Frustrasjoner og ros mellom husstandens voksne, med poeng, våpenhvile og
+// ukesoppsummering. Overført fra ha-apper (oppgaver.html) og gjort generell:
+// de voksne og barna hentes fra personregisteret. Valgfritt – slås på per
+// husstand i Innstillinger (data.husfreden.pa). Ingen push-varsler.
+// data.husfreden = {pa, entries:[…], cats:[{name,emoji,type}], truce:{from,until,by}|null, nextHid}
+// Oppføring: {id,type:'frust'|'ros',from,about,cat,emoji,level,text,date,ts,fixed:{by,date,via}|null,taskId,comments:[]}
+const HF_ROS_GIVE_CAP=3;                   // maks poeng pr. dag for å GI ros
+const HF_BONUS_MIN_AVG=2;                  // kategori må ha minst så mange i snitt pr. uke
+const HF_BONUS_WEEKS=4;                    // baseline: snitt av så mange uker før
+const HF_DEFAULT_CATS=[
+  {type:'frust',emoji:'🧦',name:'Ting på gulvet'},{type:'frust',emoji:'🍽️',name:'Oppvask/kjøkken'},
+  {type:'frust',emoji:'📱',name:'Telefon-zombie'},{type:'frust',emoji:'🔇',name:'Hørte ikke etter'},
+  {type:'frust',emoji:'🕐',name:'For sent'},
+  {type:'ros',emoji:'🍝',name:'Laget mat'},{type:'ros',emoji:'🌙',name:'Tok natta'},
+  {type:'ros',emoji:'🧹',name:'Ryddet'},{type:'ros',emoji:'🤗',name:'Omtenksom'},{type:'ros',emoji:'🛒',name:'Handlet'},
+];
+const HF_LEVELS=['😐','😒','😤','😡','🌋'];
+const HF_ME_KEY='oppgaver_hf_me';
+let hfSub='logg',hfWeekOffset=0,hfType='frust',hfAbout='',hfCat='',hfLevel=3,hfShowDays=14,hfEditCats=false;
+let hfMeValgt=(()=>{try{return localStorage.getItem(HF_ME_KEY)||'';}catch(e){return '';}})();
+
+// De voksne er med i poengkampen; barna kan logges, men får ikke poeng.
+function hfPeople(){
+  const v=(PERS.voksne||[]).filter(p=>typeof p==='string'&&p.trim());
+  return v.length?v:(data.people||[]).filter(p=>p&&p!=='Felles');
+}
+function hfKids(){return (PERS.barn||[]).map(b=>b&&b.navn).filter(Boolean);}
+function hfIsKid(n){return hfKids().includes(n);}
+// Hvem logger? 1) valgt på denne enheten, 2) den innloggede (fornavn), 3) spør.
+function hfMe(){
+  const P=hfPeople();
+  if(hfMeValgt&&P.includes(hfMeValgt))return hfMeValgt;
+  const m=(MITT||'').toLowerCase();
+  return m?(P.find(p=>p.toLowerCase()===m||p.split(' ')[0].toLowerCase()===m)||''):'';
+}
+function hfOn(){return !!(data.husfreden&&data.husfreden.pa);}
+function hfEnsure(){
+  if(!data.husfreden||typeof data.husfreden!=='object')data.husfreden={};
+  const h=data.husfreden;
+  if(!Array.isArray(h.entries))h.entries=[];
+  if(!Array.isArray(h.cats)||!h.cats.length)h.cats=HF_DEFAULT_CATS.map(c=>({...c}));
+  if(h.truce===undefined)h.truce=null;
+  const mx=h.entries.reduce((m,e)=>typeof e.id==='number'&&e.id>=m?e.id+1:m,1);
+  if(typeof h.nextHid!=='number'||h.nextHid<mx)h.nextHid=mx;
+}
+function hfSettPa(on){
+  hfEnsure();
+  data.husfreden.pa=!!on;
+  oppdaterHfFane();
+  save();
+  if(!on&&currentView==='husfreden')setView('settings');else render();
+}
+function oppdaterHfFane(){const t=document.getElementById('tab-husfreden');if(t)t.style.display=hfOn()?'':'none';}
+function hfSetMe(p){hfMeValgt=p;try{localStorage.setItem(HF_ME_KEY,p);}catch(e){}hfAbout='';renderHusfreden();}
+function hfSetSub(s){hfSub=s;renderHusfreden();}
+function hfWeek(d){hfWeekOffset=Math.min(0,hfWeekOffset+d);renderHusfreden();}
+function hfWeekNow(){hfWeekOffset=0;renderHusfreden();}
+function hfFmtTime(e){const t=e.ts?new Date(e.ts):null;const d=formatDate(e.date);return t&&e.date===todayStr()?'i dag '+String(t.getHours()).padStart(2,'0')+':'+String(t.getMinutes()).padStart(2,'0'):d;}
+function hfWeekStart(ds){const d=new Date(ds+'T12:00:00');d.setDate(d.getDate()-(d.getDay()+6)%7);return toDateStr(d);}
+function hfInWeek(ds,ws){return !!ds&&ds>=ws&&ds<=addDays(ws,6);}
+function hfTruceOn(hf,td){return !!(hf&&hf.truce&&hf.truce.until&&hf.truce.until>=td&&(!hf.truce.from||hf.truce.from<=td));}
+
+// Poeng for én uke (ws = mandag). Returnerer pr. person og samlet.
+function hfWeekStats(hf,ws){
+  const E=(hf&&hf.entries)||[],PEOPLE=hfPeople();
+  const P={};PEOPLE.forEach(p=>P[p]={total:0,rosGiven:0,rosGot:0,fixed:0,bonus:0,frustGot:0,bonusLines:[]});
+  const inW=E.filter(e=>hfInWeek(e.date,ws));
+  // Ros gitt: +1, maks HF_ROS_GIVE_CAP pr. giver pr. dag (ros til barna gir ikke poeng)
+  const givenPerDay={};
+  inW.filter(e=>e.type==='ros').sort((a,b)=>(a.ts||0)-(b.ts||0)).forEach(e=>{
+    if(P[e.about]){P[e.about].rosGot++;}
+    if(P[e.from]&&P[e.about]&&e.from!==e.about){
+      const k=e.from+'|'+e.date;givenPerDay[k]=(givenPerDay[k]||0)+1;
+      if(givenPerDay[k]<=HF_ROS_GIVE_CAP)P[e.from].rosGiven++;
+    }
+  });
+  inW.filter(e=>e.type==='frust'&&P[e.about]).forEach(e=>P[e.about].frustGot++);
+  // Fikset: +3 til den som ble logget, i uka det ble fikset
+  E.filter(e=>e.type==='frust'&&e.fixed&&hfInWeek(e.fixed.date,ws)&&P[e.about]).forEach(e=>P[e.about].fixed++);
+  // Forbedringsbonus: færre i en kategori enn snittet de HF_BONUS_WEEKS ukene før
+  const first=E.reduce((m,e)=>(!m||(e.date&&e.date<m))?e.date:m,null);
+  const bonusOn=!!first&&first<=addDays(ws,-7*HF_BONUS_WEEKS);
+  if(bonusOn){
+    PEOPLE.forEach(p=>{
+      const cats={};
+      E.filter(e=>e.type==='frust'&&e.about===p).forEach(e=>{
+        const c=e.cat||'Annet';cats[c]=cats[c]||{emoji:e.emoji||'',base:0,now:0};
+        if(hfInWeek(e.date,ws))cats[c].now++;
+        else if(e.date>=addDays(ws,-7*HF_BONUS_WEEKS)&&e.date<ws)cats[c].base++;
+      });
+      Object.entries(cats).forEach(([c,v])=>{
+        const avg=v.base/HF_BONUS_WEEKS;
+        if(avg<HF_BONUS_MIN_AVG)return;
+        const gain=Math.floor(avg-v.now);
+        if(gain>0){P[p].bonus+=gain;P[p].bonusLines.push({cat:c,emoji:v.emoji,avg:Math.round(avg*10)/10,now:v.now,gain});}
+      });
+    });
+  }
+  PEOPLE.forEach(p=>{const x=P[p];x.total=x.rosGiven+x.rosGot+3*x.fixed+x.bonus;});
+  const max=PEOPLE.length?Math.max(...PEOPLE.map(p=>P[p].total)):0;
+  const winners=max>0?PEOPLE.filter(p=>P[p].total===max):[];
+  // Mønstre: mest brukte frustrasjons- og ros-kategori
+  const top=t=>{const c={};inW.filter(e=>e.type===t).forEach(e=>{const k=(e.emoji?e.emoji+' ':'')+(e.cat||'Annet');c[k]=(c[k]||0)+1;});const b=Object.entries(c).sort((a,b)=>b[1]-a[1])[0];return b?{name:b[0],n:b[1]}:null;};
+  return {ws,people:P,PEOPLE,winners,
+    frust:inW.filter(e=>e.type==='frust').length,ros:inW.filter(e=>e.type==='ros').length,
+    fixed:E.filter(e=>e.type==='frust'&&e.fixed&&hfInWeek(e.fixed.date,ws)).length,
+    topFrust:top('frust'),topRos:top('ros'),bonusOn,
+    kid:inW.filter(e=>hfIsKid(e.about)),truce:hfTruceOn(hf,addDays(ws,6))};
+}
+
+function renderHusfreden(){
+  hfEnsure();
+  document.getElementById('hf-seg-logg').classList.toggle('active',hfSub==='logg');
+  document.getElementById('hf-seg-uke').classList.toggle('active',hfSub==='uke');
+  document.getElementById('hf-seg-logg').setAttribute('aria-pressed',String(hfSub==='logg'));
+  document.getElementById('hf-seg-uke').setAttribute('aria-pressed',String(hfSub==='uke'));
+  document.getElementById('hf-sub-logg').style.display=hfSub==='logg'?'block':'none';
+  document.getElementById('hf-sub-uke').style.display=hfSub==='uke'?'block':'none';
+  if(hfSub==='logg'){renderHfAdd();renderHfFeed();}else renderHfWeek();
+}
+function renderHfAdd(){
+  const h=data.husfreden,td=todayStr(),box=document.getElementById('hf-add'),tb=document.getElementById('hf-truce');
+  if(hfTruceOn(h,td)){
+    tb.innerHTML='<div class="hf-truce">🏳️ <b>Våpenhvile</b> til '+esc(formatDate(h.truce.until))+'<br><span style="font-size:12px">Ingenting logges, og poengene står stille.</span><br><button class="btn-ghost" data-hf-truce-end="1">Avslutt våpenhvilen</button></div>';
+    box.style.display='none';return;
+  }
+  tb.innerHTML='';box.style.display='block';
+  const PEOPLE=hfPeople(),me=hfMe();
+  if(PEOPLE.length<2){
+    box.innerHTML='<div class="hf-empty" style="padding:.6rem">Husfreden trenger minst to voksne i husstandens oppsett.<br><a href="onboarding.html" style="color:var(--accent-text)">Endre oppsett</a></div>';
+    return;
+  }
+  if(!me){
+    box.innerHTML='<div class="hf-lbl" style="margin-top:0">Hvem er du? (huskes på denne enheten)</div><div class="hf-chips">'
+      +PEOPLE.map(p=>'<button class="hf-chip" data-hf-me="'+esc(p)+'">'+esc(p)+'</button>').join('')+'</div>';
+    return;
+  }
+  const abouts=PEOPLE.filter(p=>p!==me).concat(hfKids());
+  if(!abouts.includes(hfAbout))hfAbout=abouts[0];
+  const cats=h.cats.filter(c=>c.type===hfType);
+  if(!cats.some(c=>c.name===hfCat))hfCat='';
+  let html='<div class="hf-type"><button class="frust'+(hfType==='frust'?' active':'')+'" data-hf-type="frust" aria-pressed="'+(hfType==='frust')+'">😤 Frustrasjon</button>'
+    +'<button class="ros'+(hfType==='ros'?' active':'')+'" data-hf-type="ros" aria-pressed="'+(hfType==='ros')+'">💚 Ros</button></div>';
+  html+='<div class="hf-lbl" style="margin-top:0">Gjelder</div><div class="hf-chips">'
+    +abouts.map(p=>'<button class="hf-chip'+(p===hfAbout?' active':'')+'" data-hf-about="'+esc(p)+'" aria-pressed="'+(p===hfAbout)+'">'+(hfIsKid(p)?'👶 ':'')+esc(p)+'</button>').join('')+'</div>';
+  html+='<div class="hf-lbl">Kategori'+(cats.length?' · <button class="hf-link" data-hf-editcats="1">'+(hfEditCats?'ferdig':'rediger')+'</button>':'')+'</div><div class="hf-chips">'
+    +cats.map(c=>'<button class="hf-chip'+(c.name===hfCat?' active':'')+'" '+(hfEditCats?'data-hf-delcat':'data-hf-cat')+'="'+esc(c.name)+'"'+(hfEditCats?' aria-label="Fjern kategorien '+esc(c.name)+'"':' aria-pressed="'+(c.name===hfCat)+'"')+'>'+esc(c.emoji?c.emoji+' ':'')+esc(c.name)+(hfEditCats?' ✕':'')+'</button>').join('')
+    +'<button class="hf-chip add" data-hf-newcat="1">＋ Ny</button></div>';
+  if(hfType==='frust'){
+    html+='<div class="hf-lbl">Frustrasjonsnivå</div><div class="hf-levels">'
+      +HF_LEVELS.map((em,i)=>'<button class="'+(hfLevel===i+1?'active':'')+'" data-hf-level="'+(i+1)+'" aria-label="Nivå '+(i+1)+' av 5" aria-pressed="'+(hfLevel===i+1)+'">'+em+'</button>').join('')+'</div>';
+  }
+  html+='<div class="add-row" style="margin-top:8px;margin-bottom:0"><input type="text" class="add-input" id="hf-text" maxlength="140" autocomplete="off" placeholder="'
+    +(hfType==='frust'?'Forbedringspotensial (valgfritt)':'Hva var bra? (valgfritt)')+'" aria-label="Tekst" />'
+    +'<button class="add-btn" data-hf-add="1" aria-label="Logg"><i class="ti ti-check" aria-hidden="true"></i></button></div>';
+  html+='<div class="hf-me">Logger som <b>'+esc(me)+'</b><button data-hf-bytt="1">bytt</button></div>';
+  // Behold det som er skrevet når kortet tegnes på nytt
+  const prev=document.getElementById('hf-text');const keep=prev?prev.value:'';
+  box.innerHTML=html;
+  const inp=document.getElementById('hf-text');if(inp&&keep)inp.value=keep;
+}
+function hfAdd(){
+  const me=hfMe();if(!me)return;
+  if(!hfCat){setStatus('Velg en kategori først','err');return;}
+  const h=data.husfreden,c=h.cats.find(x=>x.name===hfCat&&x.type===hfType)||{};
+  const inp=document.getElementById('hf-text');const text=(inp&&inp.value||'').trim().slice(0,140);
+  const e={id:h.nextHid++,type:hfType,from:me,about:hfAbout,cat:hfCat,emoji:c.emoji||'',text,date:todayStr(),ts:Date.now(),fixed:null,comments:[]};
+  if(hfType==='frust')e.level=hfLevel;
+  h.entries.push(e);
+  if(inp)inp.value='';
+  hfCat='';
+  save();render();
+  visAngre(hfType==='ros'?'💚 Ros til '+e.about+' logget':'😤 Logget',()=>{
+    data.husfreden.entries=data.husfreden.entries.filter(x=>x.id!==e.id);
+    save();render();
+  });
+}
+function hfCatFromInput(raw){
+  const s=(raw||'').trim();if(!s)return null;
+  const m=s.match(/^((?:\p{Extended_Pictographic}|\p{Regional_Indicator})(?:️|‍(?:\p{Extended_Pictographic})|\p{Emoji_Modifier})*)\s*(.*)$/u);
+  return m&&m[2]?{emoji:m[1],name:m[2].trim()}:{emoji:'',name:s};
+}
+function hfNewCat(){
+  const r=prompt(hfType==='frust'?'Ny frustrasjonskategori (start gjerne med en emoji, f.eks. «🚗 Tom tank»):':'Ny ros-kategori (f.eks. «☕ Lagde kaffe»):');
+  const c=hfCatFromInput(r);if(!c)return;
+  const h=data.husfreden,navn=c.name.slice(0,30);
+  // Samme navn kan finnes som både frustrasjon og ros – sjekk bare innenfor typen
+  const fins=h.cats.find(x=>x.type===hfType&&x.name.toLowerCase()===navn.toLowerCase());
+  if(fins){hfCat=fins.name;renderHusfreden();return;}
+  h.cats.push({type:hfType,emoji:c.emoji,name:navn});
+  hfCat=navn;
+  save();renderHusfreden();
+}
+// Sletter kategorien bare for typen som vises (frustrasjon eller ros), ikke en
+// ros-kategori med samme navn (feilen fra ha-apper-gjennomgangen).
+function hfDelCat(name){
+  if(!confirm('Fjerne kategorien «'+name+'»? Gamle innførsler beholder den.'))return;
+  data.husfreden.cats=data.husfreden.cats.filter(c=>!(c.name===name&&c.type===hfType));
+  if(hfCat===name)hfCat='';
+  save();renderHusfreden();
+}
+function hfCanFix(e){const me=hfMe();return e.type==='frust'&&!e.fixed&&!!me&&(me===e.about||hfIsKid(e.about));}
+function hfTaskState(e){
+  if(e.taskId==null)return null;
+  if(data.tasks.some(t=>t.id===e.taskId))return 'open';
+  if((data.archive||[]).some(t=>t.id===e.taskId))return 'done';
+  return null;
+}
+function renderHfFeed(){
+  const h=data.husfreden,el=document.getElementById('hf-feed');
+  const since=addDays(todayStr(),-hfShowDays);
+  const all=[...h.entries].sort((a,b)=>(b.ts||0)-(a.ts||0));
+  const list=all.filter(e=>e.date>=since);
+  if(!all.length){el.innerHTML='<div class="hf-empty">Ingen innførsler ennå. Husfreden er intakt 🕊️</div>';return;}
+  el.innerHTML='<div class="section-hdr">Siste '+hfShowDays+' dager<span>'+list.length+'</span></div>'
+    +(list.length?list.map(hfEntryHtml).join(''):'<div class="hf-empty">Stille i det siste 🕊️</div>')
+    +(all.length>list.length?'<div style="text-align:center;margin-top:6px"><button class="today-btn" data-hf-more="1">Vis eldre</button></div>':'');
+}
+function hfEntryHtml(e){
+  const ros=e.type==='ros',ts=hfTaskState(e),me=hfMe();
+  let h='<div class="hf-entry '+(ros?'ros':'frust')+(e.fixed?' fixed':'')+'">';
+  h+='<div class="hf-head">'+(ros?'💚':HF_LEVELS[Math.min(5,Math.max(1,e.level||3))-1])+' <b>'+esc(e.from)+'</b> → <b>'+esc(e.about)+'</b> · '+esc(e.emoji?e.emoji+' ':'')+esc(e.cat)+'<span class="hf-time">'+esc(hfFmtTime(e))+'</span></div>';
+  if(e.text)h+='<div class="hf-text">'+(ros?'':'💡 ')+esc(e.text)+'</div>';
+  const tags=[];
+  if(e.fixed)tags.push('<span class="hf-tag ok">✅ Fikset '+esc(formatDate(e.fixed.date))+(e.fixed.via==='oppgave'?' via oppgave':'')+'</span>');
+  if(ts==='open')tags.push('<span class="hf-tag">📋 Ligger i Oppgaver</span>');
+  if(tags.length)h+='<div class="hf-tags">'+tags.join('')+'</div>';
+  (e.comments||[]).forEach(c=>{h+='<div class="hf-comment"><b>'+esc(c.from)+':</b> '+esc(c.text)+'</div>';});
+  const a=[];
+  if(hfCanFix(e))a.push('<button class="go" data-hf-act="fix" data-id="'+e.id+'">✅ Fikset</button>');
+  if(hfCanFix(e)&&ts===null)a.push('<button data-hf-act="task" data-id="'+e.id+'">📋 Gjør til oppgave</button>');
+  if(e.fixed&&me&&(me===e.about||me===e.from||hfIsKid(e.about)))a.push('<button data-hf-act="unfix" data-id="'+e.id+'">Angre fikset</button>');
+  if(me)a.push('<button data-hf-act="comment" data-id="'+e.id+'">💬 Kommenter</button>');
+  if(me&&me===e.from){a.push('<button data-hf-act="edit" data-id="'+e.id+'" aria-label="Rediger teksten">✏️</button>');a.push('<button data-hf-act="del" data-id="'+e.id+'" aria-label="Slett innførselen">🗑️</button>');}
+  if(a.length)h+='<div class="hf-acts">'+a.join('')+'</div>';
+  return h+'</div>';
+}
+// Kom en fullført oppgave fra Husfreden, markeres forbedringspunktet som fikset.
+function hfFraOppgave(task){
+  if(task.hfId==null||!data.husfreden||!Array.isArray(data.husfreden.entries))return;
+  const e=data.husfreden.entries.find(x=>x.id===task.hfId);
+  if(e&&!e.fixed)e.fixed={by:e.about,date:todayStr(),via:'oppgave'};
+}
+function hfAct(act,id){
+  const h=data.husfreden,e=h.entries.find(x=>x.id===id),me=hfMe();if(!e)return;
+  if(act==='fix'){if(!hfCanFix(e))return;e.fixed={by:me||e.about,date:todayStr(),via:'hånd'};setStatus('✅ Fikset – +3 poeng','ok');}
+  else if(act==='unfix'){e.fixed=null;}
+  else if(act==='task'){
+    if(!hfCanFix(e)||hfTaskState(e)!==null)return;
+    const tid=nextId++;
+    const kid=hfIsKid(e.about);
+    data.tasks.push({id:tid,title:e.text||((e.emoji?e.emoji+' ':'')+e.cat),cat:kid&&data.categories.includes('Barn')?'Barn':'',
+      who:kid?(me||''):e.about,date:'',prio:'normal',repeat:'',
+      note:'Fra Husfreden – '+e.from+', '+formatDate(e.date)+'. Fullfører du oppgaven, markeres den som fikset.',
+      done:false,created:todayStr(),order:computeOrderFor(''),hfId:e.id});
+    e.taskId=tid;setStatus('📋 Lagt til i Oppgaver','ok');
+  }
+  else if(act==='comment'){
+    if(!me)return;
+    const t=(prompt('Kommentar til «'+(e.text||e.cat)+'»:')||'').trim();if(!t)return;
+    if(!Array.isArray(e.comments))e.comments=[];
+    e.comments.push({id:Date.now(),from:me,text:t.slice(0,200),ts:Date.now()});
+  }
+  else if(act==='edit'){
+    if(me!==e.from)return;
+    const t=prompt(e.type==='frust'?'Forbedringspotensial:':'Hva var bra?',e.text||'');if(t===null)return;
+    e.text=t.trim().slice(0,140);
+  }
+  else if(act==='del'){
+    if(me!==e.from)return;
+    const idx=h.entries.findIndex(x=>x.id===id);
+    h.entries=h.entries.filter(x=>x.id!==id);
+    save();render();
+    visAngre('Innførselen er slettet',()=>{
+      if(data.husfreden.entries.some(x=>x.id===e.id))return;
+      data.husfreden.entries.splice(Math.min(idx,data.husfreden.entries.length),0,e);
+      save();render();
+    });
+    return;
+  }
+  save();render();
+}
+function hfWeekLabel(ws){const we=addDays(ws,6);return 'Uke '+getWeekNumber(new Date(ws+'T12:00:00'))+' · '+formatDate(ws)+'–'+formatDate(we);}
+function renderHfWeek(){
+  const h=data.husfreden,ws=addDays(hfWeekStart(todayStr()),7*hfWeekOffset),s=hfWeekStats(h,ws);
+  document.getElementById('hf-week-label').textContent=hfWeekLabel(ws);
+  const win1=s.winners.length===1?s.winners[0]:null;
+  let html='';
+  if(s.truce)html+='<div class="hf-truce">🏳️ Våpenhvile denne uka</div>';
+  if(s.PEOPLE.length){
+    html+='<div class="hf-score" style="grid-template-columns:repeat('+Math.min(3,s.PEOPLE.length)+',1fr)">'+s.PEOPLE.map(p=>{
+      const x=s.people[p];
+      return '<div class="hf-pers'+(win1===p?' win':'')+'"><div class="who">'+(win1===p?'🏆 ':'')+esc(p)+'</div><div class="n">'+x.total+'</div>'
+        +'<div class="brk">💚 gitt '+x.rosGiven+' · fått '+x.rosGot+'<br>✅ fikset '+x.fixed+' (×3)'+(x.bonus?'<br>📉 bonus +'+x.bonus:'')+'<br>😤 fikk '+x.frustGot+'</div></div>';
+    }).join('')+'</div>';
+  }
+  html+='<div class="stat-section">';
+  html+='<div class="hf-line">😤 '+s.frust+' frustrasjoner · 💚 '+s.ros+' ros · ✅ '+s.fixed+' fikset</div>';
+  if(s.topFrust)html+='<div class="hf-line">Mest frustrasjon: '+esc(s.topFrust.name)+' ('+s.topFrust.n+')</div>';
+  if(s.topRos)html+='<div class="hf-line">Mest ros: '+esc(s.topRos.name)+' ('+s.topRos.n+')</div>';
+  s.PEOPLE.forEach(p=>s.people[p].bonusLines.forEach(b=>{html+='<div class="hf-line">📉 '+esc(p)+': '+esc((b.emoji?b.emoji+' ':'')+b.cat)+' ned fra '+String(b.avg).replace('.',',')+' til '+b.now+' i uka 👏 (+'+b.gain+')</div>';}));
+  if(!s.bonusOn){
+    const first=h.entries.reduce((m,e)=>(!m||e.date<m)?e.date:m,null);
+    // Første uke der bonusen gjelder: første mandag på/etter første innførsel + 4 uker (samme regel som hfWeekStats)
+    let fra=null;if(first){const d=addDays(first,7*HF_BONUS_WEEKS);fra=hfWeekStart(d);if(fra<d)fra=addDays(fra,7);}
+    html+='<div class="hf-line" style="color:var(--text3)">📉 Forbedringsbonus starter når det er '+HF_BONUS_WEEKS+' uker med data'+(fra?' (fra uka '+esc(formatDate(fra))+')':'')+'.</div>';
+  }
+  if(s.kid.length){html+='<div class="hf-line" style="margin-top:4px"><b>👶 Barna denne uka</b></div>'+s.kid.map(e=>'<div class="hf-line">'+(e.type==='ros'?'💚':HF_LEVELS[Math.min(5,Math.max(1,e.level||3))-1])+' '+esc(e.about)+': '+esc((e.emoji?e.emoji+' ':'')+(e.text||e.cat))+'</div>').join('');}
+  if(!s.frust&&!s.ros&&!s.fixed)html+='<div class="hf-line" style="color:var(--text3)">Stille uke i Husfreden 🕊️</div>';
+  html+='</div>';
+  // Siste 8 uker
+  const rows=[];
+  for(let i=0;i<8;i++){const w=addDays(hfWeekStart(todayStr()),-7*i),st=hfWeekStats(h,w);if(!st.frust&&!st.ros&&!st.fixed&&i>0)continue;rows.push({w,st});}
+  if(rows.length>1){
+    html+='<div class="stat-section"><div class="stat-title">📈 Siste uker</div>'+rows.map(r=>{
+      const wn=r.st.winners.length===1?r.st.winners[0]:'';
+      return '<div class="hf-line" style="display:flex;gap:8px;flex-wrap:wrap"><span style="flex:1;min-width:52px">Uke '+getWeekNumber(new Date(r.w+'T12:00:00'))+'</span>'+r.st.PEOPLE.map(p=>'<span style="text-align:right">'+esc(p)+' '+r.st.people[p].total+(wn===p?' 🏆':'')+'</span>').join('')+'</div>';
+    }).join('')+'</div>';
+  }
+  document.getElementById('hf-week').innerHTML=html;
+  // Våpenhvile-kontroller
+  const tc=document.getElementById('hf-truce-ctrl'),td=todayStr();
+  tc.innerHTML=hfTruceOn(h,td)
+    ?'<div style="font-size:12px;margin-bottom:6px">Aktiv til <b>'+esc(formatDate(h.truce.until))+'</b> (satt av '+esc(h.truce.by||'?')+')</div><button class="btn-ghost" data-hf-truce-end="1">Avslutt</button>'
+    :'<div class="hf-chips"><button class="hf-chip" data-hf-truce="2">Resten av uka</button><button class="hf-chip" data-hf-truce="7">1 uke</button><button class="hf-chip" data-hf-truce="14">2 uker</button></div>';
+}
+function hfTruce(days){
+  const td=todayStr(),until=days===2?addDays(hfWeekStart(td),6):addDays(td,days-1);
+  data.husfreden.truce={from:td,until,by:hfMe()||MITT||''};
+  setStatus('🏳️ Våpenhvile til '+formatDate(until),'ok');save();render();
+}
+function hfTruceEnd(){data.husfreden.truce=null;save();render();}
+
+// Husfreden-lyttere (delegert – ingen brukerdata i inline onclick)
+document.getElementById('view-husfreden').addEventListener('click',e=>{
+  const g=(a)=>e.target.closest('['+a+']');let b;
+  if((b=g('data-hf-me'))){hfSetMe(b.dataset.hfMe);return;}
+  if((b=g('data-hf-bytt'))){hfMeValgt='';try{localStorage.removeItem(HF_ME_KEY);}catch(x){}
+    // Uten lagret valg faller vi tilbake til den innloggede – vis velgeren eksplisitt
+    const box=document.getElementById('hf-add');
+    box.innerHTML='<div class="hf-lbl" style="margin-top:0">Hvem er du? (huskes på denne enheten)</div><div class="hf-chips">'
+      +hfPeople().map(p=>'<button class="hf-chip" data-hf-me="'+esc(p)+'">'+esc(p)+'</button>').join('')+'</div>';
+    return;}
+  if((b=g('data-hf-type'))){hfType=b.dataset.hfType;hfCat='';hfEditCats=false;renderHusfreden();return;}
+  if((b=g('data-hf-about'))){hfAbout=b.dataset.hfAbout;renderHusfreden();return;}
+  if((b=g('data-hf-cat'))){hfCat=b.dataset.hfCat;renderHusfreden();return;}
+  if((b=g('data-hf-delcat'))){hfDelCat(b.dataset.hfDelcat);return;}
+  if((b=g('data-hf-editcats'))){hfEditCats=!hfEditCats;renderHusfreden();return;}
+  if((b=g('data-hf-newcat'))){hfNewCat();return;}
+  if((b=g('data-hf-level'))){hfLevel=parseInt(b.dataset.hfLevel,10);renderHusfreden();return;}
+  if((b=g('data-hf-add'))){hfAdd();return;}
+  if((b=g('data-hf-act'))){hfAct(b.dataset.hfAct,parseInt(b.dataset.id,10));return;}
+  if((b=g('data-hf-more'))){hfShowDays+=28;renderHfFeed();return;}
+  if((b=g('data-hf-truce'))){hfTruce(parseInt(b.dataset.hfTruce,10));return;}
+  if((b=g('data-hf-truce-end'))){hfTruceEnd();return;}
+});
+document.getElementById('view-husfreden').addEventListener('keydown',e=>{if(e.key==='Enter'&&e.target.id==='hf-text')hfAdd();});
+
 // Escape lukker åpen modal.
 document.addEventListener('keydown',e=>{
   if(e.key!=='Escape')return;
@@ -1241,10 +1694,11 @@ document.addEventListener('keydown',e=>{
 Object.assign(window,{addCategory,addMaint,addPerson,addTask,changeWeek,clearArchive,
 completeTask,deleteFromModal,deleteMaint,deleteTask,goToNow,hideMaintModal,hideModal,
 maintAddDate,maintDelDate,maintDoneNow,openMaintModal,openModal,render,sendModalKomm,
-saveMaintModal,saveModal,setModalPrio,setMyName,
+saveMaintModal,saveModal,setModalPrio,setMyName,hfSetSub,hfSettPa,hfWeek,hfWeekNow,
 setNewPrio,setView,setWeekMode,taskDragStart,toggleNewRepeat,toggleTheme});
 
-load();
+// oppgaver.html?view=husfreden (o.l.) åpner fanen direkte
+load().then(()=>{const qv=new URLSearchParams(location.search).get('view');if(qv&&document.getElementById('view-'+qv))setView(qv);});
 </script>
 </body>
 </html>
