@@ -139,6 +139,8 @@ input:focus-visible,select:focus-visible,button:focus-visible,textarea:focus-vis
 .day-task.prio-normal{border-left:2px solid var(--prio-normal)}
 .day-task.prio-low{border-left:2px solid var(--prio-low)}
 .day-task-name{flex:1;font-weight:500}
+.week-check{width:24px;height:24px;flex-shrink:0;border-radius:50%;border:1.5px solid var(--border);background:var(--surface);color:transparent;cursor:pointer;display:flex;align-items:center;justify-content:center;padding:0;font-size:12px}
+.week-check:hover{border-color:var(--accent);color:var(--accent)}
 .day-empty{font-size:12px;color:var(--text4);font-style:italic;padding:2px 0}
 /* Arkiv */
 .archive-item{display:flex;align-items:center;gap:10px;padding:8px 12px;background:var(--surface);border:1px solid var(--border2);border-radius:8px;margin-bottom:4px}
@@ -497,6 +499,11 @@ let FAMILIE=null;
 let MITT=''; // fornavnet til innlogget bruker – stemples på fullførte oppgaver
 let PERS={voksne:[],barn:[]}; // personregisteret (voksne/barn) – brukes av Husfreden
 
+// Arkivoppføringer eldre enn ARKIV_MND måneder flyttes til egen node (familier/<id>/oppgaverArkiv =
+// {items:[…]}), så hoveddataene som lastes og lagres hver gang ikke vokser uten grense.
+// data.arkiv={antall,maxId,oppdatert} i hoveddataene forteller at noden finnes. Den leses bare ved behov.
+const ARKIV_NODE='oppgaverArkiv';
+const ARKIV_MND=12;
 const DEFAULT_CATS=['Hjem','Hage & Ute','Rengjøring','Handle','Familie','Annet'];
 const CAT_ICONS={'Hjem':'ti-home','Hage & Ute':'ti-plant','Rengjøring':'ti-vacuum','Handle':'ti-shopping-cart','Familie':'ti-heart','Annet':'ti-box'};
 const WHO_COLORS=['#1a56db','#c2185b','#7b1fa2','#2e7d32','#e65100','#0891b2'];
@@ -577,7 +584,48 @@ function adoptData(saved){
     open.forEach((t,i)=>{t.order=i+1;});
   }
   const allIds=[...data.tasks.map(t=>t.id),...data.archive.map(t=>t.id)].filter(Boolean);
+  if(data.arkiv&&typeof data.arkiv.maxId==='number')allIds.push(data.arkiv.maxId); // id-er i eldre arkiv skal ikke brukes på nytt
   nextId=allIds.length?Math.max(...allIds)+1:100;
+}
+// ── Eldre arkiv (egen node) ──────────────────────────────────
+let arkivData=null,arkivRoterer=false,arkivVist=false;
+function arkivKey(a){return a.id+'|'+(a.completedDate||'');}
+function arkivGrense(){const d=new Date(todayStr()+'T12:00:00');d.setMonth(d.getMonth()-ARKIV_MND);return toDateStr(d);}
+// Flytter oppføringer eldre enn 12 mnd fra data.archive til arkiv-noden. Les-slå-sammen-skriv:
+// noden leses ferskt (dbGet kaster ved feil, null = noden er tom) og de gamle legges til.
+// Først når de ligger trygt der, fjernes de fra hoveddataene.
+async function arkivRoter(){
+  if(!dataLoaded||arkivRoterer||isEditing())return;
+  const cut=arkivGrense();
+  const gamle=(data.archive||[]).filter(a=>a&&a.completedDate&&a.completedDate<cut);
+  if(!gamle.length)return;
+  arkivRoterer=true;
+  try{
+    const lest=await dbGet(FAMILIE,ARKIV_NODE);
+    const ark=lest&&typeof lest==='object'?lest:{};
+    if(!Array.isArray(ark.items))ark.items=[];
+    const har=new Set(ark.items.map(arkivKey));
+    gamle.forEach(a=>{if(!har.has(arkivKey(a)))ark.items.push(a);});
+    ark.items.sort((a,b)=>(b.completedDate||'').localeCompare(a.completedDate||''));
+    await dbSet(FAMILIE,ARKIV_NODE,ark);
+    arkivData=ark;
+    const flyttet=new Set(gamle.map(arkivKey));
+    data.archive=data.archive.filter(a=>!flyttet.has(arkivKey(a)));
+    const ids=ark.items.map(a=>a.id).filter(x=>typeof x==='number');
+    data.arkiv={antall:ark.items.length,maxId:Math.max(ids.length?Math.max(...ids):0,(data.arkiv&&data.arkiv.maxId)||0),oppdatert:todayStr()};
+    await save();render();
+  }catch(e){console.error(e);} // prøves igjen ved neste oppstart
+  finally{arkivRoterer=false;}
+}
+// «Vis eldre» i Arkiv-fanen: henter arkiv-noden ved behov
+async function arkivVisEldre(){
+  arkivVist=true;
+  if(!arkivData){
+    const btn=document.getElementById('arkiv-more');if(btn){btn.disabled=true;btn.textContent='Henter eldre …';}
+    try{const r=await dbGet(FAMILIE,ARKIV_NODE);arkivData=r&&Array.isArray(r.items)?r:{items:[]};}
+    catch(e){arkivVist=false;setStatus('Kunne ikke hente eldre arkiv – prøv igjen','err');}
+  }
+  renderArchive();
 }
 async function load(){
   setStatus('Laster...');
@@ -609,6 +657,7 @@ async function load(){
     autoTasksFromMaint(); // generer oppgaver for forfalt hus-vedlikehold
     setStatus('');
     startListen();
+    arkivRoter(); // gjør ingenting når alt i arkivet er nyere enn 12 mnd
   }catch(e){setStatus('Kunne ikke laste – '+(e.message||'prøv igjen'),'err');}
   render();
 }
@@ -826,7 +875,7 @@ function renderKampanje(){
 }
 
 function deleteTask(id){if(!confirm('Slette oppgaven?'))return;data.tasks=data.tasks.filter(t=>t.id!==id);save();render();}
-function clearArchive(){if(!confirm('Tøm hele arkivet?'))return;data.archive=[];save();render();}
+function clearArchive(){if(!confirm('Tømme arkivet for de siste '+ARKIV_MND+' månedene?'+(data.arkiv?' (Eldre arkiv røres ikke.)':'')))return;data.archive=[];save();render();}
 
 // ── Modal ────────────────────────────────────────────────────
 function openModal(id){
@@ -886,7 +935,20 @@ function addCategory(){const inp=document.getElementById('new-cat-name');const n
 function deleteCategory(cat){if(data.tasks.some(t=>t.cat===cat)){alert('"'+cat+'" er i bruk.');return;}data.categories=data.categories.filter(c=>c!==cat);save();render();}
 document.getElementById('new-cat-name').addEventListener('keydown',e=>{if(e.key==='Enter')addCategory();});
 function addPerson(){const inp=document.getElementById('new-person');const name=inp.value.trim();if(!name||data.people.includes(name))return;data.people.push(name);inp.value='';save();render();}
-function deletePerson(name){if(data.people.length<=1){alert('Må ha minst én person.');return;}data.people=data.people.filter(p=>p!==name);save();render();}
+function deletePerson(name){
+  if(data.people.length<=1){alert('Må ha minst én person.');return;}
+  const egne=data.tasks.filter(t=>!t.done&&t.who===name);
+  if(egne.length){
+    // Oppgavene skal ikke bli stående på en person som ikke finnes lenger
+    const til=name==='Felles'?'':'Felles';
+    if(!confirm(egne.length+(egne.length===1?' oppgave står':' oppgaver står')+' på «'+name+'».\nSlette personen og flytte '+(egne.length===1?'den':'dem')+' til '+(til?'Felles':'ingen')+'?'))return;
+    egne.forEach(t=>{t.who=til;});
+    if(til&&!data.people.includes(til))data.people.push(til);
+  }else if(!confirm('Slette «'+name+'»?'))return;
+  data.people=data.people.filter(p=>p!==name);
+  if(myName===name)setMyName('');
+  save();render();
+}
 document.getElementById('new-person').addEventListener('keydown',e=>{if(e.key==='Enter')addPerson();});
 
 // ── Render ───────────────────────────────────────────────────
@@ -1068,7 +1130,8 @@ function renderTasks(){
   const search=(document.getElementById('search-input')?.value||'').toLowerCase();
   let tasks=data.tasks.filter(t=>!t.done);
   const prioValues=['high','normal','low'];
-  if(activeFilter==='minday'){const t0=todayStr();tasks=tasks.filter(t=>(!myName||t.who===myName)&&t.date&&t.date<=t0);}
+  // «Min dag»: mine oppgaver + felles (Felles eller ingen person), med frist i dag eller tidligere
+  if(activeFilter==='minday'){const t0=todayStr();tasks=tasks.filter(t=>(!myName||t.who===myName||isShared(t))&&t.date&&t.date<=t0);}
   else if(activeFilter.startsWith('who:')){const who=activeFilter.slice(4);tasks=tasks.filter(t=>t.who===who);}
   else if(activeFilter&&prioValues.includes(activeFilter))tasks=tasks.filter(t=>t.prio===activeFilter);
   else if(activeFilter)tasks=tasks.filter(t=>t.cat===activeFilter);
@@ -1141,7 +1204,9 @@ function taskDragEnd(){
   render();
 }
 
+function isShared(t){return !t.who||t.who==='Felles';}
 function renderTaskRow(task){
+  const sharedMark=activeFilter==='minday'&&isShared(task);
   const whoColor=task.who?personColor(task.who):'';
   const overdue=isOverdue(task.date)&&!task.done;
   const repeatLabel=task.repeat?(REPEAT_LABELS[task.repeat]||'Hver '+task.repeat+'. dag'):'';
@@ -1152,7 +1217,7 @@ function renderTaskRow(task){
     +'<div class="task-title">'+esc(task.title)+'</div>'
     +'<div class="task-meta">'
     +(task.cat?'<span class="task-cat"><i class="ti '+(CAT_ICONS[task.cat]||'ti-box')+'" style="font-size:10px;vertical-align:-1px;margin-right:2px"></i>'+esc(task.cat)+'</span>':'')
-    +(task.who?'<span class="task-who" style="background:'+whoColor+'22;color:'+whoColor+'">'+esc(task.who)+'</span>':'')
+    +(task.who?'<span class="task-who" style="background:'+whoColor+'22;color:'+whoColor+'">'+(sharedMark?'👥 ':'')+esc(task.who)+'</span>':(sharedMark?'<span class="task-who" style="background:var(--surface2);color:var(--text2)">👥 Felles</span>':''))
     +(task.date?'<span class="task-date'+(overdue?' overdue':'')+'"><i class="ti ti-calendar" style="font-size:10px"></i>'+formatDate(task.date)+(overdue?' ⚠️':'')+'</span>':'')
     +(repeatLabel?'<span class="task-repeat"><i class="ti ti-refresh" style="font-size:10px"></i>'+repeatLabel+'</span>':'')
     +((task.kommentarer&&task.kommentarer.length)?'<span class="task-repeat"><i class="ti ti-message-circle" style="font-size:10px"></i>'+task.kommentarer.length+'</span>':'')
@@ -1179,18 +1244,14 @@ function renderWeek(){
     html+='<div class="day-card'+(isToday?' today':'')+'">';
     html+='<div class="day-header"><span class="day-name'+(isToday?' today':'')+'">'+DAYS_SHORT[dow]+'</span><span class="day-date-lbl">'+d.toLocaleDateString('nb-NO',{day:'numeric',month:'short'})+'</span>'+(isToday?'<span class="today-badge">I dag</span>':'')+'</div>';
     if(overdueToday.length){
-      html+='<div style="font-size:11px;color:var(--prio-high);margin-bottom:6px;display:flex;align-items:center;gap:4px"><i class="ti ti-alert-triangle" style="font-size:11px"></i>'+overdueToday.length+' forfalt</div>';
+      // Forfalte vises på i dag-kortet, eldste først, og kan krysses av herfra
+      html+='<div style="font-size:11px;color:var(--prio-high);margin-bottom:4px;display:flex;align-items:center;gap:4px"><i class="ti ti-alert-triangle" style="font-size:11px"></i>'+overdueToday.length+' forfalt</div>';
+      overdueToday.sort((a,b)=>a.date.localeCompare(b.date)||(a.order??1e9)-(b.order??1e9)).forEach(t=>{html+=weekTaskRow(t,true);});
+      if(dayTasks.length)html+='<div style="height:4px"></div>';
     }
     if(dayTasks.length){
-      dayTasks.forEach(t=>{
-        const whoColor=t.who?personColor(t.who):'';
-        html+='<div class="day-task prio-'+t.prio+'" onclick="openModal('+t.id+')">'
-          +'<span class="day-task-name">'+esc(t.title)+'</span>'
-          +(t.who?'<span style="font-size:10px;padding:1px 6px;border-radius:10px;background:'+whoColor+'22;color:'+whoColor+'">'+esc(t.who)+'</span>':'')
-          +(t.repeat?'<i class="ti ti-refresh" style="font-size:10px;color:var(--accent)"></i>':'')
-          +'</div>';
-      });
-    }else{
+      dayTasks.forEach(t=>{html+=weekTaskRow(t,false);});
+    }else if(!overdueToday.length){
       html+='<div class="day-empty">Ingenting planlagt</div>';
     }
     html+='</div>';
@@ -1208,13 +1269,31 @@ function renderWeek(){
   document.getElementById('week-list').innerHTML=html;
 }
 
+// Én oppgave i ukevisningen: kryss av, trykk navnet for å redigere. overdue = vis fristen.
+function weekTaskRow(t,overdue){
+  const whoColor=t.who?personColor(t.who):'';
+  return '<div class="day-task prio-'+t.prio+'">'
+    +'<button class="week-check" onclick="completeTask('+t.id+')" title="Fullfør" aria-label="Fullfør «'+esc(t.title)+'»"><i class="ti ti-check" aria-hidden="true"></i></button>'
+    +'<span class="day-task-name" onclick="openModal('+t.id+')" role="button" tabindex="0">'+esc(t.title)+'</span>'
+    +(overdue?'<span class="task-date overdue">'+esc(formatDate(t.date))+'</span>':'')
+    +(t.who?'<span style="font-size:10px;padding:1px 6px;border-radius:10px;background:'+whoColor+'22;color:'+whoColor+'">'+esc(t.who)+'</span>':'')
+    +(t.repeat?'<i class="ti ti-refresh" style="font-size:10px;color:var(--accent)"></i>':'')
+    +'</div>';
+}
+let archiveLimit=50;
 function renderArchive(){
-  const arc=data.archive;
+  // Eldre arkiv (egen node) tas med først når «Vis eldre» er trykket
+  let arc=data.archive;
+  if(arkivVist&&arkivData&&arkivData.items.length){
+    const har=new Set(arc.map(arkivKey));
+    arc=arc.concat(arkivData.items.filter(a=>!har.has(arkivKey(a))));
+  }
+  const olderBtn=(data.arkiv&&!arkivVist)?'<div style="text-align:center;margin-top:8px"><button class="today-btn" id="arkiv-more" onclick="arkivVisEldre()">Vis eldre enn '+ARKIV_MND+' mnd'+(data.arkiv.antall?' ('+Number(data.arkiv.antall)+')':'')+'</button></div>':'';
   if(!arc.length){
     document.getElementById('archive-stats').innerHTML='';
     document.getElementById('archive-filter-chips').innerHTML='';
     document.getElementById('archive-count').textContent='';
-    document.getElementById('archive-list').innerHTML='<div class="empty-state"><i class="ti ti-archive" style="font-size:28px;display:block;margin-bottom:8px"></i>Ingen fullførte oppgaver ennå</div>';
+    document.getElementById('archive-list').innerHTML='<div class="empty-state"><i class="ti ti-archive" style="font-size:28px;display:block;margin-bottom:8px"></i>'+(data.arkiv?'Ingen fullførte oppgaver de siste '+ARKIV_MND+' månedene':'Ingen fullførte oppgaver ennå')+'</div>'+olderBtn;
     return;
   }
 
@@ -1295,7 +1374,7 @@ function renderArchive(){
     filtered=arc.filter(t=>t.cat===archiveFilter||t.who===archiveFilter);
   }
   document.getElementById('archive-count').textContent=filtered.length+' av '+total+' oppgaver';
-  document.getElementById('archive-list').innerHTML=filtered.slice(0,50).map(t=>{
+  document.getElementById('archive-list').innerHTML=filtered.slice(0,archiveLimit).map(t=>{
     const whoColor=t.who?personColor(t.who):'';
     return '<div class="archive-item">'
       +'<i class="ti ti-check" style="color:var(--green);font-size:14px;flex-shrink:0"></i>'
@@ -1306,10 +1385,13 @@ function renderArchive(){
       +(t.who?'<span style="font-size:10px;padding:1px 6px;border-radius:10px;background:'+whoColor+'22;color:'+whoColor+'">'+esc(t.who)+'</span>':'')
       +(t.repeat?'<span style="font-size:10px;color:var(--accent)"><i class="ti ti-refresh" style="font-size:10px"></i></span>':'')
       +'</div></div>'
-      +'<span class="archive-meta">'+formatDate(t.completedDate)+(t.doneBy?' · '+esc(t.doneBy):'')+'</span>'
+      +'<span class="archive-meta">'+formatDate(t.completedDate)+(t.completedDate&&t.completedDate.slice(0,4)!==todayStr().slice(0,4)?' '+t.completedDate.slice(0,4):'')+(t.doneBy?' · '+esc(t.doneBy):'')+'</span>'
       +'</div>';
-  }).join('');
+  }).join('')
+  +(filtered.length>archiveLimit?'<div style="text-align:center;margin-top:8px"><button class="today-btn" onclick="archiveMore()">Vis flere ('+(filtered.length-archiveLimit)+')</button></div>':'')
+  +olderBtn;
 }
+function archiveMore(){archiveLimit+=100;renderArchive();}
 
 function renderSettings(){
   // Statistikk
@@ -1362,7 +1444,10 @@ document.addEventListener('keydown',e=>{
 // de voksne og barna hentes fra personregisteret. Valgfritt – slås på per
 // husstand i Innstillinger (data.husfreden.pa). Ingen push-varsler.
 // data.husfreden = {pa, entries:[…], cats:[{name,emoji,type}], truce:{from,until,by}|null, nextHid}
-// Oppføring: {id,type:'frust'|'ros',from,about,cat,emoji,level,text,date,ts,fixed:{by,date,via}|null,taskId,comments:[]}
+// Oppføring: {id,type:'frust'|'ros',from,about,cat,emoji,level,text,date,ts,fixed:{by,date,via,pending?,confirmed?}|null,taskId,comments:[]}
+// «Fikset» meldes av den det gjelder (fixed.pending=true) og teller først når den som skrev
+// frustrasjonen bekrefter (fixed.confirmed={by,date}, pending fjernes). Eldre fixed uten pending
+// regnes som bekreftet, så gamle data og poeng er uendret. Gjelder det et barn, trengs ingen bekreftelse.
 const HF_ROS_GIVE_CAP=3;                   // maks poeng pr. dag for å GI ros
 const HF_BONUS_MIN_AVG=2;                  // kategori må ha minst så mange i snitt pr. uke
 const HF_BONUS_WEEKS=4;                    // baseline: snitt av så mange uker før
@@ -1417,6 +1502,15 @@ function hfWeekNow(){hfWeekOffset=0;renderHusfreden();}
 function hfFmtTime(e){const t=e.ts?new Date(e.ts):null;const d=formatDate(e.date);return t&&e.date===todayStr()?'i dag '+String(t.getHours()).padStart(2,'0')+':'+String(t.getMinutes()).padStart(2,'0'):d;}
 function hfWeekStart(ds){const d=new Date(ds+'T12:00:00');d.setDate(d.getDate()-(d.getDay()+6)%7);return toDateStr(d);}
 function hfInWeek(ds,ws){return !!ds&&ds>=ws&&ds<=addDays(ws,6);}
+function hfFixDone(e){return !!(e&&e.fixed&&!e.fixed.pending);}
+function hfFixPending(e){return !!(e&&e.fixed&&e.fixed.pending);}
+// Dato poengene telles på: bekreftelsesdatoen, eller fiksedatoen for eldre data
+function hfFixDate(e){return e.fixed?((e.fixed.confirmed&&e.fixed.confirmed.date)||e.fixed.date):null;}
+function hfNewFix(e,by,td,via){
+  const f={by,date:td,via};
+  if(!hfIsKid(e.about)&&e.from!==by)f.pending=true;
+  return f;
+}
 function hfTruceOn(hf,td){return !!(hf&&hf.truce&&hf.truce.until&&hf.truce.until>=td&&(!hf.truce.from||hf.truce.from<=td));}
 
 // Poeng for én uke (ws = mandag). Returnerer pr. person og samlet.
@@ -1435,7 +1529,8 @@ function hfWeekStats(hf,ws){
   });
   inW.filter(e=>e.type==='frust'&&P[e.about]).forEach(e=>P[e.about].frustGot++);
   // Fikset: +3 til den som ble logget, i uka det ble fikset
-  E.filter(e=>e.type==='frust'&&e.fixed&&hfInWeek(e.fixed.date,ws)&&P[e.about]).forEach(e=>P[e.about].fixed++);
+  // (bare bekreftede – teller i uka bekreftelsen kom)
+  E.filter(e=>e.type==='frust'&&hfFixDone(e)&&hfInWeek(hfFixDate(e),ws)&&P[e.about]).forEach(e=>P[e.about].fixed++);
   // Forbedringsbonus: færre i en kategori enn snittet de HF_BONUS_WEEKS ukene før
   const first=E.reduce((m,e)=>(!m||(e.date&&e.date<m))?e.date:m,null);
   const bonusOn=!!first&&first<=addDays(ws,-7*HF_BONUS_WEEKS);
@@ -1462,7 +1557,8 @@ function hfWeekStats(hf,ws){
   const top=t=>{const c={};inW.filter(e=>e.type===t).forEach(e=>{const k=(e.emoji?e.emoji+' ':'')+(e.cat||'Annet');c[k]=(c[k]||0)+1;});const b=Object.entries(c).sort((a,b)=>b[1]-a[1])[0];return b?{name:b[0],n:b[1]}:null;};
   return {ws,people:P,PEOPLE,winners,
     frust:inW.filter(e=>e.type==='frust').length,ros:inW.filter(e=>e.type==='ros').length,
-    fixed:E.filter(e=>e.type==='frust'&&e.fixed&&hfInWeek(e.fixed.date,ws)).length,
+    fixed:E.filter(e=>e.type==='frust'&&hfFixDone(e)&&hfInWeek(hfFixDate(e),ws)).length,
+    pending:E.filter(e=>e.type==='frust'&&hfFixPending(e)).length,
     topFrust:top('frust'),topRos:top('ros'),bonusOn,
     kid:inW.filter(e=>hfIsKid(e.about)),truce:hfTruceOn(hf,addDays(ws,6))};
 }
@@ -1577,18 +1673,23 @@ function renderHfFeed(){
 }
 function hfEntryHtml(e){
   const ros=e.type==='ros',ts=hfTaskState(e),me=hfMe();
-  let h='<div class="hf-entry '+(ros?'ros':'frust')+(e.fixed?' fixed':'')+'">';
+  let h='<div class="hf-entry '+(ros?'ros':'frust')+(hfFixDone(e)?' fixed':'')+'">';
   h+='<div class="hf-head">'+(ros?'💚':HF_LEVELS[Math.min(5,Math.max(1,e.level||3))-1])+' <b>'+esc(e.from)+'</b> → <b>'+esc(e.about)+'</b> · '+esc(e.emoji?e.emoji+' ':'')+esc(e.cat)+'<span class="hf-time">'+esc(hfFmtTime(e))+'</span></div>';
   if(e.text)h+='<div class="hf-text">'+(ros?'':'💡 ')+esc(e.text)+'</div>';
   const tags=[];
-  if(e.fixed)tags.push('<span class="hf-tag ok">✅ Fikset '+esc(formatDate(e.fixed.date))+(e.fixed.via==='oppgave'?' via oppgave':'')+'</span>');
+  if(hfFixPending(e))tags.push('<span class="hf-tag">⏳ Meldt fikset '+esc(formatDate(e.fixed.date))+(e.fixed.via==='oppgave'?' via oppgave':'')+' – venter på '+esc(e.from)+'</span>');
+  else if(e.fixed)tags.push('<span class="hf-tag ok">✅ Fikset '+esc(formatDate(hfFixDate(e)))+(e.fixed.via==='oppgave'?' via oppgave':'')+(e.fixed.confirmed?' · bekreftet':'')+'</span>');
   if(ts==='open')tags.push('<span class="hf-tag">📋 Ligger i Oppgaver</span>');
   if(tags.length)h+='<div class="hf-tags">'+tags.join('')+'</div>';
   (e.comments||[]).forEach(c=>{h+='<div class="hf-comment"><b>'+esc(c.from)+':</b> '+esc(c.text)+'</div>';});
   const a=[];
   if(hfCanFix(e))a.push('<button class="go" data-hf-act="fix" data-id="'+e.id+'">✅ Fikset</button>');
   if(hfCanFix(e)&&ts===null)a.push('<button data-hf-act="task" data-id="'+e.id+'">📋 Gjør til oppgave</button>');
-  if(e.fixed&&me&&(me===e.about||me===e.from||hfIsKid(e.about)))a.push('<button data-hf-act="unfix" data-id="'+e.id+'">Angre fikset</button>');
+  if(hfFixPending(e)&&me&&me===e.from){
+    a.push('<button class="go" data-hf-act="confirm" data-id="'+e.id+'">✅ Bekreft fikset</button>');
+    a.push('<button data-hf-act="unfix" data-id="'+e.id+'">Ikke fikset</button>');
+  }
+  else if(e.fixed&&me&&(me===e.about||me===e.from||hfIsKid(e.about)))a.push('<button data-hf-act="unfix" data-id="'+e.id+'">Angre fikset</button>');
   if(me)a.push('<button data-hf-act="comment" data-id="'+e.id+'">💬 Kommenter</button>');
   if(me&&me===e.from){a.push('<button data-hf-act="edit" data-id="'+e.id+'" aria-label="Rediger teksten">✏️</button>');a.push('<button data-hf-act="del" data-id="'+e.id+'" aria-label="Slett innførselen">🗑️</button>');}
   if(a.length)h+='<div class="hf-acts">'+a.join('')+'</div>';
@@ -1598,11 +1699,21 @@ function hfEntryHtml(e){
 function hfFraOppgave(task){
   if(task.hfId==null||!data.husfreden||!Array.isArray(data.husfreden.entries))return;
   const e=data.husfreden.entries.find(x=>x.id===task.hfId);
-  if(e&&!e.fixed)e.fixed={by:e.about,date:todayStr(),via:'oppgave'};
+  if(e&&!e.fixed)e.fixed=hfNewFix(e,e.about,todayStr(),'oppgave');
 }
 function hfAct(act,id){
   const h=data.husfreden,e=h.entries.find(x=>x.id===id),me=hfMe();if(!e)return;
-  if(act==='fix'){if(!hfCanFix(e))return;e.fixed={by:me||e.about,date:todayStr(),via:'hånd'};setStatus('✅ Fikset – +3 poeng','ok');}
+  if(act==='fix'){
+    if(!hfCanFix(e))return;
+    e.fixed=hfNewFix(e,me||e.about,todayStr(),'hånd');
+    setStatus(e.fixed.pending?'⏳ Meldt fikset – +3 poeng når '+e.from+' bekrefter':'✅ Fikset','ok');
+  }
+  else if(act==='confirm'){
+    if(!hfFixPending(e)||me!==e.from)return;
+    delete e.fixed.pending;
+    e.fixed.confirmed={by:me,date:todayStr()};
+    setStatus('✅ Bekreftet – +3 poeng til '+e.about,'ok');
+  }
   else if(act==='unfix'){e.fixed=null;}
   else if(act==='task'){
     if(!hfCanFix(e)||hfTaskState(e)!==null)return;
@@ -1655,6 +1766,7 @@ function renderHfWeek(){
   }
   html+='<div class="stat-section">';
   html+='<div class="hf-line">😤 '+s.frust+' frustrasjoner · 💚 '+s.ros+' ros · ✅ '+s.fixed+' fikset</div>';
+  if(s.pending&&hfWeekOffset===0)html+='<div class="hf-line" style="color:var(--text3)">⏳ '+s.pending+' meldt fikset – venter på bekreftelse</div>';
   if(s.topFrust)html+='<div class="hf-line">Mest frustrasjon: '+esc(s.topFrust.name)+' ('+s.topFrust.n+')</div>';
   if(s.topRos)html+='<div class="hf-line">Mest ros: '+esc(s.topRos.name)+' ('+s.topRos.n+')</div>';
   s.PEOPLE.forEach(p=>s.people[p].bonusLines.forEach(b=>{html+='<div class="hf-line">📉 '+esc(p)+': '+esc((b.emoji?b.emoji+' ':'')+b.cat)+' ned fra '+String(b.avg).replace('.',',')+' til '+b.now+' i uka 👏 (+'+b.gain+')</div>';}));
@@ -1727,7 +1839,7 @@ document.addEventListener('keydown',e=>{
 Object.assign(window,{addCategory,addMaint,addPerson,addTask,changeWeek,clearArchive,
 completeTask,deleteFromModal,deleteMaint,deleteTask,goToNow,hideMaintModal,hideModal,
 maintAddDate,maintDelDate,maintDoneNow,openMaintModal,openModal,render,sendModalKomm,
-saveMaintModal,saveModal,setModalPrio,setMyName,hfSetSub,hfSettPa,hfWeek,hfWeekNow,
+saveMaintModal,saveModal,setModalPrio,arkivVisEldre,archiveMore,setMyName,hfSetSub,hfSettPa,hfWeek,hfWeekNow,
 setNewPrio,setView,setWeekMode,taskDragStart,toggleNewRepeat,toggleTheme});
 
 // oppgaver.html?view=husfreden (o.l.) åpner fanen direkte

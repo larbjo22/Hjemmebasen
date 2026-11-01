@@ -60,6 +60,13 @@
 .tile-status.varsel{color:var(--accent-text);font-weight:600}
 .tile-linje{display:flex;align-items:center;gap:6px;font-size:12px;color:var(--text2);margin-top:4px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .tile-linje.overtid{color:var(--danger)}
+.tile-linje.tine{color:var(--accent-text,var(--accent));font-weight:600}
+/* Angre-kø for hurtig-avkryssinger: én stripe, nyeste øverst, «+N til» */
+.hjem-angre{position:fixed;left:50%;bottom:calc(14px + env(safe-area-inset-bottom));transform:translateX(-50%);z-index:300;display:none;align-items:center;gap:10px;max-width:calc(100vw - 24px);padding:8px 8px 8px 14px;border-radius:12px;background:var(--text,#222);color:var(--bg,#fff);font-size:13px;box-shadow:0 8px 28px rgba(0,0,0,.25)}
+.hjem-angre.vis{display:flex}
+.hjem-angre span{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.hjem-angre small{font-size:11px;opacity:.7;white-space:nowrap}
+.hjem-angre button{flex-shrink:0;font-size:13px;font-weight:700;padding:8px 12px;min-height:36px;border-radius:8px;border:none;background:rgba(127,127,127,.25);color:inherit;cursor:pointer}
 .dash-check{width:20px;height:20px;border-radius:50%;border:1.5px solid var(--border);background:transparent;color:var(--text4);cursor:pointer;font-size:11px;line-height:1;flex-shrink:0;padding:0;transition:border-color .15s var(--ease-out),color .15s var(--ease-out),transform .14s var(--ease-out)}
 .dash-check:active{transform:scale(.92)}
 @media(hover:hover) and (pointer:fine){.dash-check:hover{border-color:var(--accent);color:var(--accent)}}
@@ -116,6 +123,7 @@
   </div>
 
   <div class="varsler" id="varsler"></div>
+  <div class="hjem-angre" id="hjem-angre" role="status" aria-live="polite"><span id="hjem-angre-tekst"></span><small id="hjem-angre-flere"></small><button type="button" id="hjem-angre-btn">Angre</button></div>
 
   <div class="app-grid" id="app-grid"></div>
 
@@ -184,6 +192,7 @@ import { APP_NAVN, APP_IKON } from './felles/seed.js';
 import { varslerStottet, varslerTillatt, aktiverVarsler } from './felles/push.js';
 import { ref, onValue, set } from 'https://www.gstatic.com/firebasejs/10.14.1/firebase-database.js';
 
+import { ingCore, navnTreff } from './felles/vare.js';
 import { monterHjelp } from './felles/hjelp.js';
 monterHjelp('hjem');
 
@@ -201,6 +210,7 @@ const UKEDAG = ['søndag', 'mandag', 'tirsdag', 'onsdag', 'torsdag', 'fredag', '
 const { user, erAdmin, familieId, medlem } = await requireAuth();
 let innst = medlem?.innstillinger || {}; // per-bruker: rekkefolge + varselAv
 let sisteFam = null; // siste familie-snapshot (deles av hilsen, dashbord, profil)
+let frakobletFra = null; // når forbindelsen til databasen falt ut (null = tilkoblet)
 if (erAdmin) document.getElementById('admin-lenke').style.display = 'block';
 
 // ── Personlig hilsen ──
@@ -239,6 +249,14 @@ if (!familieId) {
   document.getElementById('meny-oppsett').style.display = 'none';
 } else {
   visHilsen();
+  // Er vi koblet til databasen? Sanntidslytteren gir ferske data så lenge forbindelsen står.
+  // Faller den ut, kan noen ha gitt en dose i mellomtiden – se helseFersk().
+  onValue(ref(db, '.info/connected'), snap => {
+    const v = snap.val();
+    if (v === true) frakobletFra = null;
+    else if (v === false && frakobletFra === null) frakobletFra = Date.now();
+    if (sisteFam) tegnVarsler(sisteFam, sisteFam.meta || {});
+  });
   onValue(ref(db, 'familier/' + familieId), snap => {
     const fam = snap.exists() ? snap.val() : {};
     const meta = fam.meta || {};
@@ -255,8 +273,9 @@ if (!familieId) {
 function dagerMellom(a, b) { return Math.floor((new Date(a) - new Date(b)) / 86400000); }
 function klokke(ts) { const d = new Date(ts); return String(d.getHours()).padStart(2, '0') + ':' + String(d.getMinutes()).padStart(2, '0'); }
 function varighet(ms) {
-  const t = Math.floor(ms / 3600000), m = Math.round(ms % 3600000 / 60000);
-  return (t > 0 ? t + ' t ' : '') + (m > 0 || t === 0 ? m + ' min' : '');
+  // Rund av til hele minutter først – ellers kan det bli «2 t 60 min»
+  const tot = Math.round(Math.max(0, ms) / 60000), t = Math.floor(tot / 60), m = tot % 60;
+  return ((t > 0 ? t + ' t ' : '') + (m > 0 || t === 0 ? m + ' min' : '')).trim();
 }
 // Når kan neste dose gis? Minste intervall OG maks per døgn: er maks nådd, er
 // neste tidspunkt når den eldste av de siste dosene blir 24 t gammel. Doser fram
@@ -271,6 +290,38 @@ function nesteDose(doser, med, barnId, now) {
   const maxed = siste24.length >= maks;
   if (maxed) okAt = Math.max(okAt, siste24[siste24.length - maks].ts + 86400000);
   return { last, okAt, maxed };
+}
+// Forsiden står ofte åpen hele dagen. Har forbindelsen vært borte i over 30 min, kan helse-
+// dataene være gamle: da vises aldri «kan gis nå», bare når de sist ble oppdatert.
+const HELSE_GAMMEL_MS = 30 * 60000;
+function helseFersk(now) { return frakobletFra === null || now - frakobletFra <= HELSE_GAMMEL_MS; }
+function oppdatertTekst(now) {
+  return frakobletFra === null ? '' : ' (oppdatert kl ' + klokke(frakobletFra) + (new Date(frakobletFra).toDateString() !== new Date(now).toDateString() ? ' ' + new Date(frakobletFra).toLocaleDateString('nb-NO', { day: 'numeric', month: 'short' }) : '') + ')';
+}
+// ── Middag i morgen og tine-påminnelse ──
+const TINE_FRA_KL = 15; // «Ta ut av fryseren i kveld» vises fra dette klokkeslettet
+function datoPluss(n) { const d = new Date(); d.setDate(d.getDate() + n); return d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0'); }
+// Fryservarer (antall > 0) som passer retten eller en av ingrediensene i idébanken – på HELE ord,
+// så «Kjøtt» ikke treffer «Kjøttdeig». «Rester: …» teller bare mot selve retten.
+function fryserTreff(fam, rett) {
+  const items = fam.fryser?.items || [];
+  if (!rett || !items.length) return [];
+  const ide = (fam.middag?.ideas || []).find(i => i.name && i.name.toLowerCase().trim() === String(rett).toLowerCase().trim());
+  const ings = (ide && Array.isArray(ide.ingredienser) ? ide.ingredienser : []).map(ingCore).filter(Boolean);
+  return items.filter(i => {
+    if (!i || !i.name || (i.qty != null && !(i.qty > 0))) return false;
+    const rest = /^rester:/i.test(i.name);
+    const nm = rest ? i.name.replace(/^rester:\s*/i, '') : i.name;
+    if (navnTreff(nm, rett)) return true;
+    return !rest && ings.some(g => navnTreff(nm, g));
+  });
+}
+function tineTekst(fam) {
+  if (new Date().getHours() < TINE_FRA_KL) return '';
+  const imorgen = (fam.middag?.meals || []).find(m => m.date === datoPluss(1) && m.meal);
+  if (!imorgen) return '';
+  const navn = [...new Set(fryserTreff(fam, imorgen.meal).map(i => i.name))];
+  return navn.length ? '❄️ Ta ut av fryseren i kveld: ' + navn.slice(0, 3).join(', ') + (navn.length > 3 ? ' …' : '') : '';
 }
 function barnNavn(fam, id) { return (fam.personer?.barn || []).find(b => String(b.id) === String(id))?.navn || 'barnet'; }
 function fristTekst(dato) {
@@ -338,6 +389,8 @@ function tegnVarsler(fam, meta) {
       if (idag) v.push({ prio: 3, ikon: 'ti-tools-kitchen-2', href: 'middag.html',
         tekst: 'I dag til middag: ' + idag.meal + (idag.cook ? ' (' + idag.cook + ' lager)' : '') });
       else v.push({ prio: 3, ikon: 'ti-tools-kitchen-2', href: 'middag.html', tekst: 'Ingen middag planlagt i dag – spinn ruletten?' });
+      const tine = aktiv('fryser') ? tineTekst(fam) : '';
+      if (tine) v.push({ prio: 2, ikon: 'ti-snowflake', href: 'fryser.html', tekst: tine });
     }
     // Ferske beskjeder på tavla (siste 24 t) – minus utløpte og de du har skjult
     if (aktiv('beskjeder')) {
@@ -361,10 +414,11 @@ function tegnVarsler(fam, meta) {
         const med = meds.find(m => m.id === x.med); if (!med) return;
         const st = nesteDose(doser, med, x.barn, now);
         if (!st) return;
+        const fersk = helseFersk(now);
         if (now < st.okAt) v.push({ prio: 2, ikon: 'ti-pill', href: 'helse.html',
-          tekst: barnNavn(fam, x.barn) + ': neste ' + med.name + ' kan gis ' + (new Date(st.okAt).toDateString() !== new Date(now).toDateString() ? 'i morgen ' : '') + 'kl ' + klokke(st.okAt) + ' (om ' + varighet(st.okAt - now) + ')' + (st.maxed ? ' – maks per døgn' : '') });
+          tekst: barnNavn(fam, x.barn) + ': neste ' + med.name + ' kan gis ' + (fersk ? '' : 'tidligst ') + (new Date(st.okAt).toDateString() !== new Date(now).toDateString() ? 'i morgen ' : '') + 'kl ' + klokke(st.okAt) + ' (om ' + varighet(st.okAt - now) + ')' + (st.maxed ? ' – maks per døgn' : '') + oppdatertTekst(now) });
         else if (now - st.last.ts < 24 * 3600000) v.push({ prio: 2, ikon: 'ti-pill', href: 'helse.html',
-          tekst: barnNavn(fam, x.barn) + ': ' + med.name + ' kan gis nå ✓' });
+          tekst: barnNavn(fam, x.barn) + ': ' + med.name + (fersk ? ' kan gis nå ✓' : ' – ukjent, sjekk Helse') + oppdatertTekst(now) });
       });
     }
   } catch (e) { /* feeden skal aldri velte forsiden */ }
@@ -403,8 +457,10 @@ function appStatus(app, fam) {
       const iStr = im.getFullYear() + '-' + String(im.getMonth() + 1).padStart(2, '0') + '-' + String(im.getDate()).padStart(2, '0');
       const imorgen = meals.find(m => m.date === iStr);
       const linjer = [];
-      if (idag) linjer.push({ tekst: 'I dag: ' + idag.meal });
-      if (imorgen) linjer.push({ tekst: 'I morgen: ' + imorgen.meal });
+      if (idag) linjer.push({ tekst: 'I dag: ' + idag.meal + (idag.cook ? ' · ' + idag.cook : '') });
+      if (imorgen && imorgen.meal) linjer.push({ tekst: 'I morgen: ' + imorgen.meal + (imorgen.cook ? ' · ' + imorgen.cook : '') });
+      const tine = tineTekst(fam);
+      if (tine) linjer.push({ tekst: tine, tine: true });
       if (!idag) return { txt: 'Ingen middag planlagt i dag', linjer };
       return { txt: '', varsel: true, linjer };
     }
@@ -454,7 +510,8 @@ function appStatus(app, fam) {
         const med = meds.find(m => m.id === dse.med);
         const st = med && nesteDose(doser, med, dse.barn, now);
         if (st) {
-          if (now < st.okAt) return { txt: barnNavn(fam, dse.barn) + ': neste ' + med.name + ' kl ' + klokke(st.okAt), varsel: true };
+          if (now < st.okAt) return { txt: barnNavn(fam, dse.barn) + ': neste ' + med.name + ' kl ' + klokke(st.okAt) + oppdatertTekst(now), varsel: true };
+          if (!helseFersk(now)) return { txt: barnNavn(fam, dse.barn) + ': ' + med.name + ' – ukjent, sjekk Helse' + oppdatertTekst(now), varsel: true };
           return { txt: barnNavn(fam, dse.barn) + ': ' + med.name + ' kan gis nå ✓', varsel: true };
         }
       }
@@ -502,7 +559,7 @@ function tegnDashbord(fam, meta) {
       if (s.txt) inner += '<span class="tile-status' + (s.varsel ? ' varsel' : '') + '">' + esc(s.txt) + '</span>';
       if (s.linjer?.length) {
         inner += s.linjer.map(l =>
-          '<span class="tile-linje' + (l.overtid ? ' overtid' : '') + '">'
+          '<span class="tile-linje' + (l.overtid ? ' overtid' : '') + (l.tine ? ' tine' : '') + '">'
           + (l.handling ? '<button class="dash-check" data-handling="' + l.handling + '" data-id="' + l.id + '" title="Merk som gjort" aria-label="Merk som gjort">○</button>' : '')
           + esc(l.tekst) + '</span>').join('');
         if (s.flere) inner += '<span class="tile-status">+ ' + s.flere + ' til…</span>';
@@ -536,9 +593,12 @@ document.getElementById('app-grid').addEventListener('click', async e => {
   btn.textContent = '✓'; btn.disabled = true;
   try {
     if (btn.dataset.handling === 'hl-check') {
+      const id = parseInt(btn.dataset.id);
+      const vare = (sisteFam.handleliste?.items || []).find(i => i.id === id);
       const items = (sisteFam.handleliste?.items || []).map(i =>
-        i.id === parseInt(btn.dataset.id) ? { ...i, checked: true, av: (medlem?.navn || '').split(' ')[0] } : i);
+        i.id === id ? { ...i, checked: true, av: (medlem?.navn || '').split(' ')[0] } : i);
       await set(ref(db, 'familier/' + familieId + '/handleliste/items'), items);
+      if (vare) leggIAngreKo({ type: 'hl', id, tekst: '✓ ' + vare.name });
     } else if (btn.dataset.handling === 'opg-check') {
       // Samme semantikk som oppgave-appens completeTask: arkiver + fjern.
       // (Bare ikke-gjentakende oppgaver får avhuking her – se appStatus.)
@@ -550,9 +610,56 @@ document.getElementById('app-grid').addEventListener('click', async e => {
         const archive = [...(sisteFam.oppgaver?.archive || []), { ...ferdig, done: true, completedDate: todayStr(), doneBy: (medlem?.navn || '').split(' ')[0] }];
         await set(ref(db, 'familier/' + familieId + '/oppgaver/tasks'), tasks);
         await set(ref(db, 'familier/' + familieId + '/oppgaver/archive'), archive);
+        leggIAngreKo({ type: 'opg', id, task: ferdig, tekst: '✓ ' + ferdig.title });
       }
     }
   } catch (err) { btn.textContent = '○'; btn.disabled = false; }
+});
+
+// ── Angre-kø ─────────────────────────────────────────────────
+// Hver avkryssing får sin egen angre-plass som varer ANGRE_MS. Stripa viser den nyeste
+// («+N til» når flere kan angres); «Angre» tar den nyeste, så vises den neste.
+// Angringen bygger på dataene slik de er NÅ, så andres endringer i mellomtiden beholdes.
+const ANGRE_MS = 8000;
+let angreKo = [], angreTimer = null;
+function leggIAngreKo(x) {
+  angreKo = angreKo.filter(a => !(a.type === x.type && a.id === x.id));
+  angreKo.push({ ...x, til: Date.now() + ANGRE_MS });
+  tegnAngre();
+}
+function tegnAngre() {
+  const now = Date.now();
+  angreKo = angreKo.filter(a => a.til > now);
+  clearTimeout(angreTimer);
+  const el = document.getElementById('hjem-angre');
+  if (!angreKo.length) { el.classList.remove('vis'); return; }
+  const top = angreKo[angreKo.length - 1];
+  document.getElementById('hjem-angre-tekst').textContent = top.tekst;
+  document.getElementById('hjem-angre-flere').textContent = angreKo.length > 1 ? '+' + (angreKo.length - 1) + ' til' : '';
+  el.classList.add('vis');
+  angreTimer = setTimeout(tegnAngre, Math.max(50, Math.min(...angreKo.map(a => a.til)) - now));
+}
+document.getElementById('hjem-angre-btn').addEventListener('click', async () => {
+  tegnAngre();
+  const x = angreKo.pop();
+  if (!x || !sisteFam) { tegnAngre(); return; }
+  // Den neste i køen får litt ekstra tid, så man rekker å angre den også
+  if (angreKo.length) { const nx = angreKo[angreKo.length - 1]; nx.til = Math.max(nx.til, Date.now() + 3000); }
+  tegnAngre();
+  try {
+    if (x.type === 'hl') {
+      const items = (sisteFam.handleliste?.items || []).map(i => {
+        if (i.id !== x.id) return i;
+        const { av, ...rest } = i; return { ...rest, checked: false };
+      });
+      await set(ref(db, 'familier/' + familieId + '/handleliste/items'), items);
+    } else if (x.type === 'opg') {
+      const tasks = sisteFam.oppgaver?.tasks || [];
+      if (!tasks.some(t => t.id === x.id)) await set(ref(db, 'familier/' + familieId + '/oppgaver/tasks'), [...tasks, x.task]);
+      const archive = (sisteFam.oppgaver?.archive || []).filter(a => !(a.id === x.id && a.completedDate === todayStr()));
+      await set(ref(db, 'familier/' + familieId + '/oppgaver/archive'), archive);
+    }
+  } catch (err) { setStatus('Kunne ikke angre – prøv igjen', 'err'); }
 });
 
 // ── Inviter til husstanden ───────────────────────────────────
