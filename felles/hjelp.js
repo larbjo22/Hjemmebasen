@@ -48,6 +48,7 @@ const HJELP = {
       'Huk av for å fullføre. Den arkiveres med dato og hvem som gjorde den.',
       '«Min dag» filtrerer til dine oppgaver som skal gjøres i dag – den velger deg automatisk.',
       'Hus-vedlikehold: registrer ting som skal gjøres med jevne mellomrom, så lages oppgaven automatisk når det er på tide igjen.',
+      'Husfreden (slås på under Innstillinger): fanen «Fred» der de voksne logger frustrasjoner og ros, markerer ting som fikset og ser ukas poeng.',
     ],
     tips: 'Dra i håndtaket til venstre for å endre rekkefølgen manuelt.',
   },

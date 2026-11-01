@@ -96,7 +96,9 @@ all sikkerhet ligger i security rules (§7).
       "handleliste": { "items": [], "history": [], "categories": [], "templates": [], "other": [], "otherPlaces": [], "otherHistory": [] },
       "middag":      { "meals": [], "people": [], "ideas": [] },      // people seedes fra personer.voksne
       "fryser":      { "freezers": [], "categories": [], "history": [], "items": [] },
-      "oppgaver":    { "tasks": [], "archive": [], "categories": [], "people": [], "maintenance": [] },
+      "oppgaver":    { "tasks": [], "archive": [], "categories": [], "people": [], "maintenance": [],
+                       // valgfri fane «Fred» (Husfreden), av som standard:
+                       "husfreden": { "pa": false, "entries": [], "cats": [], "truce": null, "nextHid": 1 } },
       "plikter":     { "kids": [], "chores": [], "log": [], "rewards": [], "spent": [] },  // kids seedes fra personer.barn
 
       // ENDRING 1: søvn per barn (flere barn fra start)
