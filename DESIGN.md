@@ -101,7 +101,10 @@ all sikkerhet ligger i security rules (§7).
 
       // ENDRING 1: søvn per barn (flere barn fra start)
       "sovn": {
-        "<barnId>": { "state": "awake", "since": 0, "sessions": [], "nextSid": 1, "settings": {} }
+        "<barnId>": { "state": "awake", "since": 0, "sessions": [], "ukjent": [], "nextSid": 1, "settings": {} }
+        // state: awake | sleeping | pause. ukjent: [{id,fra,til}] = tid som ikke er registrert
+        // (pause/«nullstill fra nå») – holdes utenfor statistikk og læring.
+        // settings.autoWake (standard på): «anbefalt neste søvn» lærer av barnets siste 14 dager.
       },
 
       // ENDRING 2: helse.barn refererer personregisteret (id, ikke navn-streng)

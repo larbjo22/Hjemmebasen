@@ -79,7 +79,8 @@ const HJELP = {
     punkter: [
       'Trykk «Legg ned» når barnet sovner og «Våknet» når det våkner. Har flere barn? Velg barn øverst.',
       'Trykk «Justér tidspunkt» hvis du glemte å registrere med en gang.',
-      'Anslaget for neste lur eller leggetid bygger på våkenvinduene du setter i innstillingene.',
+      'Anslaget for neste lur eller leggetid lærer av barnets egne våkenvinduer og leggetid de siste 14 dagene. Før det er nok data, brukes våkenvinduene i innstillingene.',
+      '«Pause» når andre har barnet (barnehage, besteforeldre): tiden telles ikke. «Nullstill fra nå» hvis dere glemte å trykke – tiden siden forrige trykk holdes utenfor statistikken.',
       'Avviker dagen fra planen, bruk «Siste lur er tatt» eller «Én lur til i dag» – da regner appen riktig.',
       'På en kort luredag forkortes leggetid-anslaget automatisk, og du ser hvorfor i teksten.',
     ],
