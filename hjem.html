@@ -309,6 +309,7 @@ function tegnVarsler(fam, meta) {
         const navn = barnNavn(fam, id);
         if (blob.state === 'sleeping') v.push({ prio: 3, ikon: 'ti-zzz', href: 'sovn.html',
           tekst: navn + ' sover nå – har sovet i ' + varighet(Date.now() - blob.since) + ' (siden ' + klokke(blob.since) + ')' });
+        else if (blob.state === 'pause') return; // søvnsporingen er satt på pause (andre har barnet)
         else if (blob.sessions?.length) v.push({ prio: 3, ikon: 'ti-sun', href: 'sovn.html',
           tekst: navn + ' er våken – våken i ' + varighet(Date.now() - blob.since) });
       });
