@@ -382,6 +382,7 @@ import { requireAuth } from './felles/auth.js';
 import { dbGet, dbSet, dbListen } from './felles/storage.js';
 import { esc, todayStr, initTheme, toggleTheme, setStatus } from './felles/ui.js';
 import { monterNav } from './felles/nav.js';
+import { endreTrygt } from './felles/flett.js';
 import { normKey, stemWord, ingCore, vareKey, vareOrd, ordFolge, finnVare, storForbokstav } from './felles/vare.js';
 const APP='middag';
 let FAMILIE=null;
@@ -1270,15 +1271,14 @@ async function confirmWeekShop(){
   const btn=document.getElementById('shop-confirm-btn');
   btn.disabled=true;btn.innerHTML='Legger til...';
   try{
-    // Fersk lesning av handlelista rett før skriving. dbGet kaster ved feil
-    // og gir null KUN når noden er tom (autoritativt svar) → trygt å starte
-    // blankt. Lesningen markerer også noden som lest, som dbSet krever.
-    let hl=await dbGet(FAMILIE,'handleliste');
-    if(!hl)hl={};                                  // helt ny node
+    // Handlelista endres i én transaksjon (felles/flett.js): Firebase gir oss det som ligger der
+    // NÅ, og kjører endringen på nytt hvis noen andre skrev i mellomtiden – ingenting overskrives.
+    let added=0,okt=0;
+    const ok=await endreTrygt('familier/'+FAMILIE+'/handleliste',hl=>{
     if(!Array.isArray(hl.items))hl.items=[];       // reparer KUN items – resten av noden bevares
     const hist=Array.isArray(hl.history)?hl.history:[];
     let nextId=Math.max(100,...hl.items.map(i=>i.id||0),...(hl.templates||[]).map(t=>t.id||0),...(hl.other||[]).map(o=>o.id||0))+1;
-    let added=0,okt=0;
+    added=0;okt=0; // funksjonen kan kjøres flere ganger – tell på nytt hver gang
     const td=today();
     // Vare-regelen (felles/vare.js): mengde/enhet tas bort («400 g kjøttdeig» → «Kjøttdeig»), og samme
     // vare telles sammen – fra to middager blir det én rad med antall 2, ikke to rader.
@@ -1299,9 +1299,9 @@ async function confirmWeekShop(){
       hl.items.push({id:nextId++,name:h?h.name:b.navn,cat:h?(h.cat||''):'',qty:b.antall,checked:false,added:td});
       added++;
     });
-    if(added||okt){
-      await dbSet(FAMILIE,'handleliste',hl); // kaster ved feil → catch under
-    }
+    return (added||okt)?hl:undefined; // undefined = ingenting å skrive
+    });
+    if(!ok&&(added||okt))throw new Error('ikke skrevet');
     hideShopModal();
     setStatus((added?added+' nye varer':'')+(added&&okt?' · ':'')+(okt?okt+' fikk økt antall':'')+(added||okt?' i handlelista ✓':'Ingen varer valgt'),'ok');
   }catch(e){

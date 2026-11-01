@@ -193,6 +193,7 @@ import { varslerStottet, varslerTillatt, aktiverVarsler } from './felles/push.js
 import { ref, onValue, set } from 'https://www.gstatic.com/firebasejs/10.14.1/firebase-database.js';
 
 import { ingCore, navnTreff } from './felles/vare.js';
+import { endreTrygt } from './felles/flett.js';
 import { monterHjelp } from './felles/hjelp.js';
 monterHjelp('hjem');
 
@@ -592,26 +593,34 @@ document.getElementById('app-grid').addEventListener('click', async e => {
   e.preventDefault(); e.stopPropagation();
   btn.textContent = '✓'; btn.disabled = true;
   try {
+    // Endringene gjøres i en transaksjon på noden (felles/flett.js): bygger på det som ligger
+    // der NÅ og endrer bare den ene varen/oppgaven – andres samtidige endringer beholdes.
+    const av = (medlem?.navn || '').split(' ')[0];
     if (btn.dataset.handling === 'hl-check') {
       const id = parseInt(btn.dataset.id);
-      const vare = (sisteFam.handleliste?.items || []).find(i => i.id === id);
-      const items = (sisteFam.handleliste?.items || []).map(i =>
-        i.id === id ? { ...i, checked: true, av: (medlem?.navn || '').split(' ')[0] } : i);
-      await set(ref(db, 'familier/' + familieId + '/handleliste/items'), items);
-      if (vare) leggIAngreKo({ type: 'hl', id, tekst: '✓ ' + vare.name });
+      let navn = null;
+      await endreTrygt('familier/' + familieId + '/handleliste', hl => {
+        const it = (Array.isArray(hl.items) ? hl.items : []).find(i => i.id === id);
+        if (!it || it.checked) return; // allerede krysset av (eller borte) – ingenting å gjøre
+        it.checked = true; if (av) it.av = av; navn = it.name;
+        return hl;
+      });
+      if (navn) leggIAngreKo({ type: 'hl', id, tekst: '✓ ' + navn });
     } else if (btn.dataset.handling === 'opg-check') {
       // Samme semantikk som oppgave-appens completeTask: arkiver + fjern.
       // (Bare ikke-gjentakende oppgaver får avhuking her – se appStatus.)
       const id = parseInt(btn.dataset.id);
-      const alle = sisteFam.oppgaver?.tasks || [];
-      const ferdig = alle.find(t => t.id === id);
-      if (ferdig) {
-        const tasks = alle.filter(t => t.id !== id);
-        const archive = [...(sisteFam.oppgaver?.archive || []), { ...ferdig, done: true, completedDate: todayStr(), doneBy: (medlem?.navn || '').split(' ')[0] }];
-        await set(ref(db, 'familier/' + familieId + '/oppgaver/tasks'), tasks);
-        await set(ref(db, 'familier/' + familieId + '/oppgaver/archive'), archive);
-        leggIAngreKo({ type: 'opg', id, task: ferdig, tekst: '✓ ' + ferdig.title });
-      }
+      let ferdig = null;
+      await endreTrygt('familier/' + familieId + '/oppgaver', o => {
+        const tasks = Array.isArray(o.tasks) ? o.tasks : [];
+        ferdig = tasks.find(t => t.id === id) || null;
+        if (!ferdig) return;
+        o.tasks = tasks.filter(t => t.id !== id);
+        const a = { ...ferdig, done: true, completedDate: todayStr() }; if (av) a.doneBy = av;
+        o.archive = [...(Array.isArray(o.archive) ? o.archive : []), a];
+        return o;
+      });
+      if (ferdig) leggIAngreKo({ type: 'opg', id, task: ferdig, tekst: '✓ ' + ferdig.title });
     }
   } catch (err) { btn.textContent = '○'; btn.disabled = false; }
 });
@@ -648,16 +657,19 @@ document.getElementById('hjem-angre-btn').addEventListener('click', async () => 
   tegnAngre();
   try {
     if (x.type === 'hl') {
-      const items = (sisteFam.handleliste?.items || []).map(i => {
-        if (i.id !== x.id) return i;
-        const { av, ...rest } = i; return { ...rest, checked: false };
+      await endreTrygt('familier/' + familieId + '/handleliste', hl => {
+        const it = (Array.isArray(hl.items) ? hl.items : []).find(i => i.id === x.id);
+        if (!it || !it.checked) return;
+        it.checked = false; delete it.av;
+        return hl;
       });
-      await set(ref(db, 'familier/' + familieId + '/handleliste/items'), items);
     } else if (x.type === 'opg') {
-      const tasks = sisteFam.oppgaver?.tasks || [];
-      if (!tasks.some(t => t.id === x.id)) await set(ref(db, 'familier/' + familieId + '/oppgaver/tasks'), [...tasks, x.task]);
-      const archive = (sisteFam.oppgaver?.archive || []).filter(a => !(a.id === x.id && a.completedDate === todayStr()));
-      await set(ref(db, 'familier/' + familieId + '/oppgaver/archive'), archive);
+      await endreTrygt('familier/' + familieId + '/oppgaver', o => {
+        const tasks = Array.isArray(o.tasks) ? o.tasks : [];
+        if (!tasks.some(t => t.id === x.id)) o.tasks = [...tasks, x.task];
+        o.archive = (Array.isArray(o.archive) ? o.archive : []).filter(a => !(a.id === x.id && a.completedDate === todayStr()));
+        return o;
+      });
     }
   } catch (err) { setStatus('Kunne ikke angre – prøv igjen', 'err'); }
 });
