@@ -251,7 +251,7 @@ Estimat: **6–8 dager kalendertid** (flere-barn-søvn la på ~1 dag), koding i
 | Rules-feil → datalekkasje mellom familier | Testplan §7 før noen inviteres; rules reviewes som egen PR-del |
 | Helsedata om barn hos bekjente | E-postinnlogging, familie-isolasjon, ingen sporing/analyse i appene |
 | Administratoren blir «support» | Admin-side for alt vanlig; passord-reset er selvbetjent |
-| Samtidig redigering (last-write-wins per blob) | Sanntidslyttere krymper vinduet til <1 s; per-felt-skriving i v2 |
+| Samtidig redigering (last-write-wins per blob) | Søvn, handleliste og oppgaver lagrer med `felles/flett.js`: transaksjon + tre-veis sammenslåing (base/lokal/database), lister slås sammen per id. Engangsendringer fra andre sider (Hjem, middag/fryser → handleliste) bruker `endreTrygt()`. Øvrige apper: sanntidslyttere krymper vinduet |
 | To kodebaser (ha-apper + hjemmebasen) | Bevisst valgt; forbedringer porteres manuelt ved behov. Revurderes hvis vedlikehold svir |
 | Gratisgrenser | 20–30 familier < 1 % av Spark-grensene |
 | iOS-quirks (PWA) | administratoren tester på iPhone per etappe; web-push utsettes til v2 |

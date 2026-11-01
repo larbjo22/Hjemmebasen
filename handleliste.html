@@ -348,6 +348,7 @@ import { dbGet, dbSet, dbListen } from './felles/storage.js';
 import { esc, todayStr, initTheme, toggleTheme, setStatus } from './felles/ui.js';
 import { monterNav } from './felles/nav.js';
 import { visAngre } from './felles/angre.js';
+import { flettLager } from './felles/flett.js';
 import { normKey, finnVare, vareFraTekst } from './felles/vare.js';
 const APP='handleliste';
 let FAMILIE=null;
@@ -438,6 +439,9 @@ async function load(){
     // ingen MQTT-tvetydighet). Tom node = ny husstand → trygt å starte blankt.
     const saved=await dbGet(FAMILIE,APP);
     if(saved)adoptData(saved);
+    // Lageret slår sammen med andres endringer ved hver lagring (felles/flett.js)
+    lager=flettLager('familier/'+FAMILIE+'/'+APP,{hent:()=>data,bruk:d=>{adoptData(d);render();},normaliser});
+    lager.mottatt(saved,{brukDem:false});
     dataLoaded=true;
     setStatus('');
     startListen();
@@ -445,17 +449,19 @@ async function load(){
   render();
 }
 
-let sistSkrevet=''; // JSON av egen siste skriving – brukes til å ignorere ekko fra lytteren
+// Lagring: les ferskt, slå sammen med andres endringer og skriv – i én transaksjon
+// (felles/flett.js). Hindrer at en telefon med gamle data overskriver det en annen nettopp gjorde.
+let lager=null;
 async function save(){
-  if(!dataLoaded){setStatus('Ikke lagret – data er ikke lastet ennå. Last siden på nytt.','err');return;}
+  if(!dataLoaded||!lager){setStatus('Ikke lagret – data er ikke lastet ennå. Last siden på nytt.','err');return;}
   setStatus('Lagrer...');
+  const treg=setTimeout(()=>setStatus('Venter på nett – lagres når forbindelsen er tilbake','err'),8000);
   try{
-    sistSkrevet=JSON.stringify(data);
-    await dbSet(FAMILIE,APP,data);
-    setStatus('Lagret ✓','ok');
+    const ok=await lager.lagre();
+    setStatus(ok?'Lagret ✓':'Ikke lagret – prøv igjen',ok?'ok':'err');
   }catch(e){
     setStatus('Kunne ikke lagre – prøv igjen','err');
-  }
+  }finally{clearTimeout(treg);}
 }
 
 // Stille re-henting: oppdaterer lista når appen åpnes igjen / mens den står åpen.
@@ -475,16 +481,16 @@ let stopListen=null;
 function startListen(){
   if(stopListen)return;
   stopListen=dbListen(FAMILIE,APP,saved=>{
-    if(!saved)return;
-    const s=JSON.stringify(normaliser(saved));
-    if(s===sistSkrevet)return;               // ekko av egen skriving – alltid ignorér
-    if(s===JSON.stringify(data))return;      // ingen reell endring
-    if(isEditing())return;                   // ekte endring – vent til brukeren er ferdig
-    adoptData(saved);
-    dataLoaded=true;
-    render();
+    if(!saved||!lager)return;
+    // Mens du skriver/redigerer tegnes ikke lista på nytt – endringen tas inn når du er ferdig
+    // (eller slås sammen ved din neste lagring, så den går aldri tapt)
+    if(isEditing()){ventende=saved;return;}
+    ventende=null;
+    lager.mottatt(saved); // tar dem i bruk hvis vi ikke har ulagrede endringer selv
   });
 }
+let ventende=null;
+setInterval(()=>{if(ventende&&lager&&!isEditing()){const v=ventende;ventende=null;lager.mottatt(v);}},3000);
 
 // ── Views ────────────────────────────────────────────────────
 function setView(v){

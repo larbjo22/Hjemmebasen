@@ -515,6 +515,7 @@ import { requireAuth } from './felles/auth.js';
 import { dbGet, dbSet, dbSetSub, dbListen } from './felles/storage.js';
 import { esc, avatarHtml, finnAvatar, initTheme, toggleTheme, setStatus } from './felles/ui.js';
 import { monterNav } from './felles/nav.js';
+import { flettLager } from './felles/flett.js';
 
 const APP='sovn';
 let FAMILIE=null;
@@ -968,7 +969,20 @@ function dayIncomplete(key){return ukjentMsOnDay(key)>=UKJENT_DAG_MS;}
 // ── Lagring (Firebase via felles/storage.js) ─────────────────
 let dataLoaded=false; // sant først når en ekte lesning har lyktes – hindrer overskriving
 let lastSave=0;
-let sistSkrevet=''; // JSON av vår egen siste skriving (ekko-vern)
+// Ett lager per barn (sovn/<barnId>): hver lagring leser ferskt og slår sammen med det
+// den andre forelderen har registrert for samme barn i mellomtiden (felles/flett.js).
+const lagre={};
+function barnFor(id){return barnListe.find(b=>String(b.id)===String(id))||{id};}
+function lagerFor(id){
+  if(!lagre[id]){
+    lagre[id]=flettLager('familier/'+FAMILIE+'/'+APP+'/'+id,{
+      hent:()=>alle[id]??null,
+      bruk:d=>{alle[id]=d;if(aktivBarn&&String(aktivBarn.id)===String(id))data=alle[id];render();},
+      normaliser:d=>normalizeData(d,barnFor(id)),
+    });
+  }
+  return lagre[id];
+}
 
 // Pek `data` på det valgte barnets blob (opprett default-blob hvis den mangler).
 // Samme objektreferanse som i `alle`, så all eksisterende mutasjon virker uendret.
@@ -1005,6 +1019,9 @@ async function load(){
     // dbGet gir null KUN når noden er tom (autoritativt svar) → trygt å starte blankt
     const saved=await dbGet(FAMILIE,APP);
     alle=saved||{};
+    // Normaliser alle barnas blober og la lagrene vite hva som ligger i databasen
+    Object.keys(alle).forEach(id=>{alle[id]=normalizeData(alle[id],barnFor(id));lagerFor(id).mottatt(saved[id],{brukDem:false});});
+    barnListe.forEach(b=>{if(!lagerFor(b.id).lastet)lagerFor(b.id).mottatt(null,{brukDem:false});});
     dataLoaded=true;
     if(barnListe.length){
       const husk=localStorage.getItem(APP_KEY+'_barn');
@@ -1024,8 +1041,10 @@ async function save(){
     // Skriver KUN aktivt barns node – to foreldre kan registrere for hvert
     // sitt barn samtidig uten å viske ut hverandres økter (review H3).
     if(aktivBarn&&data){
-      sistSkrevet=JSON.stringify(data);
-      await dbSetSub(FAMILIE,APP,aktivBarn.id,data);
+      const treg=setTimeout(()=>setStatus('Venter på nett – lagres når forbindelsen er tilbake','err'),8000);
+      let ok=false;
+      try{ok=await lagerFor(aktivBarn.id).lagre();}finally{clearTimeout(treg);}
+      if(!ok){setStatus('Ikke lagret – prøv igjen','err');return false;}
     }else{
       await dbSet(FAMILIE,APP,alle);
     }
@@ -1049,19 +1068,23 @@ let stopListen=null;
 function startListen(){
   if(stopListen)return;
   stopListen=dbListen(FAMILIE,APP,saved=>{
-    const incoming=saved||{};
-    if(JSON.stringify(incoming)===JSON.stringify(alle))return; // uendret
-    // Ekko av egen skriving: vårt barns node matcher det vi nettopp skrev,
-    // men andres endringer (andre barn) skal alltid slippe gjennom.
-    if(aktivBarn&&sistSkrevet&&JSON.stringify(incoming[aktivBarn.id]||null)===sistSkrevet
-       &&JSON.stringify({...incoming,[aktivBarn.id]:null})===JSON.stringify({...alle,[aktivBarn.id]:null}))return;
-    if(modalOpen())return;                 // ikke overskriv mens noen redigerer
-    alle=incoming;
-    dataLoaded=true;
-    if(aktivBarn)velgBarnIntern(aktivBarn); // repek data=alle[aktivBarn.id]
-    render();
+    if(modalOpen()){ventende=saved||{};return;} // ikke tegn om mens noen redigerer – tas inn etterpå
+    ventende=null;
+    taInn(saved||{});
   });
 }
+// Hvert barn for seg: lageret tar i bruk andres endringer når vi ikke har ulagrede egne
+// (ellers slår neste lagring dem sammen). Ekko av egen lagring er likt og endrer ingenting.
+function taInn(incoming){
+  Object.keys(incoming).forEach(id=>{
+    if(alle[id]===undefined)alle[id]=normalizeData(JSON.parse(JSON.stringify(incoming[id])),barnFor(id));
+    lagerFor(id).mottatt(incoming[id]);
+  });
+  if(aktivBarn)velgBarnIntern(aktivBarn); // repek data=alle[aktivBarn.id]
+  render();
+}
+let ventende=null;
+setInterval(()=>{if(ventende&&!modalOpen()){const v=ventende;ventende=null;taInn(v);}},3000);
 
 // ── Tilstandsendring ─────────────────────────────────────────
 function setState(newState){
