@@ -17,10 +17,9 @@
 .tilbake{display:inline-flex;align-items:center;gap:5px;font-size:13px;font-weight:700;padding:7px 14px;border-radius:18px;background:var(--accent);color:#fff;text-decoration:none;margin-bottom:12px}
 .utgave{margin-bottom:22px}
 .utgave-hode{margin:4px 2px 12px}
-.utgave-dato{font-size:11.5px;font-weight:600;color:var(--text3);text-transform:uppercase;letter-spacing:.05em}
 .utgave-tittel{font-size:19px;font-weight:800;line-height:1.25;margin:3px 0 6px}
 .utgave-ingress{font-size:13.5px;line-height:1.55;color:var(--text2);margin:0}
-.ny-merke{display:inline-block;font-size:10.5px;font-weight:700;padding:2px 7px;border-radius:9px;background:var(--accent-bg);border:1px solid var(--accent-border);color:var(--accent-text);vertical-align:middle;margin-left:6px;text-transform:none;letter-spacing:0}
+.ny-merke{display:inline-block;position:relative;top:-2px;font-size:10.5px;font-weight:700;padding:2px 7px;border-radius:9px;background:var(--accent-bg);border:1px solid var(--accent-border);color:var(--accent-text);vertical-align:middle;margin-left:6px;text-transform:none;letter-spacing:0}
 .del .card-title i{font-size:15px;color:var(--accent-text)}
 .del ul{margin:0;padding-left:18px}
 .del li{font-size:13.5px;line-height:1.55;margin-bottom:7px}
@@ -53,18 +52,12 @@ document.getElementById('theme-btn').addEventListener('click', toggleTheme);
 
 const varUlest = nyheterUlest();
 
-function datoTxt(ds) {
-  const d = new Date(ds + 'T12:00:00');
-  return d.toLocaleDateString('nb-NO', { day: 'numeric', month: 'long', year: 'numeric' });
-}
-
 // Punktene i nyheter.js er vår egen, faste tekst med <b> for utheving –
 // de settes inn som HTML. Alt annet går gjennom esc().
 document.getElementById('utgaver').innerHTML = NYHETER.map((u, i) =>
   '<section class="utgave">'
   + '<div class="utgave-hode">'
-  + '<div class="utgave-dato">' + esc(datoTxt(u.dato)) + (i === 0 && varUlest ? '<span class="ny-merke">Nytt</span>' : '') + '</div>'
-  + '<h2 class="utgave-tittel">' + esc(u.tittel) + '</h2>'
+  + '<h2 class="utgave-tittel">' + esc(u.tittel) + (i === 0 && varUlest ? '<span class="ny-merke">Nytt</span>' : '') + '</h2>'
   + (u.ingress ? '<p class="utgave-ingress">' + esc(u.ingress) + '</p>' : '')
   + '</div>'
   + u.deler.map(d =>

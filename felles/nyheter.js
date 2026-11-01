@@ -2,12 +2,11 @@
 // Release notes for brukerne: vises på nyheter.html, og Hjem viser et lite
 // «Nytt i Hjemmebasen»-banner til den nyeste utgaven er lest.
 // Ny utgave: legg et nytt objekt ØVERST i NYHETER med en ny, unik id
-// (dato er fint). Skriv for brukere – hva de ser og kan gjøre, ikke kode.
+// (f.eks. dagens dato – den vises ikke). Skriv for brukere – hva de ser og kan gjøre, ikke kode.
 
 export const NYHETER = [
   {
     id: '2026-11-01',
-    dato: '2026-11-01',
     tittel: 'Smartere søvn, Husfreden og tryggere lagring',
     ingress: 'Den største oppdateringen hittil. Søvn-appen lærer av barnets egne tider, flere kan bruke appene samtidig uten at noe forsvinner, og nesten alle appene har fått angre og små forbedringer.',
     deler: [
