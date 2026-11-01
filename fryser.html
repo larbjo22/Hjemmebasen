@@ -252,6 +252,7 @@ import { requireAuth } from './felles/auth.js';
 import { dbGet, dbSet, dbListen } from './felles/storage.js';
 import { esc, todayStr, initTheme, toggleTheme, setStatus } from './felles/ui.js';
 import { monterNav } from './felles/nav.js';
+import { visAngre } from './felles/angre.js';
 const APP='fryser';
 const SHOP_APP='handleliste'; // handlelista – for «Legg på handleliste»
 let FAMILIE=null;
@@ -406,7 +407,12 @@ function renderCatChips(){document.getElementById('cat-chips').innerHTML=[...dat
 function addCategory(){const inp=document.getElementById('new-cat-name');const name=inp.value.trim();if(!name||data.categories.includes(name))return;data.categories.push(name);data.categories.sort((a,b)=>a.localeCompare(b,'nb'));inp.value='';save();render();renderCatChips();}
 function deleteCategory(cat){if(data.items.some(i=>i.cat===cat)){alert('"'+cat+'" er i bruk.');return;}data.categories=data.categories.filter(c=>c!==cat);if(activeFilter===cat)activeFilter='alle';save();render();renderCatChips();}
 document.getElementById('new-cat-name').addEventListener('keydown',e=>{if(e.key==='Enter')addCategory();});
-function populateCatSelect(id,selected){document.getElementById(id).innerHTML=[...data.categories].sort((a,b)=>a.localeCompare(b,'nb')).map(c=>'<option value="'+esc(c)+'"'+(c===selected?' selected':'')+'>'+esc(c)+'</option>').join('');}
+function populateCatSelect(id,selected){
+  const cats=[...data.categories].sort((a,b)=>a.localeCompare(b,'nb'));
+  // Varens kategori finnes ikke lenger i lista? Ta den med, ellers byttes den stille ved lagring.
+  if(selected&&!cats.includes(selected))cats.push(selected);
+  document.getElementById(id).innerHTML=cats.map(c=>'<option value="'+esc(c)+'"'+(c===selected?' selected':'')+'>'+esc(c)+'</option>').join('');
+}
 
 // ── Modal ────────────────────────────────────────────────────
 // Standard «Avbryt/Lagre»-knapper; valgfri `prefix` (f.eks. Slett-knapp) legges først.
@@ -491,6 +497,16 @@ function saveModal(){
 function changeQty(id,delta){const item=data.items.find(i=>i.id===id);if(!item)return;item.qty=Math.max(0,item.qty+delta);save();render();}
 
 // ── Legg på handleliste ──────────────────────────────────────
+// normKey/stemWord: samme normalisering som handleliste.html bruker til å kjenne
+// igjen samme vare («Kjøttdeig» = «kjøttdeigen») – hold dem i synk.
+function stemWord(w){const s=w.replace(/(ene|er|et|en|e|a)$/,'');return s.length>=3?s:w;}
+function normKey(s){
+  let k=(s||'').toLowerCase().trim().replace(/[.,!?;:]+$/,'').replace(/\s+/g,' ');
+  if(!k)return '';
+  const parts=k.split(' ');
+  parts[parts.length-1]=stemWord(parts[parts.length-1]);
+  return parts.join(' ');
+}
 // Leser handlelista (Firebase-noden 'handleliste'), legger til / øker antall,
 // og skriver tilbake. Vern: dbGet kaster ved feil, så vi skriver aldri i blinde.
 async function addToShoppingList(id){
@@ -503,7 +519,7 @@ async function addToShoppingList(id){
     // mangle på en ellers gyldig node – reparer KUN items, resten bevares.
     if(!list)list={};
     if(!Array.isArray(list.items))list.items=[];
-    const existing=list.items.find(i=>i.name.toLowerCase()===item.name.toLowerCase()&&!i.checked);
+    const existing=list.items.find(i=>normKey(i.name)===normKey(item.name)&&!i.checked);
     if(existing){
       existing.qty=(existing.qty||1)+1;
     }else{
@@ -519,7 +535,18 @@ async function addToShoppingList(id){
     setStatus('Kunne ikke legge på handleliste','err');
   }
 }
-function deleteItem(id){data.items=data.items.filter(i=>i.id!==id);save();render();}
+// Sletting kan angres i noen sekunder (varen legges tilbake i dagens data).
+function deleteItem(id){
+  const idx=data.items.findIndex(i=>i.id===id);if(idx<0)return;
+  const item=data.items[idx];
+  data.items=data.items.filter(i=>i.id!==id);
+  save();render();
+  visAngre('«'+item.name+'» slettet',()=>{
+    if(data.items.some(i=>i.id===item.id))return;
+    data.items.splice(Math.min(idx,data.items.length),0,item);
+    save();render();
+  });
+}
 function addItem(){
   const name=document.getElementById('new-name').value.trim();
   if(!name){document.getElementById('new-name').focus();return;}
@@ -610,13 +637,21 @@ function renderFilters(freezerItems){
   if(expiredCount>0)filterHtml+='<button class="filter-btn danger'+(activeFilter==='expired'?' active':'')+'" data-filter="expired"><i class="ti ti-alert-circle" aria-hidden="true" style="font-size:11px;vertical-align:-1px"></i> Utgått ('+expiredCount+')</button>';
   if(warningCount>0)filterHtml+='<button class="filter-btn warn'+(activeFilter==='expiring'?' active':'')+'" data-filter="expiring"><i class="ti ti-clock" aria-hidden="true" style="font-size:11px;vertical-align:-1px"></i> Går snart ut ('+warningCount+')</button>';
   if(oldCount>0)filterHtml+='<button class="filter-btn old'+(activeFilter==='old'?' active':'')+'" data-filter="old"><i class="ti ti-alarm" aria-hidden="true" style="font-size:11px;vertical-align:-1px"></i> Bruk opp ('+oldCount+')</button>';
-  filterHtml+=data.categories.filter(c=>usedCats.includes(c)).map(c=>{
+  filterHtml+=visteKategorier(freezerItems).filter(c=>usedCats.includes(c)).map(c=>{
     const cnt=freezerItems.filter(i=>i.cat===c).reduce((s,i)=>s+i.qty,0);
-    return '<button class="filter-btn'+(activeFilter===c?' active':'')+'" data-filter="'+esc(c)+'">'+esc(c)+' ('+cnt+')</button>';
+    return '<button class="filter-btn'+(activeFilter===c?' active':'')+'" data-filter="'+esc(c)+'">'+esc(c||'Uten kategori')+' ('+cnt+')</button>';
   }).join('');
   document.getElementById('filter-bar').innerHTML=filterHtml;
 }
 
+// Kategoriene som skal vises: de kjente (sortert) + kategorier som bare finnes på
+// varer (slettet kategori, endret på en annen telefon, tom) – ellers ble slike
+// varer usynlige i lista selv om de telles i totalen.
+function visteKategorier(items){
+  const kjente=[...data.categories].sort((a,b)=>a.localeCompare(b,'nb'));
+  const ekstra=[...new Set(items.map(i=>i.cat||''))].filter(c=>!kjente.includes(c)).sort((a,b)=>a.localeCompare(b,'nb'));
+  return kjente.concat(ekstra);
+}
 function renderList(freezerItems,search){
   let filtered=freezerItems;
   if(activeFilter==='expired')filtered=filtered.filter(i=>expiryStatus(i.expiry)==='expired');
@@ -641,13 +676,13 @@ function renderList(freezerItems,search){
     else{any=true;filtered.forEach(item=>{html+=renderItem(item);});}
   }else{
     const catsToShow=activeFilter==='alle'
-      ?[...data.categories].sort((a,b)=>a.localeCompare(b,'nb'))
+      ?visteKategorier(freezerItems)
       :[activeFilter];
     catsToShow.forEach(cat=>{
       const catItems=[...filtered.filter(i=>i.cat===cat)].sort((a,b)=>a.name.localeCompare(b.name,'nb'));
       if(!catItems.length)return;any=true;
       const icon=CAT_ICONS[cat]||'ti-box';
-      html+='<div class="cat-header"><i class="ti '+icon+'" aria-hidden="true"></i><span class="cat-label">'+esc(cat)+'</span><span class="cat-count">'+catItems.reduce((s,i)=>s+i.qty,0)+' stk</span></div>';
+      html+='<div class="cat-header"><i class="ti '+icon+'" aria-hidden="true"></i><span class="cat-label">'+esc(cat||'Uten kategori')+'</span><span class="cat-count">'+catItems.reduce((s,i)=>s+i.qty,0)+' stk</span></div>';
       catItems.forEach(item=>{html+=renderItem(item);});
     });
     if(!any)html='<div class="empty-state"><i class="ti ti-snowflake" style="font-size:24px;display:block;margin-bottom:6px"></i>Ingen varer her ennå</div>';
@@ -681,9 +716,9 @@ function renderItem(item){
       +(metaHtml?'<div class="item-meta">'+metaHtml+'</div>':'')
     +'</div>'
     +'<div class="qty-wrap">'
-      +'<button class="qty-btn" onclick="changeQty('+item.id+',-1)">−</button>'
+      +'<button class="qty-btn" onclick="changeQty('+item.id+',-1)" aria-label="Én mindre '+esc(item.name)+'">−</button>'
       +'<span class="qty-num'+(item.qty===0?' zero':'')+'">'+item.qty+'</span>'
-      +'<button class="qty-btn" onclick="changeQty('+item.id+',1)">+</button>'
+      +'<button class="qty-btn" onclick="changeQty('+item.id+',1)" aria-label="Én mer '+esc(item.name)+'">+</button>'
     +'</div>'
     +(item.qty===0?'<button class="icon-btn cart" onclick="addToShoppingList('+item.id+')" title="Legg på handleliste" aria-label="Legg '+esc(item.name)+' på handleliste"><i class="ti ti-shopping-cart-plus" aria-hidden="true"></i></button>':'')
     +'<button class="icon-btn" onclick="openEditModal('+item.id+')" title="Rediger" aria-label="Rediger vare"><i class="ti ti-edit" aria-hidden="true"></i></button>'

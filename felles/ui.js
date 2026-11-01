@@ -76,7 +76,11 @@ export function finnAvatar(avatarer, navn) {
 }
 
 // Én sirkel: bilde hvis det finnes, ellers initialer på personfargen.
+// Bare ekte bilde-data-URL-er slipper gjennom: avatarer skrives av alle i
+// husstanden, og verdien havner i et style-attributt (ellers mulig XSS).
+const TRYGT_BILDE = /^data:image\/(png|jpe?g|webp|gif);base64,[A-Za-z0-9+/=]+$/;
 export function avatarHtml(navn, foto, px = 32) {
+  if (foto && !TRYGT_BILDE.test(foto)) foto = null;
   const stil = 'width:' + px + 'px;height:' + px + 'px;font-size:' + Math.round(px * 0.4) + 'px';
   if (foto) return '<span class="avatar" title="' + esc(navn) + '" style="' + stil + ';background-image:url(' + foto + ')"></span>';
   return '<span class="avatar" title="' + esc(navn) + '" style="' + stil + ';background:' + personFarge(navn) + '">' + esc(initialer(navn)) + '</span>';

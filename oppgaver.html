@@ -672,6 +672,11 @@ document.getElementById('new-title').addEventListener('keydown',e=>{if(e.key==='
 // ── Fullfør oppgave ───────────────────────────────────────────
 function completeTask(id){
   const task=data.tasks.find(t=>t.id===id);if(!task)return;
+  // Auto-oppgave fra hus-vedlikehold: fullført = gjort i dag (ellers blir den forfalt for alltid)
+  if(task.maintId){
+    const m=(data.maintenance||[]).find(x=>x.id===task.maintId);
+    if(m){if(!Array.isArray(m.dates))m.dates=[];const td=todayStr();if(!m.dates.includes(td))m.dates.push(td);}
+  }
   // Arkiver
   const arkivert={...task,completedDate:todayStr()};
   if(MITT)arkivert.doneBy=MITT;
@@ -844,7 +849,20 @@ function maintDoneNow(id){
   if(!Array.isArray(m.dates))m.dates=[]; // Firebase fjerner tomme arrays
   const td=todayStr();
   if(!m.dates.includes(td))m.dates.push(td);
+  lukkMaintOppgaver(m);
   save();render();
+}
+// Er vedlikeholdet gjort (ikke lenger forfalt), skal den automatiske oppgaven
+// for det lukkes – ellers ble «Gjort nå» stående som åpen oppgave i lista.
+function lukkMaintOppgaver(m){
+  if(maintStatus(m).due)return;
+  const td=todayStr();
+  data.tasks.filter(t=>t.maintId===m.id&&!t.done).forEach(t=>{
+    const a={...t,completedDate:td};
+    if(MITT)a.doneBy=MITT;
+    data.archive.unshift(a);
+  });
+  data.tasks=data.tasks.filter(t=>!(t.maintId===m.id&&!t.done));
 }
 function renderMaint(){
   const el=document.getElementById('maint-list');
@@ -876,9 +894,11 @@ function renderMaint(){
   }).join('');
 }
 let maintEditId=null;
+let maintDatesFor=null; // kopi av datoene da modalen ble åpnet – «Avbryt» legger dem tilbake
 function openMaintModal(id){
   const m=data.maintenance.find(x=>x.id===id);if(!m)return;
   maintEditId=id;
+  maintDatesFor=[...(m.dates||[])];
   document.getElementById('maint-id').value=id;
   document.getElementById('maint-name').value=m.name;
   document.getElementById('maint-interval').value=m.intervalMonths||'';
@@ -912,15 +932,26 @@ function saveMaintModal(){
   if(name)m.name=name;
   const iv=parseInt(document.getElementById('maint-interval').value,10);
   m.intervalMonths=isNaN(iv)?null:iv;
+  lukkMaintOppgaver(m);
+  maintDatesFor=null; // lagret – ikke legg tilbake
   hideMaintModal();save();render();
 }
 function deleteMaint(){
   const m=data.maintenance.find(x=>x.id===maintEditId);if(!m)return;
   if(!confirm('«'+m.name+'» – slette hele loggen?'))return;
   data.maintenance=data.maintenance.filter(x=>x.id!==maintEditId);
+  maintDatesFor=null;
   hideMaintModal();save();render();
 }
-function hideMaintModal(){document.getElementById('maint-modal').style.display='none';maintEditId=null;}
+// Lukker modalen. Uten lagring (Avbryt, Esc, klikk utenfor) angres dato-endringene.
+function hideMaintModal(){
+  if(maintDatesFor&&maintEditId!=null){
+    const m=data.maintenance.find(x=>x.id===maintEditId);
+    if(m)m.dates=maintDatesFor;
+  }
+  maintDatesFor=null;
+  document.getElementById('maint-modal').style.display='none';maintEditId=null;
+}
 
 function renderTasks(){
   renderKampanje();
@@ -1234,7 +1265,9 @@ document.addEventListener('keydown',e=>{
 // Escape lukker åpen modal.
 document.addEventListener('keydown',e=>{
   if(e.key!=='Escape')return;
-  ['modal','maint-modal'].forEach(id=>{const m=document.getElementById(id);if(m&&m.style.display!=='none')m.style.display='none';});
+  const mm=document.getElementById('maint-modal');
+  if(mm&&mm.style.display!=='none'){hideMaintModal();return;} // angrer ulagrede dato-endringer
+  const m=document.getElementById('modal');if(m&&m.style.display!=='none')m.style.display='none';
 });
 
 // Modul-scope: funksjoner brukt i on*-attributter må eksponeres på window.

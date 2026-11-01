@@ -258,6 +258,20 @@ function varighet(ms) {
   const t = Math.floor(ms / 3600000), m = Math.round(ms % 3600000 / 60000);
   return (t > 0 ? t + ' t ' : '') + (m > 0 || t === 0 ? m + ' min' : '');
 }
+// Når kan neste dose gis? Minste intervall OG maks per døgn: er maks nådd, er
+// neste tidspunkt når den eldste av de siste dosene blir 24 t gammel. Doser fram
+// i tid telles ikke. (Samme logikk som doseStatus() i helse.html – hold dem like.)
+function nesteDose(doser, med, barnId, now) {
+  const ds = doser.filter(d => d.barn === barnId && d.med === med.id && d.ts <= now).sort((a, b) => a.ts - b.ts);
+  if (!ds.length) return null;
+  const last = ds[ds.length - 1];
+  const siste24 = ds.filter(d => d.ts > now - 86400000);
+  const maks = med.maxDay > 0 ? med.maxDay : Infinity;
+  let okAt = last.ts + (med.intervalH || 0) * 3600000;
+  const maxed = siste24.length >= maks;
+  if (maxed) okAt = Math.max(okAt, siste24[siste24.length - maks].ts + 86400000);
+  return { last, okAt, maxed };
+}
 function barnNavn(fam, id) { return (fam.personer?.barn || []).find(b => String(b.id) === String(id))?.navn || 'barnet'; }
 function fristTekst(dato) {
   const d = dagerMellom(dato, todayStr());
@@ -335,22 +349,20 @@ function tegnVarsler(fam, meta) {
       if (lapper.length) v.push({ prio: 3, ikon: 'ti-pin', href: 'beskjeder.html', skjul: lapper[0].id + '_' + lapper[0].ts,
         tekst: lapper[0].fra + ': «' + lapper[0].tekst + '»' + (lapper.length > 1 ? ' (+' + (lapper.length - 1) + ' til)' : '') });
     }
-    // Helse: neste dose
+    // Helse: neste dose (maks per døgn teller også – se nesteDose)
     if (aktiv('helse')) {
       const doser = fam.helse?.doser || [];
       const meds = fam.helse?.medisiner || [];
       const now = Date.now();
-      const sist = {};
-      doser.filter(x => now - x.ts < 48 * 3600000).forEach(x => {
-        const k = x.barn + ':' + x.med;
-        if (!sist[k] || x.ts > sist[k].ts) sist[k] = x;
-      });
-      Object.values(sist).forEach(x => {
+      const par = new Set(doser.filter(x => x.ts <= now && now - x.ts < 48 * 3600000).map(x => x.barn + ':' + x.med));
+      par.forEach(k => {
+        const x = doser.find(d => d.barn + ':' + d.med === k);
         const med = meds.find(m => m.id === x.med); if (!med) return;
-        const okAt = x.ts + med.intervalH * 3600000;
-        if (now < okAt) v.push({ prio: 2, ikon: 'ti-pill', href: 'helse.html',
-          tekst: barnNavn(fam, x.barn) + ': neste ' + med.name + ' kan gis kl ' + klokke(okAt) + ' (om ' + varighet(okAt - now) + ')' });
-        else if (now - x.ts < 24 * 3600000) v.push({ prio: 2, ikon: 'ti-pill', href: 'helse.html',
+        const st = nesteDose(doser, med, x.barn, now);
+        if (!st) return;
+        if (now < st.okAt) v.push({ prio: 2, ikon: 'ti-pill', href: 'helse.html',
+          tekst: barnNavn(fam, x.barn) + ': neste ' + med.name + ' kan gis ' + (new Date(st.okAt).toDateString() !== new Date(now).toDateString() ? 'i morgen ' : '') + 'kl ' + klokke(st.okAt) + ' (om ' + varighet(st.okAt - now) + ')' + (st.maxed ? ' – maks per døgn' : '') });
+        else if (now - st.last.ts < 24 * 3600000) v.push({ prio: 2, ikon: 'ti-pill', href: 'helse.html',
           tekst: barnNavn(fam, x.barn) + ': ' + med.name + ' kan gis nå ✓' });
       });
     }
@@ -435,13 +447,13 @@ function appStatus(app, fam) {
       const doser = fam.helse?.doser || [];
       const meds = fam.helse?.medisiner || [];
       const now = Date.now();
-      const aktive = doser.filter(x => now - x.ts < 48 * 3600000).sort((a, b) => b.ts - a.ts);
+      const aktive = doser.filter(x => x.ts <= now && now - x.ts < 48 * 3600000).sort((a, b) => b.ts - a.ts);
       if (aktive.length) {
         const dse = aktive[0];
         const med = meds.find(m => m.id === dse.med);
-        if (med) {
-          const okAt = dse.ts + med.intervalH * 3600000;
-          if (now < okAt) return { txt: barnNavn(fam, dse.barn) + ': neste ' + med.name + ' kl ' + klokke(okAt), varsel: true };
+        const st = med && nesteDose(doser, med, dse.barn, now);
+        if (st) {
+          if (now < st.okAt) return { txt: barnNavn(fam, dse.barn) + ': neste ' + med.name + ' kl ' + klokke(st.okAt), varsel: true };
           return { txt: barnNavn(fam, dse.barn) + ': ' + med.name + ' kan gis nå ✓', varsel: true };
         }
       }
@@ -543,9 +555,13 @@ document.getElementById('app-grid').addEventListener('click', async e => {
 });
 
 // ── Inviter til husstanden ───────────────────────────────────
+// 8 tegn fra kryptografisk tilfeldighet (32^8 ≈ 10^12 kombinasjoner) – koden er
+// det eneste som hindrer en fremmed med lenken fra å bli medlem.
+const KODE_GYLDIG_DAGER = 14;
 function lagKode() {
   const tegn = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789'; // uten lett-forvekslbare
-  return Array.from({ length: 6 }, () => tegn[Math.floor(Math.random() * tegn.length)]).join('');
+  const tall = crypto.getRandomValues(new Uint32Array(8));
+  return Array.from(tall, n => tegn[n % tegn.length]).join('');
 }
 function inviterLenke(kode) {
   return location.origin + location.pathname.replace(/hjem\.html$/, '').replace(/\/$/, '') + '/bli-med.html?f=' + familieId + '&k=' + kode;
@@ -559,6 +575,8 @@ function tegnInviter() {
     const lenke = inviterLenke(kode);
     el.innerHTML =
       '<div style="text-align:center;font-size:24px;font-weight:800;letter-spacing:.2em;padding:10px;background:var(--surface2);border-radius:10px;margin-bottom:8px">' + esc(kode) + '</div>'
+      + (sisteFam?.meta?.invitasjonUtloper ? '<div style="text-align:center;font-size:11px;color:var(--text3);margin:-4px 0 8px">'
+        + (sisteFam.meta.invitasjonUtloper < Date.now() ? 'Utløpt – lag en ny kode' : 'Gyldig til ' + new Date(sisteFam.meta.invitasjonUtloper).toLocaleDateString('nb-NO', { day: 'numeric', month: 'long' })) + '</div>' : '')
       + '<input class="hinput" readonly value="' + esc(lenke) + '" style="font-size:11px" onclick="this.select()" />'
       + '<div style="display:flex;gap:6px;margin-top:8px">'
       + '<button class="btn-ghost" style="flex:1" id="inv-kopier"><i class="ti ti-copy"></i> Kopier lenke</button>'
@@ -583,8 +601,10 @@ function tegnInviter() {
   }).catch(() => {}));
 }
 async function settKode(kode) {
+  const utloper = kode ? Date.now() + KODE_GYLDIG_DAGER * 86400000 : null;
   await set(ref(db, 'familier/' + familieId + '/meta/invitasjonskode'), kode);
-  if (sisteFam?.meta) sisteFam.meta.invitasjonskode = kode;
+  await set(ref(db, 'familier/' + familieId + '/meta/invitasjonUtloper'), utloper);
+  if (sisteFam?.meta) { sisteFam.meta.invitasjonskode = kode; sisteFam.meta.invitasjonUtloper = utloper; }
   tegnInviter();
 }
 document.getElementById('meny-inviter').addEventListener('click', () => {

@@ -113,6 +113,7 @@ import { requireAuth } from './felles/auth.js';
 import { dbGet, dbSet, dbListen } from './felles/storage.js';
 import { esc, initTheme, toggleTheme, setStatus } from './felles/ui.js';
 import { monterNav } from './felles/nav.js';
+import { visAngre } from './felles/angre.js';
 
 import { monterHjelp } from './felles/hjelp.js';
 monterHjelp('pakkelister');
@@ -174,7 +175,7 @@ function skriverNoe(){
   return ['ny-liste-navn','ny-item'].some(id=>{const e=document.getElementById(id);return e&&e.value.trim();});
 }
 
-function aktivListe(){return data.lister.find(l=>l.id===aktivId)||null;}
+function aktivListe(){return data?data.lister.find(l=>l.id===aktivId)||null:null;}
 
 function render(){
   const l=aktivListe();
@@ -240,6 +241,8 @@ document.getElementById('ny-liste-btn').addEventListener('click',async()=>{
   const inp=document.getElementById('ny-liste-navn');
   const navn=inp.value.trim();
   if(!navn)return;
+  // Lesingen feilet: ikke bygg videre på en tom liste (save() ville uansett nektet)
+  if(!dataLoaded||!data){setStatus('Listene er ikke lastet – last siden på nytt','err');return;}
   const emoji=EMOJIS[data.lister.length%EMOJIS.length];
   const id=data.nextId++;
   const nyListe={id,navn,emoji,items:[]};
@@ -277,7 +280,17 @@ document.getElementById('item-liste').addEventListener('click',async e=>{
   const t=e.target.closest('[data-toggle]');
   if(t){const i=l.items.find(x=>x.id===parseInt(t.dataset.toggle));if(i){i.pakket=!i.pakket;await save();render();}return;}
   const f=e.target.closest('[data-fjern]');
-  if(f){l.items=l.items.filter(x=>x.id!==parseInt(f.dataset.fjern));await save();render();}
+  if(f){
+    const id=parseInt(f.dataset.fjern),idx=l.items.findIndex(x=>x.id===id);if(idx<0)return;
+    const ting=l.items[idx],listeId=l.id;
+    l.items=l.items.filter(x=>x.id!==id);await save();render();
+    visAngre('«'+ting.navn+'» fjernet',async()=>{
+      const ll=data.lister.find(x=>x.id===listeId);
+      if(!ll||ll.items.some(x=>x.id===ting.id))return;
+      ll.items.splice(Math.min(idx,ll.items.length),0,ting);
+      await save();render();
+    });
+  }
 });
 
 document.getElementById('aktiv-dato').addEventListener('change',async e=>{
@@ -310,9 +323,15 @@ document.getElementById('nullstill-btn').addEventListener('click',async()=>{
 document.getElementById('slett-liste-btn').addEventListener('click',async()=>{
   const l=aktivListe();if(!l)return;
   if(!confirm('Slette hele lista «'+l.navn+'» med '+l.items.length+' ting?'))return;
+  const idx=data.lister.findIndex(x=>x.id===l.id);
   data.lister=data.lister.filter(x=>x.id!==l.id);
   aktivId=null;
   await save();render();
+  visAngre('«'+l.navn+'» slettet',async()=>{
+    if(data.lister.some(x=>x.id===l.id))return;
+    data.lister.splice(Math.min(idx,data.lister.length),0,l);
+    await save();render();
+  });
 });
 
 document.getElementById('lim-inn-btn').addEventListener('click',()=>{
