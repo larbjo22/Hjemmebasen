@@ -24,10 +24,17 @@ middag.html       Ukesplanlegger, idébank, rulett, uke→handleliste
 oppgaver.html     Oppgaver + hus-vedlikehold + gamification
 fryser.html       Fryseroversikt («bruk opp»-logikk)
 plikter.html      Pliktsporing for barn (poeng/belønninger)
+nyheter.html      «Nytt i Hjemmebasen» – release notes for brukerne (innhold i felles/nyheter.js)
 felles/           Delte moduler: firebase-init, auth, storage, seed, ui + stil.css
 database.rules.json  Security rules (limes inn i Firebase Console)
 docs/adr/         Arkitekturbeslutninger (ADR-er)
 ```
+
+## Release notes
+
+Ved en ny utgave som brukerne merker: legg en ny oppføring **øverst** i `NYHETER` i
+`felles/nyheter.js` med ny `id` (f.eks. dato). Hjem viser da banneret «Nytt i Hjemmebasen»
+til brukeren har åpnet `nyheter.html`. Skriv for brukere – hva de ser og kan gjøre, ikke kode.
 
 ## Kjøre lokalt
 

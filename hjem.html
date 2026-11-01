@@ -34,6 +34,7 @@
 /* Install-hint */
 .hint-banner{display:none;align-items:flex-start;gap:10px;background:var(--accent-bg);border:1px solid var(--accent-border);border-radius:12px;padding:10px 12px;font-size:12.5px;color:var(--accent-text);line-height:1.5;margin-bottom:12px;transition:opacity .22s var(--ease-out),transform .22s var(--ease-out),display .22s allow-discrete}
 .hint-banner[style*="none"]{opacity:0;transform:translateY(6px)}
+.nyhet-banner{text-decoration:none}
 .hint-banner button{border:none;background:none;color:inherit;cursor:pointer;font-size:15px;padding:0;flex-shrink:0}
 
 /* Fire-once entré (fyrer kun ved første display-flip, ikke på 60s-rerender) */
@@ -100,6 +101,7 @@
       <div id="meny" style="display:none">
         <button id="meny-profil">Min profil &amp; bilder</button>
         <a href="statistikk.html" id="meny-statistikk">Statistikk</a>
+        <a href="nyheter.html" id="meny-nyheter">Nytt i Hjemmebasen</a>
         <button id="meny-inviter">Inviter til husstanden</button>
         <button id="meny-tilpass">Tilpass forsiden</button>
         <a href="onboarding.html" id="meny-oppsett">Endre oppsett</a>
@@ -121,6 +123,12 @@
     <span id="install-hint-tekst">Legg Hjemmebasen på Hjem-skjermen for ekte app-følelse.</span>
     <button id="install-hint-lukk" aria-label="Lukk">×</button>
   </div>
+
+  <a class="hint-banner nyhet-banner" id="nyhet-hint" href="nyheter.html" style="display:none">
+    <i class="ti ti-sparkles" style="font-size:18px;color:var(--accent-text)"></i>
+    <span><b>Nytt i Hjemmebasen:</b> <span id="nyhet-tittel"></span> – se hva som er endret.</span>
+    <i class="ti ti-chevron-right" style="margin-left:auto;align-self:center"></i>
+  </a>
 
   <div class="varsler" id="varsler"></div>
   <div class="hjem-angre" id="hjem-angre" role="status" aria-live="polite"><span id="hjem-angre-tekst"></span><small id="hjem-angre-flere"></small><button type="button" id="hjem-angre-btn">Angre</button></div>
@@ -195,7 +203,14 @@ import { ref, onValue, set } from 'https://www.gstatic.com/firebasejs/10.14.1/fi
 import { ingCore, navnTreff } from './felles/vare.js';
 import { endreTrygt } from './felles/flett.js';
 import { monterHjelp } from './felles/hjelp.js';
+import { NYHETER, nyheterUlest } from './felles/nyheter.js';
 monterHjelp('hjem');
+
+// «Nytt i Hjemmebasen» – vises til nyeste utgave er lest (nyheter.html markerer den lest)
+if (nyheterUlest()) {
+  document.getElementById('nyhet-tittel').textContent = NYHETER[0].tittel;
+  document.getElementById('nyhet-hint').style.display = 'flex';
+}
 
 initTheme();
 document.getElementById('theme-btn').addEventListener('click', toggleTheme);
