@@ -348,6 +348,7 @@ import { dbGet, dbSet, dbListen } from './felles/storage.js';
 import { esc, todayStr, initTheme, toggleTheme, setStatus } from './felles/ui.js';
 import { monterNav } from './felles/nav.js';
 import { visAngre } from './felles/angre.js';
+import { normKey, finnVare, vareFraTekst } from './felles/vare.js';
 const APP='handleliste';
 let FAMILIE=null;
 let MITT=''; // fornavnet til innlogget bruker – stemples på avhukede varer
@@ -543,19 +544,31 @@ function addTemplateItem(){
   data.templates.push({id:nextId++,name,cat});inp.value='';save();render();
 }
 function deleteTemplate(id){data.templates=data.templates.filter(t=>t.id!==id);save();render();}
+// Kategorien varen sist hadde i historikken (samme vare etter vare-regelen i felles/vare.js)
+function histCat(name){const h=finnVare(data.history,name);return h?(h.cat||''):'';}
+// Vare-regelen: samme vare som allerede står (uavkrysset) på lista får økt antall – ingen ny rad.
+// Returnerer {item, ny} så kalleren kan si fra om hva som skjedde.
+function leggPaaLista(name,qty,cat){
+  qty=Math.max(1,qty||1);
+  const ex=finnVare(data.items,name,i=>!i.checked);
+  if(ex){
+    ex.qty=(ex.qty||1)+qty;
+    if(!ex.cat&&cat)ex.cat=cat;
+    return {item:ex,ny:false};
+  }
+  const item={id:nextId++,name,cat:cat||histCat(name),qty,checked:false,added:todayStr()};
+  data.items.push(item);
+  return {item,ny:true};
+}
 // Legg til en vare fra historikken («Kjøpes ofte»-chips) med lagret kategori.
 function addFromHistory(name){
-  const h=(data.history||[]).find(x=>x.name.toLowerCase()===name.toLowerCase());
-  const existing=data.items.find(i=>normKey(i.name)===normKey(name)&&!i.checked);
-  if(existing){existing.qty++;}
-  else data.items.push({id:nextId++,name:h?h.name:name,cat:h?(h.cat||''):'',qty:1,checked:false,added:todayStr()});
+  const h=finnVare(data.history,name);
+  leggPaaLista(h?h.name:name,1,h?(h.cat||''):'');
   save();render();
 }
 function addFromTemplate(id){
   const t=data.templates.find(t=>t.id===id);if(!t)return;
-  const existing=data.items.find(i=>normKey(i.name)===normKey(t.name)&&!i.checked);
-  if(existing){existing.qty++;save();render();return;}
-  data.items.push({id:nextId++,name:t.name,cat:t.cat,qty:1,checked:false,added:todayStr()});
+  leggPaaLista(t.name,1,t.cat); // samme vare på lista → +1
   save();render();
 }
 document.getElementById('new-template-item').addEventListener('keydown',e=>{if(e.key==='Enter')addTemplateItem();});
@@ -564,17 +577,14 @@ document.getElementById('new-template-item').addEventListener('keydown',e=>{if(e
 function addItem(){
   const name=document.getElementById('new-item').value.trim();
   if(!name){document.getElementById('new-item').focus();return;}
-  const qty=Math.max(1,parseInt(document.getElementById('new-qty').value,10)||1);
+  let qty=Math.max(1,parseInt(document.getElementById('new-qty').value,10)||1);
   const cat=document.getElementById('new-cat').value;
-  const existing=data.items.find(i=>normKey(i.name)===normKey(name)&&!i.checked);
-  if(existing){
-    existing.qty=(existing.qty||1)+qty;
-    document.getElementById('new-item').value='';
-    document.getElementById('new-qty').value='1';
-    document.getElementById('new-cat').value='';
-    save();render();return;
-  }
-  data.items.push({id:nextId++,name,cat,qty,checked:false,added:todayStr()});
+  // «2 melk» → Melk ×2 (bare når antallsfeltet står på 1; «400 g kjøttdeig» skrives som det står)
+  let navn=name;
+  if(qty===1){const v=vareFraTekst(name);if(v.tall&&v.antall>1&&v.navn){navn=v.navn;qty=v.antall;}}
+  // Vare-regelen: «Tomater» når «Tomat» står på lista → antallet økes, ingen ny rad
+  const r=leggPaaLista(navn,qty,cat);
+  if(!r.ny)setStatus('«'+r.item.name+'» sto på lista – nå ×'+r.item.qty,'ok');
   document.getElementById('new-item').value='';
   document.getElementById('new-qty').value='1';
   document.getElementById('new-cat').value='';
@@ -598,18 +608,39 @@ function slettMedAngre(liste,id){
   });
 }
 function deleteItem(id){slettMedAngre('items',id);}
+// Fullfør handletur: kan angres i noen sekunder (ingen bekreftelse nødvendig).
+// Samme vare (vare-regelen) teller opp den eksisterende historikkoppføringen, og kategorien
+// varen hadde på lista tas med – så en rettet kategori huskes til neste gang.
 function completeShop(){
   const checked=data.items.filter(i=>i.checked);
   if(!checked.length){alert('Ingen varer er haket av ennå.');return;}
-  if(!confirm('Fullfør handletur og tøm hakkede varer?'))return;
   const now=todayStr();
+  const angreVarer=JSON.parse(JSON.stringify(checked));
+  const histFor=[]; // [{name, for: kopi før endring | null (ny oppføring)}]
   checked.forEach(item=>{
-    const existing=data.history.find(h=>h.name.toLowerCase()===item.name.toLowerCase());
-    if(existing){existing.count++;existing.last=now;}
-    else data.history.push({name:item.name,cat:item.cat,count:1,last:now});
+    const existing=finnVare(data.history,item.name);
+    if(existing){
+      if(!histFor.some(h=>h.name===existing.name))histFor.push({name:existing.name,for:JSON.parse(JSON.stringify(existing))});
+      existing.count=(existing.count||0)+1;existing.last=now;
+      if(item.cat)existing.cat=item.cat;
+    }else{
+      data.history.push({name:item.name,cat:item.cat,count:1,last:now});
+      histFor.push({name:item.name,for:null});
+    }
   });
-  data.items=data.items.filter(i=>!i.checked);
+  const ids=new Set(checked.map(i=>i.id));
+  data.items=data.items.filter(i=>!ids.has(i.id));
   save();render();
+  visAngre('Handletur fullført ('+checked.length+' '+(checked.length===1?'vare':'varer')+')',()=>{
+    angreVarer.forEach(v=>{if(!data.items.some(i=>i.id===v.id))data.items.push(v);});
+    histFor.forEach(h=>{
+      if(h.for===null){data.history=data.history.filter(x=>x.name!==h.name);return;}
+      const x=data.history.find(x=>x.name===h.name);
+      if(x){Object.keys(x).forEach(k=>delete x[k]);Object.assign(x,h.for);}
+      else data.history.push(h.for);
+    });
+    save();render();
+  });
 }
 
 // ── Modal ────────────────────────────────────────────────────
@@ -681,16 +712,8 @@ function hideCatModal(){document.getElementById('cat-modal').style.display='none
 function catItemEdit(name){hideCatModal();openHistEdit(name);}
 
 // ── Slå sammen duplikater ────────────────────────────────────
-// Normalisering: små bokstaver, mellomrom, tegnsetting + enkel entall/flertall
-// (stemmer siste ord konservativt). Brukes kun til å GRUPPERE – du bekrefter.
-function stemWord(w){const s=w.replace(/(ene|er|et|en|e|a)$/,'');return s.length>=3?s:w;}
-function normKey(s){
-  let k=(s||'').toLowerCase().trim().replace(/[.,!?;:]+$/,'').replace(/\s+/g,' ');
-  if(!k)return '';
-  const parts=k.split(' ');
-  parts[parts.length-1]=stemWord(parts[parts.length-1]);
-  return parts.join(' ');
-}
+// Normalisering (normKey) ligger i felles/vare.js: små bokstaver, mellomrom, tegnsetting
+// + enkel entall/flertall. Brukes her kun til å GRUPPERE – du bekrefter.
 function dupeGroups(arr){
   const m={};
   arr.forEach(x=>{const k=normKey(x.name);if(!k)return;(m[k]=m[k]||[]).push(x);});
@@ -1090,7 +1113,7 @@ function renderList(unchecked,checked){
   // Faste varer
   document.getElementById('template-chips').innerHTML=
     [...data.templates].sort((a,b)=>a.name.localeCompare(b.name,'nb')).map(t=>{
-      const onList=data.items.some(i=>i.name.toLowerCase()===t.name.toLowerCase()&&!i.checked);
+      const onList=!!finnVare(data.items,t.name,i=>!i.checked);
       return '<span class="template-chip'+(onList?' on-list':'')+'" onclick="addFromTemplate('+t.id+')">'
         +'<i class="ti '+(CAT_ICONS[t.cat]||'ti-box')+'" style="font-size:11px"></i>'
         +esc(t.name)+(onList?'<i class="ti ti-check" style="font-size:10px;margin-left:2px"></i>':'')

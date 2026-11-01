@@ -209,8 +209,9 @@ function fmtKl(ts){const d=new Date(ts);return pad(d.getHours())+':'+pad(d.getMi
 function fmtDatoKort(ts){return new Date(ts).toLocaleDateString('nb-NO',{weekday:'short',day:'numeric',month:'short'});}
 function fmtDatoNo(ds){return ds?new Date(ds+'T12:00:00').toLocaleDateString('nb-NO',{day:'numeric',month:'short',year:'numeric'}):'';}
 function fmtVarighet(ms){
-  const t=Math.floor(ms/3600000),m=Math.round(ms%3600000/60000);
-  return (t>0?t+' t ':'')+(m>0||t===0?m+' min':'');
+  // Rund av til hele minutter først – ellers kan det bli «2 t 60 min»
+  const tot=Math.round(Math.max(0,ms)/60000),t=Math.floor(tot/60),m=tot%60;
+  return ((t>0?t+' t ':'')+(m>0||t===0?m+' min':'')).trim();
 }
 function toLocalInput(ts){const d=new Date(ts);return d.getFullYear()+'-'+pad(d.getMonth()+1)+'-'+pad(d.getDate())+'T'+pad(d.getHours())+':'+pad(d.getMinutes());}
 
@@ -229,6 +230,25 @@ function doseStatus(bid,mid,at=Date.now()){
   const maxed=siste24.length>=maks;
   if(maxed)okAt=Math.max(okAt,siste24[siste24.length-maks].ts+86400000);
   return {med,last,okAt,count24:siste24.length,maxed};
+}
+// Ville en dose på tidspunkt ts bryte intervall eller maks per døgn? Sjekker mot dosene på
+// BEGGE sider (en etterført dose kan ligge før en dose som alt er registrert), og alle
+// 24-timersvinduer som inneholder den nye dosen.
+function doseKonflikt(b,med,ts){
+  const DAY=86400000,iv=(med.intervalH||0)*3600000;
+  const ds=helse.doser.filter(d=>d.barn===b.id&&d.med===med.id).map(d=>d.ts).sort((x,y)=>x-y);
+  const before=ds.filter(t=>t<=ts).pop(),after=ds.find(t=>t>ts);
+  const kl=t=>(new Date(t).toDateString()!==new Date(ts).toDateString()?fmtDatoKort(t)+' ':'')+'kl '+fmtKl(t);
+  const msgs=[];
+  if(before!=null&&ts-before<iv)msgs.push('Det er bare '+fmtVarighet(ts-before)+' etter forrige '+med.name+' til '+b.navn+' ('+kl(before)+'). Minste intervall er '+med.intervalH+' timer.');
+  if(after!=null&&after-ts<iv)msgs.push('Det er bare '+fmtVarighet(after-ts)+' før neste registrerte '+med.name+' til '+b.navn+' ('+kl(after)+'). Minste intervall er '+med.intervalH+' timer.');
+  if(med.maxDay>0){
+    const all=[...ds,ts].sort((x,y)=>x-y);
+    let verst=0;
+    all.filter(t=>t<=ts&&t>ts-DAY).forEach(st=>{verst=Math.max(verst,all.filter(t=>t>=st&&t<st+DAY).length);});
+    if(verst>med.maxDay)msgs.push('Det blir '+verst+' doser '+med.name+' til '+b.navn+' innenfor 24 timer (maks '+med.maxDay+').');
+  }
+  return msgs;
 }
 function fmtNarKl(ts){
   const i=new Date(),d=new Date(ts);
@@ -325,13 +345,10 @@ document.getElementById('hd-logg-btn').addEventListener('click',async()=>{
     ts=Math.min(t,Date.now());
   }
   const dose=document.getElementById('hd-dose').value.trim();
-  // Vurder mot dosene før dette tidspunktet (også når tidspunktet er satt bakover)
-  const st=doseStatus(b.id,med.id,ts);
-  if(st&&ts<st.last.ts+med.intervalH*3600000){
-    if(!confirm('Det er under '+med.intervalH+' timer siden forrige '+med.name+' til '+b.navn+' (kl '+fmtKl(st.last.ts)+'). Logge likevel?'))return;
-  }else if(st&&st.maxed){
-    if(!confirm(b.navn+' har alt fått '+st.count24+' doser '+med.name+' siste døgn (maks '+med.maxDay+'). Logge likevel?'))return;
-  }
+  // Vennlig vakthund: for kort intervall (før ELLER etter – viktig ved etterføring) eller over
+  // maks per døgn i et hvilket som helst 24-timersvindu som inneholder dosen → bekreft
+  const konflikt=doseKonflikt(b,med,ts);
+  if(konflikt.length&&!confirm(konflikt.join('\n\n')+'\n\nLogge likevel?'))return;
   helse.doser.push({id:helse.nextHid++,barn:b.id,med:med.id,dose,ts});
   document.getElementById('hd-dose').value='';
   document.getElementById('hd-time-toggle').checked=false;

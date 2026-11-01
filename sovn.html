@@ -148,6 +148,7 @@ input:focus-visible,select:focus-visible,button:focus-visible,textarea:focus-vis
 .seg.night{background:var(--sleep)}
 .seg.nap{background:var(--awake)}
 .bar-stack.today{outline:2px solid var(--awake);outline-offset:1px}
+.bar-stack.ukjent{opacity:.4;background:repeating-linear-gradient(45deg,var(--border2) 0 3px,transparent 3px 6px)}
 .bar-day{font-size:10px;color:var(--text3)}
 .bar-day.today{color:var(--awake-text);font-weight:700}
 .bar-legend{display:flex;justify-content:center;gap:16px;margin-top:10px;font-size:11px;color:var(--text2)}
@@ -155,6 +156,7 @@ input:focus-visible,select:focus-visible,button:focus-visible,textarea:focus-vis
 .bar-legend .dot{width:10px;height:10px;border-radius:3px;display:inline-block}
 .bar-legend .dot.night{background:var(--sleep)}
 .bar-legend .dot.nap{background:var(--awake)}
+.bar-legend .dot.unk{background:repeating-linear-gradient(45deg,var(--text3) 0 2px,transparent 2px 4px);border:1px solid var(--border2)}
 .kind-badge{font-size:9px;font-weight:700;padding:1px 6px;border-radius:8px;text-transform:uppercase;letter-spacing:.03em;vertical-align:middle}
 .kind-badge.natt{background:var(--sleep-bg);color:var(--sleep-text)}
 .kind-badge.lur{background:var(--awake-bg);color:var(--awake-text)}
@@ -177,7 +179,9 @@ input:focus-visible,select:focus-visible,button:focus-visible,textarea:focus-vis
 .undo-chip:hover{border-color:var(--accent);color:var(--accent-text)}
 
 /* Estimat-linje */
-#estimate-line{font-size:12px;text-align:center;min-height:16px;display:flex;align-items:center;justify-content:center;gap:5px}
+#estimate-line{font-size:13px;font-weight:600;text-align:center;min-height:16px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px}
+.rec-basis{font-size:11px;font-weight:400;color:var(--text3)}
+.rec-usikker{font-size:10px;font-weight:700;padding:1px 6px;border-radius:8px;background:var(--surface2);border:1px solid var(--border2);color:var(--text2);text-transform:uppercase;letter-spacing:.03em}
 #estimate-line i{font-size:13px}
 .vindu-rad{display:flex;gap:6px;justify-content:center;margin-top:7px;flex-wrap:wrap}
 .vindu-chip{font-size:11.5px;font-weight:600;padding:5px 11px;border-radius:14px;border:1px solid var(--border);background:var(--surface2);color:var(--text2);cursor:pointer}
@@ -402,9 +406,19 @@ body.embed .info-row{padding:10px 14px}
         <label for="set-auto-wake" style="flex:1;font-size:13px;color:var(--text);margin:0">🧠 Tilpass etter barnets egne tider</label>
         <label class="switch"><input type="checkbox" id="set-auto-wake" onchange="saveSettings()"><span class="slider"></span></label>
       </div>
-      <p style="font-size:11px;color:var(--text3);margin:0 0 10px" id="learned-wake-txt"></p>
+      <p style="font-size:11px;color:var(--text3);margin:0 0 6px" id="learned-wake-txt"></p>
+      <p style="font-size:11px;color:var(--text3);margin:0 0 10px" id="rec-accuracy-txt"></p>
+      <div style="display:flex;align-items:center;gap:10px;margin:4px 0 10px">
+        <label for="set-show-rec" style="flex:1;font-size:13px;color:var(--text);margin:0">💡 Vis anbefalt neste søvn</label>
+        <label class="switch"><input type="checkbox" id="set-show-rec" onchange="saveSettings()"><span class="slider"></span></label>
+      </div>
+      <div style="display:flex;align-items:center;gap:10px;margin:4px 0 4px">
+        <label for="set-barnehage" id="set-barnehage-lbl" style="flex:1;font-size:13px;color:var(--text);margin:0">🏫 Går i barnehage</label>
+        <label class="switch"><input type="checkbox" id="set-barnehage" onchange="saveSettings()"><span class="slider"></span></label>
+      </div>
+      <p style="font-size:11px;color:var(--text3);margin:0 0 10px">Pause-knappen blir «Levert i barnehagen». Ved henting spør appen om barnet sov der, så luren kommer med i statistikken. Gjelder bare dette barnet.</p>
       <div style="font-size:13px;color:var(--text);margin-bottom:8px;display:flex;align-items:center;gap:6px">⏰ Våkenvinduer</div>
-      <p style="font-size:11px;color:var(--text3);margin:-4px 0 8px">Rekkefølge gjennom dagen. Siste vindu = før natt. Brukes til «anbefalt neste lur/leggetid» når det er for lite data, eller når tilpasning er av.</p>
+      <p style="font-size:11px;color:var(--text3);margin:-4px 0 8px">Rekkefølge gjennom dagen. Siste vindu = før natt. Brukes til «anbefalt neste lur/leggetid» når tilpasning er av (og som referanse uten fødselsdato).</p>
       <div id="wakewin-list"></div>
       <button onclick="addWakeWin()" style="margin-top:8px;font-size:12px;padding:7px 12px;border:1px dashed var(--border);border-radius:8px;background:var(--surface2);color:var(--text2);cursor:pointer;display:inline-flex;align-items:center;gap:5px"><i class="ti ti-plus"></i> Legg til vindu</button>
       <div id="age-suggest" style="display:flex;align-items:center;gap:10px;margin-top:10px;padding:8px 10px;background:var(--surface2);border-radius:8px">
@@ -464,6 +478,24 @@ body.embed .info-row{padding:10px 14px}
     </div>
   </div>
 
+  <!-- Barnehage: sov barnet der? -->
+  <div class="modal-bg" id="bhg-modal" style="display:none" onclick="if(event.target===this)hideBhg()">
+    <div class="modal" onclick="event.stopPropagation()">
+      <p class="modal-title" id="bhg-title">🏫 Sov barnet i barnehagen?</p>
+      <p style="font-size:12px;color:var(--text3);margin-bottom:8px" id="bhg-info"></p>
+      <div style="display:flex;gap:8px">
+        <div style="flex:1"><label for="bhg-fra">Sovnet</label><input type="time" id="bhg-fra" /></div>
+        <div style="flex:1"><label for="bhg-til">Våknet</label><input type="time" id="bhg-til" /></div>
+      </div>
+      <button class="btn-primary" style="width:100%;margin-top:10px" onclick="bhgAnswer('ja')">Ja – lagre luren</button>
+      <div class="modal-actions" style="margin-top:8px">
+        <button class="btn-ghost" style="flex:1" onclick="bhgAnswer('nei')">Nei, sov ikke</button>
+        <button class="btn-ghost" style="flex:1" onclick="bhgAnswer('vetikke')">Vet ikke</button>
+      </div>
+      <button class="btn-ghost" style="width:100%;margin-top:8px;background:transparent;border:none" onclick="hideBhg()">Avbryt</button>
+    </div>
+  </div>
+
   <div class="modal-bg" id="stat-modal" style="display:none" onclick="if(event.target===this)hideStatModal()">
     <div class="modal" onclick="event.stopPropagation()">
       <p class="modal-title" id="stat-modal-title">Detaljer</p>
@@ -488,9 +520,11 @@ const APP='sovn';
 let FAMILIE=null;
 let meta=null;            // meta-noden (sted for værbaserte råd) – caches fra load()
 
-const DEFAULT_SETTINGS={nightStart:18,nightEnd:5,wakeWindowMin:210,trackOnset:false};
+// barnehage (per barn): Pause-knappen blir «Levert i barnehagen», og ved henting spør appen om barnet sov der.
+// showRec: vis «anbefalt neste søvn» på Hjem.
+const DEFAULT_SETTINGS={nightStart:18,nightEnd:5,wakeWindowMin:210,trackOnset:false,barnehage:false,showRec:true};
 // state: 'awake' | 'sleeping' | 'pause'. ukjent: perioder som ikke er registrert (pause/nullstilling) –
-// holdes utenfor statistikk og læring. id = fra (epoch).
+// holdes utenfor statistikk og læring. id = 'u'+fra (tekst, så den aldri forveksles med økt-id-er).
 function nyBlob(){return {state:'awake',since:Date.now(),sessions:[],ukjent:[],nextSid:1,settings:{...DEFAULT_SETTINGS}};}
 
 let alle={};              // hele app-noden: { "<barnId>": {state,since,sessions,ukjent,nextSid,settings} }
@@ -504,20 +538,25 @@ let statsType='all';
 let tickTimer=null,undoSnapshot=null;
 
 // ── Alder & referansetall ────────────────────────────────────
-// totalH = anbefalt total søvn/døgn (NSF/AASM-konsensus). wakeMin/napsTypical = veiledende.
+// totalH = anbefalt total søvn/døgn (NSF/AASM-konsensus). wakeMin = våken før lur, bedMin = våken
+// fra siste lur til natt, dayMin = våken hele dagen på en dag uten lur. Alt i minutter, veiledende.
+// 17–24 mnd: typisk 1 lur, ca. 4,5–6 t våken før lur og 5–6,5 t før natt.
 const AGE_REF=[
-  {max:4,  totalH:[14,17], wakeMin:[75,90],   naps:'3–4+', napsTypical:4},
-  {max:7,  totalH:[12,15], wakeMin:[120,180], naps:'2–3',  napsTypical:3},
-  {max:9,  totalH:[12,15], wakeMin:[150,210], naps:'2–3',  napsTypical:3},
-  {max:12, totalH:[12,15], wakeMin:[180,240], naps:'2',    napsTypical:2},
-  {max:15, totalH:[11,14], wakeMin:[210,240], naps:'1–2',  napsTypical:1},
-  {max:18, totalH:[11,14], wakeMin:[240,330], naps:'1',    napsTypical:1},
-  {max:24, totalH:[11,14], wakeMin:[300,360], naps:'1',    napsTypical:1},
-  {max:36, totalH:[11,14], wakeMin:[300,360], naps:'1',    napsTypical:1},
-  {max:999,totalH:[10,13], wakeMin:[330,420], naps:'0–1',  napsTypical:0},
+  {max:4,  totalH:[14,17], wakeMin:[75,90],   bedMin:[90,120],  naps:'3–4+', napsTypical:4},
+  {max:7,  totalH:[12,15], wakeMin:[120,180], bedMin:[150,210], naps:'2–3',  napsTypical:3},
+  {max:9,  totalH:[12,15], wakeMin:[150,210], bedMin:[180,240], naps:'2–3',  napsTypical:3},
+  {max:12, totalH:[12,15], wakeMin:[180,240], bedMin:[210,270], naps:'2',    napsTypical:2},
+  {max:15, totalH:[11,14], wakeMin:[210,270], bedMin:[240,300], naps:'1–2',  napsTypical:1},
+  {max:18, totalH:[11,14], wakeMin:[270,360], bedMin:[300,390], naps:'1',    napsTypical:1, dayMin:[600,690]},
+  {max:24, totalH:[11,14], wakeMin:[270,360], bedMin:[300,390], naps:'1',    napsTypical:1, dayMin:[600,690]},
+  {max:30, totalH:[11,14], wakeMin:[300,360], bedMin:[330,420], naps:'1',    napsTypical:1, dayMin:[630,720]},
+  {max:36, totalH:[11,14], wakeMin:[300,390], bedMin:[360,420], naps:'1',    napsTypical:1, dayMin:[630,720]},
+  {max:42, totalH:[10,13], wakeMin:[330,420], bedMin:[360,450], naps:'0–1',  napsTypical:1, dayMin:[660,750]},
+  {max:48, totalH:[10,13], wakeMin:[360,450], bedMin:[390,480], naps:'0–1',  napsTypical:0, dayMin:[660,750]},
+  {max:999,totalH:[10,13], wakeMin:[360,480], bedMin:[420,480], naps:'0',    napsTypical:0, dayMin:[690,780]},
 ];
 // Alder i måneder fra barnets fødselsdato i personregisteret. null hvis ukjent –
-// da degraderes alt aldersbasert pent (default-vinduer, ingen forslag).
+// da degraderes alt aldersbasert pent (de innstilte vinduene brukes som referanse).
 function ageMonths(barn=aktivBarn){
   if(!barn||!barn.fodt)return null;
   const b=new Date(barn.fodt+'T00:00:00'), n=new Date();
@@ -526,15 +565,35 @@ function ageMonths(barn=aktivBarn){
   return Math.max(0,m);
 }
 function ageRef(barn=aktivBarn){const m=ageMonths(barn);if(m===null)return null;return AGE_REF.find(r=>m<=r.max)||AGE_REF[AGE_REF.length-1];}
-function suggestedWakeMin(){const r=ageRef();if(!r)return DEFAULT_SETTINGS.wakeWindowMin;return Math.round((r.wakeMin[0]+r.wakeMin[1])/2/15)*15;}
+function midQ(r){return Math.round((r[0]+r[1])/2/15)*15;}
+function suggestedWakeMin(){const r=ageRef();return r?midQ(r.wakeMin):DEFAULT_SETTINGS.wakeWindowMin;}
+function suggestedBedMin(){const r=ageRef();return r?midQ(r.bedMin):DEFAULT_SETTINGS.wakeWindowMin+45;}
+// Innstilte våkenvinduer: «før lur» for lur nr. napsToday+1, og «før natt» (siste)
+function wakeWinPair(napsToday=0){
+  const w=(data.settings.wakeWins&&data.settings.wakeWins.length)?data.settings.wakeWins:[data.settings.wakeWindowMin||210];
+  const n=w.length;
+  return {nap:n>1?w[Math.min(napsToday,n-2)]:w[0],bed:w[n-1],n};
+}
+// Referansevindu (minutter) når egne data mangler: aldersreferansen, eller – uten
+// fødselsdato – de innstilte vinduene ±30 min.
+function refRange(kind){
+  const r=ageRef();
+  if(r){
+    if(kind==='nonap')return r.dayMin||[r.wakeMin[0]+r.bedMin[0]+60,r.wakeMin[1]+r.bedMin[1]+90];
+    return kind==='bed'?r.bedMin:r.wakeMin;
+  }
+  const p=wakeWinPair(0),c=kind==='nonap'?p.nap+p.bed+60:(kind==='bed'?p.bed:p.nap);
+  return [Math.max(30,c-30),c+30];
+}
 // Barnets egen typiske lur-søvn per dag (snitt av dager med logget lur,
 // siste 14 dager, i dag ekskludert). Null hvis vi ikke har nok data.
+// Dager med mye ikke registrert tid (pause/nullstilling) teller ikke – luren kan mangle der.
 function typiskLurSovnMs(dager=14){
-  const na=Date.now(), fra=na-dager*86400000, idag=dayKey(na), perDag={};
+  const na=Date.now(), fra=dayStartOffset(-dager), idag=dayKey(na), perDag={};
   data.sessions.forEach(sx=>{
     if(sx.start<fra||sessionKind(sx.start)!=='lur')return;
     const k=dayKey(sx.start);
-    if(k===idag)return;
+    if(k===idag||dayIncomplete(k))return;
     perDag[k]=(perDag[k]||0)+Math.max(0,Math.min(sx.end,na)-sx.start);
   });
   const v=Object.values(perDag);
@@ -558,39 +617,100 @@ async function settOverstyring(modus){
   await save();render();
 }
 
-// ── Lærte vinduer: barnets egne tider siste 14 dager ──
-// Barn endrer rytme fort, så faste innstillinger blir fort utdatert. Når det
-// finnes nok data, brukes medianen av barnets egne siste våkenvinduer i stedet.
-// Tid som ikke er registrert (pause/nullstilling) er holdt utenfor (awakeWindows/buildNights).
-const LEARN_DAYS=14, LEARN_MIN_N=4, LEARN_MAX_N=10;
+// ── Anbefalt neste søvn ──────────────────────────────────────
+// Barn endrer rytme fort, så anbefalingen bygger på barnets egne siste dager, vektet
+// eksponentielt (halveringstid 3 dager – gårsdagen teller dobbelt så mye som for tre dager
+// siden). Den vises som et VINDU: bredden er spredningen i barnets egne data (25.–75. persentil,
+// minst ±15, maks ±60 min). Er de siste 3 dagene konsekvent senere/tidligere, flyttes vinduet dit.
+// Få datapunkter eller stor spredning → «usikkert», og aldersreferansen brukes.
+// Tid som ikke er registrert (pause/nullstilling) er holdt utenfor (awakeWindows/dayIncomplete).
+const LEARN_DAYS=14, LEARN_MIN_N=4, LEARN_MAX_N=10, REC_HALF_LIFE_D=3, REC_MAX_IQR=120;
 function autoWakeOn(){return data.settings.autoWake!==false;}
+function showRecOn(){return data.settings.showRec!==false;}
+function barnehageOn(){return !!data.settings.barnehage;}
 function medianOf(a){if(!a.length)return null;const s=[...a].sort((x,y)=>x-y),m=Math.floor(s.length/2);return s.length%2?s[m]:(s[m-1]+s[m])/2;}
 function recentMedian(samples){
-  // samples: [{t, v}] – bruker de nyeste LEARN_MAX_N
+  // samples: [{t, v}] – bruker de nyeste LEARN_MAX_N (gammel metode: lik vekt)
   if(samples.length<LEARN_MIN_N)return null;
   const s=[...samples].sort((a,b)=>b.t-a.t).slice(0,LEARN_MAX_N).map(x=>x.v);
   return medianOf(s);
 }
-function learnStart(){const d=new Date();d.setHours(0,0,0,0);d.setDate(d.getDate()-LEARN_DAYS);return d.getTime();}
-function learnedWake(){
-  const ws=learnStart(), today=dayKey(Date.now());
-  const byDay={};
+function learnStart(){return dayStartOffset(-LEARN_DAYS);}
+// Vektet persentil: samples [{v,w}], q 0–1 (lineær mellom vektenes midtpunkter)
+function weightedQuantile(samples,q){
+  const s=[...samples].sort((a,b)=>a.v-b.v);
+  const tot=s.reduce((t,x)=>t+x.w,0);if(!tot)return null;
+  let acc=0,prevMid=null;
+  for(let i=0;i<s.length;i++){
+    const mid=(acc+s[i].w/2)/tot;acc+=s[i].w;
+    if(mid>=q){
+      if(prevMid===null)return s[0].v;
+      return s[i-1].v+(s[i].v-s[i-1].v)*(q-prevMid)/(mid-prevMid);
+    }
+    prevMid=mid;
+  }
+  return s[s.length-1].v;
+}
+// Barnets dager: våkenvinduene per dag (bare hele dager uten mye ukjent tid).
+//   nap = morgen → første lur, mid = mellom lurene (flere lurer), bed = siste lur → natt,
+//   nonap = morgen → natt på dag uten lur
+let _recsKey=null,_recsVal=null;
+function dayRecs(){
+  const last=data.sessions.length?data.sessions[data.sessions.length-1]:null;
+  const key=(aktivBarn?aktivBarn.id:'')+'|'+data.sessions.length+'|'+data.since+'|'+data.state+'|'+JSON.stringify(data.ukjent||[]).length+'|'+dayKey(Date.now())
+    +'|'+nightStartH()+'-'+nightEndH()+'|'+(last?last.start+'-'+last.end:'');
+  if(key===_recsKey)return _recsVal;
+  const today=dayKey(Date.now()),byDay={};
   awakeWindows().forEach(w=>{
-    if(w.ongoing||w.start<ws||dayKey(w.start)===today)return;
+    if(w.ongoing)return;
     const h=new Date(w.start).getHours();
     if(h<nightEndH()||h>=nightStartH())return; // kun dagtid
-    (byDay[dayKey(w.start)]=byDay[dayKey(w.start)]||[]).push(w);
+    const k=dayKey(w.start);if(k===today)return;
+    (byDay[k]=byDay[k]||[]).push(w);
   });
-  const nap=[],bed=[];
+  const out=[];
   Object.entries(byDay).forEach(([k,arr])=>{
+    if(dayIncomplete(k))return;
     arr.sort((a,b)=>a.start-b.start);
-    if(napsOnDay(k)<1||arr.length<2)return; // dag uten registrert lur sier ikke noe om vinduene
-    nap.push({t:arr[0].start,v:(arr[0].end-arr[0].start)/60000});
-    const l=arr[arr.length-1];
-    bed.push({t:l.start,v:(l.end-l.start)/60000});
+    const naps=napsOnDay(k),t=dayStartOfKey(k),l=arr[arr.length-1];
+    if(naps>=1&&arr.length>=2)out.push({k,t,nap:{start:arr[0].start,end:arr[0].end},bed:{start:l.start,end:l.end},
+      mid:arr.slice(1,-1).map(w=>({start:w.start,end:w.end}))});
+    else if(naps===0&&arr.length===1)out.push({k,t,nonap:{start:l.start,end:l.end}});
   });
-  const r=v=>v===null?null:Math.min(600,Math.max(30,Math.round(v/15)*15));
-  return {nap:r(recentMedian(nap)),bed:r(recentMedian(bed)),napN:Math.min(nap.length,LEARN_MAX_N),bedN:Math.min(bed.length,LEARN_MAX_N)};
+  out.sort((a,b)=>a.t-b.t);
+  _recsKey=key;_recsVal=out;
+  return out;
+}
+function recWindows(r,kind){return kind==='mid'?(r.mid||[]):(r[kind]?[r[kind]]:[]);}
+function recSamples(kind,asOf){
+  const day0=startOfDayEpoch(asOf),out=[];
+  dayRecs().forEach(r=>{if(r.t<day0)recWindows(r,kind).forEach(w=>out.push({t:r.t,v:(w.end-w.start)/60000}));});
+  return out;
+}
+// Ny metode: vektet median + spredning + trend. Bruker bare dager før asOf-dagen.
+function learnStats(samples,asOf){
+  const D=86400000,day0=startOfDayEpoch(asOf);
+  const s=samples.filter(x=>x.t<day0&&x.t>=dayStartOffset(-LEARN_DAYS,asOf))
+    .map(x=>({t:x.t,v:x.v,w:Math.pow(0.5,(day0-x.t)/D/REC_HALF_LIFE_D)}));
+  const n=new Set(s.map(x=>x.t)).size; // antall dager (mellomvinduer kan være flere per dag)
+  if(n<3)return {n,unsure:true};
+  let center=weightedQuantile(s,.5);
+  const q25=weightedQuantile(s,.25),q75=weightedQuantile(s,.75),iqr=q75-q25;
+  // Trend: de 3 nyeste dagene konsekvent senere/tidligere enn snittet → flytt dit
+  let trend=null;
+  if(n>=5){
+    const last3=[...s].sort((a,b)=>b.t-a.t).slice(0,3);
+    const m3=last3.reduce((t,x)=>t+x.v,0)/3;
+    if(last3.every(x=>x.v>center+10)){trend='senere';center=m3;}
+    else if(last3.every(x=>x.v<center-10)){trend='tidligere';center=m3;}
+  }
+  const half=Math.min(60,Math.max(15,iqr/2));
+  return {n,center,lo:center-half,hi:center+half,iqr,trend,unsure:n<LEARN_MIN_N||iqr>REC_MAX_IQR};
+}
+// Gammel metode (lik vekt, siste 10 av 14 dager, ett klokkeslett) – brukes bare til sammenligning
+function oldStats(samples,asOf){
+  const day0=startOfDayEpoch(asOf);
+  return recentMedian(samples.filter(x=>x.t<day0&&x.t>=dayStartOffset(-LEARN_DAYS,asOf)));
 }
 // Vanlig leggetid (minutter etter midnatt, kan være >1440) = median av siste netter
 function learnedBedtimeMin(){
@@ -604,59 +724,136 @@ function learnedBedtimeMin(){
   return m===null?null:Math.round(m/5)*5;
 }
 function todayAtMin(min){const d=new Date();d.setHours(0,0,0,0);d.setMinutes(min);return d.getTime();}
-function effectiveWakeWins(){
-  const w=(data.settings.wakeWins&&data.settings.wakeWins.length)?[...data.settings.wakeWins]:[data.settings.wakeWindowMin||210];
-  if(!autoWakeOn())return {w,learned:false};
-  const L=learnedWake();
-  let learned=false;
-  if(L.bed!==null){w[w.length-1]=L.bed;learned=true;}
-  if(L.nap!==null&&w.length>=2){for(let i=0;i<w.length-1;i++)w[i]=L.nap;learned=true;}
-  return {w,learned};
+// Hvor stor andel av barnets siste hele dager var uten lur? (overgangen fra én lur til ingen)
+function noNapShare(){
+  let n=0,none=0;
+  for(let i=1;i<=LEARN_DAYS;i++){
+    const k=dayKey(dayStartOffset(-i));
+    if(dayIncomplete(k))continue;
+    if(!data.sessions.some(s=>dayKey(s.end)===k&&sessionKind(s.start)==='natt'))continue; // ingen morgen registrert
+    n++;if(napsOnDay(k)===0)none++;
+  }
+  return n>=4?none/n:0;
 }
-
-// Hvilket våkenvindu er barnet i nå?
-// Utgangspunkt: indeks = antall lurer fullført i dag (siste = før natt).
-// I tillegg: (a) manuell overstyring vinner, (b) ingen lur ført etter kl. 15
-// (barnehagelur) → neste søvn er natt, og (c) på en kort luredag
-// forkortes før-natt-vinduet – lite dagsøvn gir tidligere leggetid.
-function currentWakeWin(){
-  const eff=effectiveWakeWins(),w=eff.w;
-  const ov=aktivOverstyring();
-  const napsToday=napsOnDay(dayKey(Date.now()));
-  let idx=Math.min(napsToday,w.length-1);
+// Når startet våkenperioden anbefalingen skal regnes fra? Vanligvis «siden». Men etter en
+// barnehagedag der søvnen er kjent, var barnet våkent fra luren i barnehagen (eller fra morgenen).
+function wakeBase(){
+  if(data.state!=='awake')return data.since;
+  const u=(data.ukjent||[]).find(x=>x.til===data.since&&x.sovnKjent);
+  if(u){const ls=lastSession();if(ls&&ls.end<=u.fra+60000&&data.since-ls.end<16*3600000)return ls.end;}
+  return data.since;
+}
+// Hva er neste søvn: 'nap' (første lur), 'mid' (en lur til, når barnet har flere lurer),
+// 'bed' (natt etter dagens lur), 'nonap' (natt på en dag uten lur – kan være helt normalt)
+// eller 'assumed' (natt – luren skjedde trolig uten å bli ført).
+// Den manuelle overstyringen («Siste lur er tatt» / «Én lur til i dag») vinner.
+function nextSleepKind(now){
+  now=now||Date.now();
+  const today=dayKey(now),hour=new Date(now).getHours();
+  const napsToday=napsOnDay(today);
+  const expectedNaps=Math.max(1,wakeWinPair().n-1);
   const usualBed=autoWakeOn()?learnedBedtimeMin():null;
-  const assumedNap=!ov&&usualBed!==null&&napsToday===0&&w.length>1&&new Date().getHours()>=15;
-  if(assumedNap)idx=w.length-1;
-  if(ov==='natt')idx=w.length-1;
-  else if(ov==='lur')idx=Math.min(idx,Math.max(0,w.length-2));
-  let isBed=idx>=w.length-1;
-  let min=w[idx], justert=0;
-  if(isBed&&!assumedNap){
-    const gjeld=lurGjeldMs();
-    // Halvparten av lur-underskuddet, maks 90 min, avrundet til 5
-    if(gjeld>5*60000)justert=Math.min(90,Math.round(gjeld/60000*0.5/5)*5);
-    min=Math.max(30,min-justert);
-  }else if(!isBed){
-    // Lander anslaget etter at natta har begynt? Da er det leggetid, ikke en
-    // lur – kun etiketten endres, tiden skyves aldri senere.
-    const maal=(data.since||Date.now())+min*60000;
-    const nattStart=new Date(maal); nattStart.setHours(nightStartH(),0,0,0);
-    if(maal>=nattStart.getTime())isBed=true;
-  }
-  const bedtime=isBed?usualBed:null;
-  return {min,idx,isBed,n:w.length,justert,overstyrt:ov,learned:eff.learned,assumedNap,bedtime};
+  const ov=aktivOverstyring();
+  if(ov==='natt')return {kind:napsToday>0?'bed':(usualBed!==null?'assumed':'bed'),napsToday,manuelt:true};
+  if(ov==='lur')return {kind:napsToday>0?'mid':'nap',napsToday,manuelt:true};
+  const bhgNap=data.sessions.some(s=>dayKey(s.start)===today&&sessionKind(s.start)==='lur'&&/barnehage/i.test(s.note||''));
+  // Sov barnet lur i barnehagen, er neste søvn natta – uansett hvor tidlig det ble hentet
+  if(napsToday>0)return {kind:(bhgNap||napsToday>=expectedNaps)?'bed':'mid',napsToday};
+  const ds=dayStartOfKey(today),de=nextDayStart(ds);
+  const todayU=(data.ukjent||[]).filter(u=>u.til>ds&&u.fra<de);
+  // Barnehagen: «Nei, sov ikke» → en dag uten lur
+  if(todayU.some(u=>u.sovnKjent))return {kind:'nonap',napsToday,why:'ingen lur i barnehagen'};
+  const share=noNapShare(),r=ageRef();
+  if((r&&r.napsTypical===0)||share>=0.5)return {kind:'nonap',napsToday,why:'dager uten lur er vanlige nå'};
+  if(share>=0.2&&hour>=15)return {kind:'nonap',napsToday,why:'ingen lur i dag'};
+  // Ikke registrert tid midt på dagen (pause uten svar): luren skjedde trolig der
+  const midday=todayU.some(u=>u.fra<ds+14*3600000&&u.til>ds+11*3600000);
+  if(usualBed!==null&&(hour>=15||midday))return {kind:'assumed',napsToday};
+  return {kind:'nap',napsToday};
 }
-// Anbefalt tidspunkt for neste søvn. Før natt: våkenvinduet fra siste lur, men
-// aldri senere enn ~30 min etter barnets vanlige leggetid, og – når luren ikke
-// er ført – den vanlige leggetiden.
-function nextSleepTarget(cw){
-  let target=data.since+cw.min*60000;
-  if(cw.isBed&&cw.bedtime!==null){
-    const usual=todayAtMin(cw.bedtime);
-    if(cw.assumedNap)target=usual;
-    else if(target>usual+30*60000)target=usual+30*60000;
+// Anbefalt vindu for neste søvn: {from,to,center,kind,isBed,basis,unsure,...} eller null
+function sleepRec(now){
+  now=now||Date.now();
+  if(data.state!=='awake')return null;
+  const nk=nextSleepKind(now),kind=nk.kind;
+  const base=wakeBase();
+  const usualBed=learnedBedtimeMin();
+  const am=ageMonths(),navn=aktivBarn?aktivBarn.navn:'barnet';
+  const fmtR=(a,b)=>fmtDur(a*60000)+'–'+fmtDur(b*60000);
+  if(kind==='assumed'){
+    const c=todayAtMin(usualBed);
+    return {kind,isBed:true,from:c-20*60000,to:c+20*60000,center:c,learned:false,unsure:false,manuelt:!!nk.manuelt,
+      basis:'Vanlig leggetid – ingen lur ført i dag'};
   }
-  return target;
+  let isBed=kind==='bed'||kind==='nonap';
+  const ref=refRange(kind==='mid'?'nap':kind);
+  let lo,hi,center,basis,unsure=false,learned=false,trend=null,n=0;
+  if(autoWakeOn()){
+    let st=learnStats(recSamples(kind,now),now);
+    // For få vinduer mellom lurene: bruk morgenvinduet («før lur») som grunnlag
+    if(kind==='mid'&&st.unsure){const s2=learnStats(recSamples('nap',now),now);if(!s2.unsure)st=s2;}
+    n=st.n;
+    if(!st.unsure){
+      lo=st.lo;hi=st.hi;center=st.center;learned=true;trend=st.trend;
+      basis='Basert på '+navn+'s siste '+n+' dager · våkenvindu ca. '+fmtDur(center*60000)+(trend?' · trend: '+trend:'');
+    }else{
+      unsure=true;lo=ref[0];hi=ref[1];center=(lo+hi)/2;
+      basis=(n?'For '+(st.iqr>REC_MAX_IQR?'spredte':'få')+' egne data ('+n+' d)':'Ingen egne data ennå')
+        +(am!==null?' – aldersreferanse '+am+' mnd: ':' – innstilte vinduer: ')+fmtR(lo,hi);
+    }
+  }else{
+    const p=wakeWinPair(nk.napsToday);
+    center=kind==='nonap'?p.nap+p.bed+60:(kind==='bed'?p.bed:p.nap);
+    lo=center-20;hi=center+20;
+    basis='Innstilt våkenvindu '+fmtDur(center*60000)+' (tilpasning er av)';
+  }
+  // Kort luredag: lite lur i dag gir tidligere leggetid (halvparten av underskuddet, maks 90 min)
+  let justert=0;
+  if(kind==='bed'){
+    const gjeld=lurGjeldMs();
+    if(gjeld>5*60000){
+      justert=Math.min(90,Math.round(gjeld/60000*0.5/5)*5,Math.max(0,Math.floor(lo-30)));
+      if(justert>0){lo-=justert;hi-=justert;center-=justert;basis+=' · −'+justert+' min (kort luredag)';}
+    }
+  }
+  let from=base+lo*60000,to=base+hi*60000,c=base+center*60000;
+  // Natt: aldri mye senere enn barnets vanlige leggetid
+  if(isBed&&usualBed!==null&&autoWakeOn()){
+    const cap=todayAtMin(usualBed)+30*60000;
+    if(c>cap){const sh=cap-c;from+=sh;to+=sh;c=cap;basis+=' · holdt mot vanlig leggetid';}
+  }
+  // Lander en «lur» etter at natta har begynt? Da er det leggetid – bare etiketten endres
+  if(!isBed){const ns=new Date(c);ns.setHours(nightStartH(),0,0,0);if(c>=ns.getTime())isBed=true;}
+  if(kind==='nonap'&&nk.why)basis=nk.why[0].toUpperCase()+nk.why.slice(1)+' · '+basis;
+  return {kind,isBed,from,to,center:c,learned,unsure,trend,n,basis,justert,manuelt:!!nk.manuelt};
+}
+// Treffsikkerhet siste 14 dager: hvor ofte havnet faktisk innsovning innenfor anbefalt vindu?
+// Hver dag regnes bare ut fra dagene FØR den (som om anbefalingen ble vist den dagen).
+// Gammel metode = ett klokkeslett (lik vekt) – treff innen ±15 min. Ny metode = vinduet
+// (dager der den var «usikkert» telles ikke). Leggetidstaket og lur-gjelden er utelatt for begge.
+function recAccuracy(){
+  const out={nyHit:0,nyN:0,nyErr:0,gHit:0,gN:0,gErr:0};
+  const fra=dayStartOffset(-LEARN_DAYS);
+  dayRecs().filter(r=>r.t>=fra).forEach(r=>{
+    ['nap','mid','bed','nonap'].forEach(kind=>{
+      const ws=recWindows(r,kind);if(!ws.length)return;
+      const asOf=r.t+12*3600000,samples=recSamples(kind,asOf);
+      const g=oldStats(samples,asOf),st=learnStats(samples,asOf);
+      ws.forEach(w=>{
+        const actual=(w.end-w.start)/60000;
+        if(g!==null){out.gN++;out.gErr+=Math.abs(actual-g);if(Math.abs(actual-g)<=15)out.gHit++;}
+        if(!st.unsure){out.nyN++;out.nyErr+=Math.abs(actual-st.center);if(actual>=st.lo&&actual<=st.hi)out.nyHit++;}
+      });
+    });
+  });
+  return out;
+}
+function recAccuracyText(){
+  const a=recAccuracy();
+  if(!a.gN&&!a.nyN)return 'Treffsikkerhet: ikke nok data ennå.';
+  const pct=(h,n)=>n?Math.round(h/n*100)+' %':'–';
+  return 'Treffsikkerhet siste '+LEARN_DAYS+' dager (innsovning i anbefalt vindu): ny metode '+a.nyHit+'/'+a.nyN+' ('+pct(a.nyHit,a.nyN)+', snittavvik '+(a.nyN?fmtDur(a.nyErr/a.nyN*60000):'–')+')'
+    +' · gammel metode '+a.gHit+'/'+a.gN+' ('+pct(a.gHit,a.gN)+' innen ±15 min, snittavvik '+(a.gN?fmtDur(a.gErr/a.gN*60000):'–')+').';
 }
 
 // ── Dato/varighet ────────────────────────────────────────────
@@ -672,6 +869,17 @@ function daysAgoStart(n){const d=new Date();d.setHours(0,0,0,0);d.setDate(d.getD
 // Kalenderdager fra og med startDay til og med i dag (lokal tid, tåler sommertid)
 function eachDay(startDay,fn){const d=new Date(startDay);d.setHours(0,0,0,0);const end=startOfToday();for(;d.getTime()<=end;d.setDate(d.getDate()+1))fn(d.getTime());}
 function dayDiff(a,b){return Math.round((startOfDayEpoch(b)-startOfDayEpoch(a))/86400000);}
+// Sommertid: et døgn er ikke alltid 24 t (23 t i mars, 25 t i oktober). Regn derfor med
+// kalenderdatoer – aldri «+86400000» – når det skal hoppes en dag fram eller tilbake.
+function dayStartOffset(n,from){const d=new Date(from??Date.now());d.setHours(0,0,0,0);d.setDate(d.getDate()+n);return d.getTime();}
+function nextDayStart(e){return dayStartOffset(1,e);}
+function dayStartOfKey(key){const [y,m,d]=key.split('-').map(Number);return new Date(y,m-1,d).getTime();}
+// Dagsstart for hver kalenderdag fra og med fra-dagen til og med til-dagen
+function dayStartsBetween(fra,til){
+  const out=[];let t=startOfDayEpoch(fra);const end=startOfDayEpoch(til);
+  while(t<=end&&out.length<5000){out.push(t);t=nextDayStart(t);}
+  return out;
+}
 function firstRecordEpoch(){let m=null;data.sessions.forEach(s=>{if(m===null||s.start<m)m=s.start;});if(data.since!=null&&(m===null||data.since<m))m=data.since;return m;}
 function fmtDur(ms){
   if(ms<0)ms=0;
@@ -705,7 +913,9 @@ function normalizeData(d,barn){
   if(!['awake','sleeping','pause'].includes(d.state))d.state='awake';
   if(!Array.isArray(d.ukjent))d.ukjent=[];
   d.ukjent=d.ukjent.filter(u=>u&&typeof u.fra==='number'&&typeof u.til==='number'&&u.til>u.fra)
-    .map(u=>({id:u.id??u.fra,fra:u.fra,til:u.til})).sort((a,b)=>a.fra-b.fra).slice(-300);
+    .map(u=>{const o={id:'u'+u.fra,fra:u.fra,til:u.til};if(u.sovnKjent)o.sovnKjent=true;return o;})
+    .filter((u,i,a)=>a.findIndex(x=>x.fra===u.fra)===i) // samme periode fra to telefoner (gammel tall-id + ny tekst-id)
+    .sort((a,b)=>a.fra-b.fra).slice(-300);
   // Invariant: når man er våken skal 'since' (= våknet-tidspunkt) alltid være
   // lik siste økt-slutt – eller slutten på siste ikke-registrerte periode hvis
   // den kom etterpå. Reparer orphan-tilstander etter manuell redigering,
@@ -734,11 +944,26 @@ function anchorTime(d){
 }
 // Overlapper tidsrommet en periode som ikke er registrert?
 function overlapsUkjent(a,b){return (data.ukjent||[]).some(u=>u.fra<b&&u.til>a);}
-function addUkjent(fra,til){
+// sovnKjent: tiden er ikke registrert trykk for trykk, men vi vet hvor mye barnet sov (barnehage
+// besvart med lur eller «Nei»). Da teller dagen med i total søvn, men våkenvinduene gjør ikke.
+// id er en tekst ('u'+fra): en tall-id lik et tidspunkt ville dratt nextSid opp ved sammenslåing.
+function addUkjent(fra,til,sovnKjent){
   if(til-fra<60000)return; // under ett minutt: ikke verdt å merke
   data.ukjent=(data.ukjent||[]).filter(u=>!(u.fra>=fra&&u.til<=til)); // slå sammen med eldre som ligger inni
-  data.ukjent.push({id:fra,fra,til});
+  const u={id:'u'+fra,fra,til};
+  if(sovnKjent)u.sovnKjent=true;
+  data.ukjent.push(u);
 }
+// Ikke registrert tid per dag (inkl. pågående pause). Perioder med kjent søvn teller ikke.
+const UKJENT_DAG_MS=2*3600000;
+function ukjentListe(){return (data.ukjent||[]).concat(data.state==='pause'?[{fra:data.since,til:Date.now()}]:[]);}
+function ukjentMsOnDay(key){
+  const a=dayStartOfKey(key),b=nextDayStart(a);let t=0;
+  ukjentListe().forEach(u=>{if(u.sovnKjent)return;const st=Math.max(u.fra,a),en=Math.min(u.til,b);if(en>st)t+=en-st;});
+  return t;
+}
+// Dag med så mye ukjent tid (≥ 2 t) at total søvn/lur ikke kan stoles på – holdes utenfor snitt
+function dayIncomplete(key){return ukjentMsOnDay(key)>=UKJENT_DAG_MS;}
 
 // ── Lagring (Firebase via felles/storage.js) ─────────────────
 let dataLoaded=false; // sant først når en ekte lesning har lyktes – hindrer overskriving
@@ -817,7 +1042,8 @@ async function save(){
 function modalOpen(){
   return document.getElementById('since-modal').style.display==='flex'
       || document.getElementById('sess-modal').style.display==='flex'
-      || document.getElementById('stat-modal').style.display==='flex';
+      || document.getElementById('stat-modal').style.display==='flex'
+      || document.getElementById('bhg-modal').style.display==='flex';
 }
 let stopListen=null;
 function startListen(){
@@ -845,6 +1071,8 @@ function setState(newState){
     openSinceEdit();
     return;
   }
+  // Hentet fra barnehagen: spør om barnet sov der før noe lagres
+  if(data.state==='pause'&&barnehageOn()&&now-data.since>=30*60000){openBhg(newState,now);return;}
   undoSnapshot=JSON.parse(JSON.stringify(data)); // for «angre»
   if(data.state==='pause'){
     // Slutt på pausen: tiden på pause er ikke registrert
@@ -865,6 +1093,7 @@ let resetOpen=false;
 const GLEMT_SOVER_MS=14*3600000, GLEMT_VAKEN_MS=7*3600000, GLEMT_PAUSE_MS=10*3600000;
 function glemtNokkel(){return APP_KEY+'_glemt_ok_'+(aktivBarn?aktivBarn.id:'');}
 function pauseNow(){
+  if(data&&data.state==='pause'&&barnehageOn())return setState('awake'); // «🏠 Hentet»
   if(!data||data.state==='pause')return;
   const now=Date.now();
   undoSnapshot=JSON.parse(JSON.stringify(data));
@@ -898,7 +1127,11 @@ function renderResetPanel(){
   const el=document.getElementById('reset-panel');if(!el||!data)return;
   const now=Date.now();
   const pb=document.getElementById('btn-pause');
-  if(pb){pb.disabled=data.state==='pause';pb.innerHTML=data.state==='pause'?'<i class="ti ti-player-pause"></i> På pause':'<i class="ti ti-player-pause"></i> Pause';}
+  if(pb){
+    const bhg=barnehageOn();
+    pb.disabled=data.state==='pause'&&!bhg;
+    pb.innerHTML=data.state==='pause'?(bhg?'🏠 Hentet':'<i class="ti ti-player-pause"></i> På pause'):(bhg?'🏫 Levert i barnehagen':'<i class="ti ti-player-pause"></i> Pause');
+  }
   const glemt=glemtSjekk(now);
   const btns='<div class="reset-btns"><button class="awake" onclick="nullstill(\'awake\')">☀️ Våken nå</button><button class="sleep" onclick="nullstill(\'sleeping\')">😴 Sover nå</button>';
   if(glemt&&!resetOpen){
@@ -914,6 +1147,71 @@ function renderResetPanel(){
   el.innerHTML='<div><b>Start på nytt fra nå.</b> Tiden siden '+fra+' ('+fmtTime(data.since)+(dayKey(data.since)!==dayKey(now)?' '+fmtDateShort(data.since):'')+') blir stående som ikke registrert – ingen søvn eller våkentid lagres, og den holdes utenfor statistikken. Hva gjør '+navn+' nå?</div>'
     +btns+'<button onclick="toggleReset()">Avbryt</button></div>';
 }
+// ── Barnehage-modus (per barn) ───────────────────────────────
+// Pausen heter «Levert i barnehagen». Når barnet hentes (Sover/Våken/Hentet) spør appen om det sov
+// der. Svar med tid → vanlig lur-økt (note 'Barnehage') innenfor pausen, og den ukjente tiden
+// kuttes rundt luren. «Nei» → hele pausen er kjent uten søvn. Begge merkes sovnKjent, så dagen
+// teller med i total søvn, mens våkenvinduene fra barnehagen holdes utenfor læringen.
+// «Vet ikke» → vanlig ikke registrert tid (som før).
+let bhgPending=null; // {state, now, fra, barnId}
+// Barnets vanlige lurtid (median start og varighet siste 14 dager) lagt innenfor pausen
+function napSuggestion(fra,til){
+  const naps=data.sessions.filter(s=>s.start>=dayStartOffset(-LEARN_DAYS)&&sessionKind(s.start)==='lur');
+  let startMin=12*60,dur=90;
+  if(naps.length>=2){
+    startMin=medianOf(naps.map(s=>{const d=new Date(s.start);return d.getHours()*60+d.getMinutes();}));
+    dur=medianOf(naps.map(s=>(s.end-s.start)/60000));
+  }
+  startMin=Math.round(startMin/5)*5;dur=Math.max(15,Math.round(dur/5)*5);
+  const d=new Date(fra);d.setHours(Math.floor(startMin/60),startMin%60,0,0);
+  let a=d.getTime(),b=a+dur*60000;
+  if(a<fra){a=fra;b=a+dur*60000;}
+  if(b>til){b=til;a=Math.max(fra,b-dur*60000);}
+  return {a,b};
+}
+// 'HH:MM' på pausens dato (eller dagen etter, hvis pausen gikk over midnatt)
+function bhgTimeToEpoch(val,ref,til){
+  const m=/^(\d{1,2}):(\d{2})/.exec(val||'');if(!m)return null;
+  const d=new Date(ref);d.setHours(+m[1],+m[2],0,0);
+  let t=d.getTime();
+  if(t<ref-60000&&dayKey(til)!==dayKey(ref)){const d2=new Date(dayStartOffset(1,ref));d2.setHours(+m[1],+m[2],0,0);t=d2.getTime();}
+  return t;
+}
+function openBhg(newState,now){
+  bhgPending={state:newState,now,fra:data.since,barnId:aktivBarn.id};
+  const sg=napSuggestion(data.since,now);
+  document.getElementById('bhg-title').textContent='🏫 Sov '+aktivBarn.navn+' i barnehagen?';
+  document.getElementById('bhg-info').textContent='Levert kl '+fmtTime(data.since)+(dayKey(data.since)!==dayKey(now)?' ('+fmtDateShort(data.since)+')':'')+', hentet kl '+fmtTime(now)+'. Forslaget er den vanlige lurtiden.';
+  document.getElementById('bhg-fra').value=fmtTime(sg.a);
+  document.getElementById('bhg-til').value=fmtTime(sg.b);
+  document.getElementById('bhg-modal').style.display='flex';
+}
+function hideBhg(){document.getElementById('bhg-modal').style.display='none';bhgPending=null;}
+function bhgAnswer(ans){
+  const p=bhgPending;if(!p)return;
+  if(!aktivBarn||aktivBarn.id!==p.barnId||data.state!=='pause'||data.since!==p.fra){hideBhg();alert('Statusen er endret i mellomtiden (annen telefon eller annet barn).');render();return;}
+  let fra=null,til=null;
+  if(ans==='ja'){
+    fra=bhgTimeToEpoch(document.getElementById('bhg-fra').value,p.fra,p.now);
+    til=bhgTimeToEpoch(document.getElementById('bhg-til').value,p.fra,p.now);
+    if(fra===null||til===null){alert('Ugyldig tidspunkt');return;}
+    if(til<=fra){alert('«Våknet» må være etter «sovnet»');return;}
+    if(fra<p.fra-60000||til>p.now+60000){alert('Luren må ligge mellom levering ('+fmtTime(p.fra)+') og henting ('+fmtTime(p.now)+').');return;}
+    fra=Math.max(fra,p.fra);til=Math.min(til,p.now);
+  }
+  document.getElementById('bhg-modal').style.display='none';bhgPending=null;
+  undoSnapshot=JSON.parse(JSON.stringify(data));
+  if(ans==='ja'){
+    data.sessions.push({id:data.nextSid++,start:fra,end:til,note:'Barnehage'});
+    addUkjent(p.fra,fra,true);
+    addUkjent(til,p.now,true);
+  }else{
+    addUkjent(p.fra,p.now,ans==='nei');
+  }
+  data.state=p.state;data.since=p.now;resetOpen=false;
+  save();render();
+}
+
 function undoLast(){
   if(!undoSnapshot)return;
   // NB: repek både alle[id] og data – snapshotet er et nytt objekt
@@ -932,6 +1230,10 @@ function saveSettings(){
   data.settings.trackOnset=document.getElementById('set-track-onset').checked;
   const aw=document.getElementById('set-auto-wake');
   if(aw)data.settings.autoWake=aw.checked;
+  const sr=document.getElementById('set-show-rec');
+  if(sr)data.settings.showRec=sr.checked;
+  const bh=document.getElementById('set-barnehage');
+  if(bh)data.settings.barnehage=bh.checked;
   save();render();
 }
 // ── Våkenvinduer (fleksibel liste, siste = før natt) ──
@@ -980,10 +1282,10 @@ function removeWakeWin(i){
   save();renderWakeWins();populateWakeHints();
 }
 function applyWakeSuggestion(){
-  const s=suggestedWakeMin();
+  const s=suggestedWakeMin(),b=suggestedBedMin();
   const r=ageRef();
   const n=Math.max(2,((r?r.napsTypical:1)||1)+1);
-  data.settings.wakeWins=Array.from({length:n},(_,i)=>i===n-1?s+45:s);
+  data.settings.wakeWins=Array.from({length:n},(_,i)=>i===n-1?b:s);
   save();render();
 }
 function actualWakeMin(){
@@ -998,17 +1300,22 @@ function populateWakeHints(){
   // Uten fødselsdato: skjul aldersforslaget helt (degrader pent)
   if(box)box.style.display=m===null?'none':'flex';
   const sug=document.getElementById('age-suggest-txt');
-  if(sug&&m!==null){const r=ageRef();sug.innerHTML='👶 '+m+' mnd: anbefalt ~'+fmtDur(suggestedWakeMin()*60000)+' ('+fmtDur(r.wakeMin[0]*60000)+'–'+fmtDur(r.wakeMin[1]*60000)+')';}
+  if(sug&&m!==null){const r=ageRef();sug.innerHTML='👶 '+m+' mnd: før lur '+fmtDur(r.wakeMin[0]*60000)+'–'+fmtDur(r.wakeMin[1]*60000)+' · før natt '+fmtDur(r.bedMin[0]*60000)+'–'+fmtDur(r.bedMin[1]*60000);}
   const act=document.getElementById('actual-wake-txt');
   if(act){const a=actualWakeMin();act.innerHTML=a!==null?('📊 Faktisk snitt (14 d): ~'+fmtDur(a*60000)):'📊 Faktisk snitt: ikke nok data ennå';}
   const lt=document.getElementById('learned-wake-txt');
   if(lt){
-    const L=learnedWake(),b=learnedBedtimeMin(),parts=[];
-    if(L.nap!==null)parts.push('før lur '+fmtDur(L.nap*60000)+' ('+L.napN+' dager)');
-    if(L.bed!==null)parts.push('før natt '+fmtDur(L.bed*60000)+' ('+L.bedN+' dager)');
+    const now=Date.now(),b=learnedBedtimeMin(),parts=[];
+    [['nap','før lur'],['mid','mellom lurer'],['bed','før natt'],['nonap','dag uten lur']].forEach(([k,l])=>{
+      const st=learnStats(recSamples(k,now),now);
+      if(st.n>=3)parts.push(l+' '+fmtDur(st.lo*60000)+'–'+fmtDur(st.hi*60000)+' ('+st.n+' d'+(st.unsure?', usikkert':'')+(st.trend?', trend '+st.trend:'')+')');
+    });
     if(b!==null)parts.push('vanlig leggetid '+pad(Math.floor(b/60)%24)+':'+pad(b%60));
-    lt.textContent=!autoWakeOn()?'Av – bruker tallene under.':(parts.length?'Lært fra siste '+LEARN_DAYS+' dager: '+parts.join(' · ')+'.':'Trenger minst '+LEARN_MIN_N+' dager med registrert lur – bruker tallene under så lenge.');
+    const reserve=ageMonths()!==null?'aldersreferansen':'tallene under';
+    lt.textContent=!autoWakeOn()?'Av – bruker tallene under.':(parts.length?'Lært fra siste '+LEARN_DAYS+' dager (nyeste dager teller mest): '+parts.join(' · ')+'. Usikkert = bruker '+reserve+'.':'Trenger minst '+LEARN_MIN_N+' hele dager med registrert lur – bruker '+reserve+' så lenge.');
   }
+  const ac=document.getElementById('rec-accuracy-txt');
+  if(ac)ac.textContent=autoWakeOn()?'🎯 '+recAccuracyText():'';
 }
 
 // ── Views ────────────────────────────────────────────────────
@@ -1065,6 +1372,12 @@ function populateSettings(){
   if(onset)onset.checked=!!data.settings.trackOnset;
   const aw=document.getElementById('set-auto-wake');
   if(aw)aw.checked=autoWakeOn();
+  const sr=document.getElementById('set-show-rec');
+  if(sr)sr.checked=showRecOn();
+  const bh=document.getElementById('set-barnehage');
+  if(bh)bh.checked=barnehageOn();
+  const bl=document.getElementById('set-barnehage-lbl');
+  if(bl)bl.textContent='🏫 '+aktivBarn.navn+' går i barnehage';
   renderWakeWins();
   populateWakeHints();
 }
@@ -1100,8 +1413,9 @@ function renderHome(){
   const now=Date.now();
   const card=document.getElementById('status-card');
   card.className='status-card '+(paused?'paused':sleeping?'sleeping':'awake');
-  document.getElementById('status-emoji').textContent=paused?'⏸️':sleeping?'😴':'😊';
-  document.getElementById('status-label').textContent=paused?'På pause – ikke registrert':sleeping?navn+' sover':navn+' er våken';
+  const bhg=paused&&barnehageOn();
+  document.getElementById('status-emoji').textContent=bhg?'🏫':paused?'⏸️':sleeping?'😴':'😊';
+  document.getElementById('status-label').textContent=bhg?navn+' er i barnehagen':paused?'På pause – ikke registrert':sleeping?navn+' sover':navn+' er våken';
   document.getElementById('status-since').innerHTML='<i class="ti ti-clock-edit"></i> Siden '+fmtTime(data.since)+(dayKey(data.since)!==dayKey(now)?' ('+fmtDateShort(data.since)+')':'');
   document.getElementById('btn-sleep-txt').textContent=navn+' sover';
   document.getElementById('btn-awake-txt').textContent=navn+' våken';
@@ -1118,8 +1432,8 @@ function renderHome(){
     // Rad 1 = hvor lenge pausen har vart, Rad 2 = sov sist
     r1.className='info-row pause current';
     document.getElementById('info-icon-1').className='ti ti-player-pause';
-    document.getElementById('info-label-1').textContent='På pause i';
-    document.getElementById('info-sub-1').textContent='Trykk Sover eller Våken for å starte igjen';
+    document.getElementById('info-label-1').textContent=bhg?'I barnehagen i':'På pause i';
+    document.getElementById('info-sub-1').textContent=bhg?'Trykk «Hentet» (eller Sover/Våken) når '+navn+' er med hjem':'Trykk Sover eller Våken for å starte igjen';
     document.getElementById('info-value-1').textContent=fmtDur(now-data.since);
     r2.className='info-row sleep';
     document.getElementById('info-icon-2').className='ti ti-moon';
@@ -1154,18 +1468,17 @@ function renderHome(){
     document.getElementById('info-label-1').textContent=navn+' har vært våken i';
     document.getElementById('info-value-1').textContent=fmtDur(now-data.since);
 
-    // Våkenvindu-hint: farg gradvis mot rødt når barnet nærmer seg/passerer grensen
-    const ww=(nextSleepTarget(currentWakeWin())-data.since)/60000;
-    const mins=(now-data.since)/60000;
-    const ratio=ww>0?mins/ww:0;
+    // Farge etter anbefalt vindu: gult inne i vinduet (mot oransje mot slutten), rødt etter at det er over
+    const rc=showRecOn()?sleepRec(now):null;
     let subTxt='Våknet '+fmtTime(data.since);
-    if(ratio>=0.7){
-      const t=(ratio-0.7)/0.3; // 0.7→0, 1.0→1
-      const col=wakeColor(t);
+    if(rc&&now>=rc.from){
+      const span=Math.max(1,rc.to-rc.from);
+      const col=now>rc.to?wakeColor(1):wakeColor(Math.min(0.5,(now-rc.from)/span*0.5));
       r1.style.borderColor=col;
       document.getElementById('info-value-1').style.color=col;
-      if(ratio>=1.0)subTxt+=' · over vanlig våkenvindu ⚠️';
-      else subTxt+=' · snart leggetid';
+      subTxt+=now>rc.to?' · over vinduet for '+(rc.isBed?'leggetid':'lur')+' ⚠️':' · i vinduet for '+(rc.isBed?'leggetid':'lur');
+    }else if(rc&&rc.from-now<=20*60000){
+      subTxt+=' · snart '+(rc.isBed?'leggetid':'lur');
     }
     document.getElementById('info-sub-1').textContent=subTxt;
 
@@ -1189,21 +1502,17 @@ function renderHome(){
 
   // Estimat for neste søvn (mykt anslag) – kun når barnet er våkent
   const est=document.getElementById('estimate-line');
-  if(!sleeping&&!paused){
-    const cw=currentWakeWin();
-    const target=nextSleepTarget(cw);
-    const over=target<now;
-    const what=cw.isBed?'leggetid':'neste lur';
-    const ic=cw.isBed?'ti-moon':'ti-zzz';
-    let winLbl;
-    if(cw.assumedNap)winLbl=' · vanlig leggetid (ingen lur ført i dag)';
-    else winLbl=cw.n>1?' · '+wakeWinLabel(cw.idx,cw.n).replace('🌙 ','')+' '+fmtDur(cw.min*60000):'';
-    if(cw.learned&&!cw.assumedNap)winLbl+=' · etter siste '+LEARN_DAYS+' dager';
-    const hvorfor=(cw.justert?' <span style="color:var(--awake-text)">−'+cw.justert+' min (kort luredag)</span>':'')
-      +(cw.overstyrt?' <span style="color:var(--accent-text)">· manuelt satt</span>':'');
-    est.innerHTML='<i class="ti '+ic+'"></i> '+(over?('Anbefalt '+what+' passert ('+fmtTime(target)+')'):('Anbefalt '+what+' ~'+fmtTime(target)))+winLbl+hvorfor;
-    est.style.color=over?wakeColor(1):'var(--text3)';
-    tegnVinduOverstyr(cw);
+  const rec=(!sleeping&&!paused&&showRecOn())?sleepRec(now):null;
+  if(rec){
+    const over=now>rec.to;
+    const what=rec.isBed?'Leggetid':'Neste lur';
+    const ic=rec.isBed?'ti-moon':'ti-zzz';
+    const vindu=fmtTime(rec.from)+'–'+fmtTime(rec.to);
+    const main=over?'Vinduet for '+what.toLowerCase()+' er passert ('+vindu+')':what+' ca. '+vindu;
+    est.innerHTML='<div><i class="ti '+ic+'"></i> '+main+'</div>'
+      +'<div class="rec-basis">'+esc(rec.basis)+(rec.manuelt?' · manuelt satt':'')+(rec.unsure?' <span class="rec-usikker">usikkert</span>':'')+'</div>';
+    est.style.color=over?wakeColor(1):'var(--text2)';
+    tegnVinduOverstyr({n:wakeWinPair().n,overstyrt:aktivOverstyring()});
   }else{
     est.innerHTML='';
     document.getElementById('vindu-overstyr').innerHTML='';
@@ -1212,7 +1521,8 @@ function renderHome(){
   // Angre-knapp etter en handling
   const ub=document.getElementById('undo-bar');
   if(undoSnapshot){
-    const FRA={sleeping:'sov',awake:'våken',pause:'pause'},TIL={sleeping:'sover',awake:'våken',pause:'pause'};
+    const p=barnehageOn()?'barnehage':'pause';
+    const FRA={sleeping:'sov',awake:'våken',pause:p},TIL={sleeping:'sover',awake:'våken',pause:p};
     ub.innerHTML='<button class="undo-chip" onclick="undoLast()"><i class="ti ti-arrow-back-up"></i> Angre siste ('+(FRA[undoSnapshot.state]||'')+' → '+(TIL[data.state]||'')+')</button>';
   }else{
     ub.innerHTML='';
@@ -1491,7 +1801,9 @@ function exportData(fmt){
     content=JSON.stringify({eksportert:new Date().toISOString(),barn:aktivBarn.navn,sessions:rows,ukjent:data.ukjent||[],settings:data.settings},null,2);
     mime='application/json';ext='json';
   }else{
-    const lines=['dato,type,start,slutt,varighet_min,lagt_ned'];
+    // Notat er fritekst: siteres, og tekst som starter med = + - @ får ' foran (ellers tolkes den som formel i Excel)
+    const csv=v=>{v=String(v??'');if(/^[=+\-@\t\r]/.test(v))v="'"+v;return /[",\n\r;]/.test(v)?'"'+v.replace(/"/g,'""')+'"':v;};
+    const lines=['dato,type,start,slutt,varighet_min,lagt_ned,notat'];
     rows.forEach(s=>{
       const d=new Date(s.start),e=new Date(s.end);
       const dato=d.getFullYear()+'-'+pad(d.getMonth()+1)+'-'+pad(d.getDate());
@@ -1500,7 +1812,7 @@ function exportData(fmt){
       const min=Math.round((s.end-s.start)/60000);
       let laid='';
       if(s.laidDown){const l=new Date(s.laidDown);laid=pad(l.getHours())+':'+pad(l.getMinutes());}
-      lines.push([dato,sessionKind(s.start),start,slutt,min,laid].join(','));
+      lines.push([dato,sessionKind(s.start),start,slutt,min,laid,s.note||''].map(csv).join(','));
     });
     content=lines.join('\n');mime='text/csv';ext='csv';
   }
@@ -1519,18 +1831,27 @@ function exportData(fmt){
 
 function periodStats(windowStart,nDays){
   const now=Date.now();
-  const all=[...data.sessions];
-  if(data.state==='sleeping')all.push({start:data.since,end:now});
+  // Total søvn og lurer per dag: bare dager uten mye ikke registrert tid (pause/nullstilling) –
+  // ellers ville tiden på pause telt som våken og trukket snittet ned.
+  // Dager før første registrering har ingen data – de skal ikke trekke snittet ned
+  const fr=firstRecordEpoch();
+  const days=dayStartsBetween(Math.max(windowStart,fr!=null?startOfDayEpoch(fr):windowStart),now).map(dayKey);
+  const todayK=dayKey(now);
+  // I dag er ikke ferdig – tas bare med når perioden er «i dag»
+  const fullDays=days.filter(k=>!dayIncomplete(k)&&(k!==todayK||days.length===1)),fullSet=new Set(fullDays);
+  const ukjentDays=days.filter(k=>dayIncomplete(k)&&k!==todayK).length;
+  const nFull=fullDays.length;
   let totalSleep=0;
-  all.forEach(s=>{const st=Math.max(s.start,windowStart),en=Math.min(s.end,now);if(en>st)totalSleep+=en-st;});
+  fullDays.forEach(k=>{totalSleep+=sleepMsOnDay(k);});
   const nights=buildNights().filter(n=>!n.ongoing&&!n.ukjent&&n.end>=windowStart);
   const avgNight=nights.length?nights.reduce((t,n)=>t+n.sleepMs,0)/nights.length:0;
   const avgWake=nights.length?nights.reduce((t,n)=>t+n.wakeCount,0)/nights.length:0;
   const longestNight=nights.length?Math.max(...nights.map(n=>n.sleepMs)):0;
   const lur=data.sessions.filter(s=>sessionKind(s.start)==='lur'&&s.start>=windowStart);
   const longestNap=lur.length?Math.max(...lur.map(s=>s.end-s.start)):0;
+  const lurFull=lur.filter(s=>fullSet.has(dayKey(s.start)));
   let napSleep=0;
-  lur.forEach(s=>{const en=Math.min(s.end,now);if(en>s.start)napSleep+=en-s.start;});
+  lurFull.forEach(s=>{const en=Math.min(s.end,now);if(en>s.start)napSleep+=en-s.start;});
   // Våkenvinduer på dagtid (mellom morgen og leggetid) – hopper over nattoppvåkninger
   const dayWins=awakeWindows().filter(w=>{
     if(w.ongoing||w.start<windowStart)return false;
@@ -1551,7 +1872,8 @@ function periodStats(windowStart,nDays){
   });
   const mean=a=>a.length?a.reduce((x,y)=>x+y,0)/a.length:0;
   const mx=a=>a.length?Math.max(...a):0;
-  return {avgSleepDay:totalSleep/nDays,avgNight,avgWake,avgNaps:lur.length/nDays,napSleepPerDay:napSleep/nDays,longestNap,longestNight,nights:nights.length,napCount:lur.length,
+  return {avgSleepDay:nFull?totalSleep/nFull:0,avgNight,avgWake,avgNaps:nFull?lurFull.length/nFull:0,napSleepPerDay:nFull?napSleep/nFull:0,longestNap,longestNight,nights:nights.length,napCount:lur.length,
+    fullDays:nFull,ukjentDays,
     avgWakeWin,longestWakeWin,wakeWinCount:wwDurs.length,
     avgWakeMorning:mean(morn),longestWakeMorning:mx(morn),morningCount:morn.length,
     avgWakeEvening:mean(eve),longestWakeEvening:mx(eve),eveningCount:eve.length};
@@ -1677,7 +1999,7 @@ function renderTodayOverview(todayKey,showNatt,showLur){
     html+='<div class="stat-box"><div class="stat-num">'+(napSleep?fmtDur(napSleep):'–')+'</div><div class="stat-lbl">Lur-søvn</div></div>';
     html+='<div class="stat-box"><div class="stat-num">'+(longest?fmtDur(longest):'–')+'</div><div class="stat-lbl">Lengste lur</div></div>';
     html+='</div><div class="stat-grid" style="margin-top:8px">'+nowBox
-      +'<div class="stat-box"><div class="stat-num">'+(totalSleep?fmtDur(totalSleep):'–')+'</div><div class="stat-lbl">Total søvn i dag</div></div>'
+      +'<div class="stat-box"><div class="stat-num">'+(totalSleep?fmtDur(totalSleep):'–')+'</div><div class="stat-lbl">Total søvn i dag'+(dayIncomplete(todayKey)?'<br><span style="color:var(--text2)">ufullstendig (pause)</span>':'')+'</div></div>'
       +'<div class="stat-box"><div class="stat-num">'+(longestAwake?fmtDur(longestAwake):'–')+'</div><div class="stat-lbl">Lengste våkenvindu</div></div></div>';
   }
   html+='</div>';
@@ -1700,6 +2022,7 @@ function renderAggOverview(pw,showNatt,showLur){
       const mark=avgH<ageR.totalH[0]?'<span style="color:var(--awake-text)">↓ under</span>':(avgH>ageR.totalH[1]?'<span style="color:var(--sleep-text)">↑ over</span>':'<span style="color:var(--green)">✓ innenfor</span>');
       lbl+=' · anbefalt '+ageR.totalH[0]+'–'+ageR.totalH[1]+'t '+(p.avgSleepDay?mark:'');
     }
+    if(p.ukjentDays)lbl+='<br>'+p.ukjentDays+' '+(p.ukjentDays===1?'dag':'dager')+' med pause/ikke registrert tid er holdt utenfor';
     html+='<div class="stat-box" style="margin-bottom:12px"><div class="stat-num">'+(p.avgSleepDay?fmtDur(p.avgSleepDay):'–')+'</div><div class="stat-lbl">'+lbl+'</div></div>';
   }
   if(showNatt){
@@ -1719,9 +2042,16 @@ function renderAggOverview(pw,showNatt,showLur){
     html+='</div>';
     html+='<div class="group-label clickable" style="color:var(--awake-text);margin-top:12px" onclick="openStatDetail(\'windows\')"><i class="ti ti-walk"></i> Våkenvindu <span>snitt vs. mål ›</span></div>';
     const pos=wakeWinByPos(pw.ws),nSlots=data.settings.wakeWins.length;
+    // Mål = det anbefalingen bruker nå: lært vindu (eller referansen) når tilpasning er på
+    const nowT=Date.now(),lNap=learnStats(recSamples('nap',nowT),nowT),lMid=learnStats(recSamples('mid',nowT),nowT),lBed=learnStats(recSamples('bed',nowT),nowT);
+    const goal=i=>{
+      if(!autoWakeOn())return data.settings.wakeWins[i];
+      const bed=i===nSlots-1,st=bed?lBed:(i>0&&!lMid.unsure?lMid:lNap);
+      return st.unsure?midQ(refRange(bed?'bed':'nap')):Math.round(st.center);
+    };
     pos.forEach((s,i)=>{
       const label=i===nSlots-1?'🌙 Før natt':'Vindu '+(i+1);
-      const target=data.settings.wakeWins[i]*60000;
+      const target=goal(i)*60000;
       const diff=s.avg-target;
       const deltaTxt=s.count&&Math.abs(diff)>=5*60000?((diff>=0?'+':'−')+fmtDur(Math.abs(diff))):'';
       const col=!s.count?'var(--text4)':(diff>15*60000?'var(--awake-text)':(diff<-15*60000?'var(--sleep-text)':'var(--green)'));
@@ -1796,8 +2126,8 @@ function renderTodayWindows(todayKey){
 }
 
 function renderTimeline(){
-  const ts=new Date();ts.setHours(0,0,0,0);
-  const dayStart=ts.getTime(),DAY=86400000,nowMs=Date.now();
+  const nowMs=Date.now(),dayStart=startOfToday(),dayEnd=nextDayStart(dayStart);
+  const DAY=dayEnd-dayStart; // faktisk døgnlengde (23/25 t ved sommertid-overgang)
   const segs=[...data.sessions];
   if(data.state==='sleeping')segs.push({start:data.since,end:nowMs});
   let segHtml='';
@@ -1805,13 +2135,13 @@ function renderTimeline(){
     const kind=sessionKind(s.start);
     if(statsType==='natt'&&kind!=='natt')return;
     if(statsType==='lur'&&kind!=='lur')return;
-    const st=Math.max(s.start,dayStart),en=Math.min(s.end,dayStart+DAY);
+    const st=Math.max(s.start,dayStart),en=Math.min(s.end,dayEnd);
     if(en<=st)return;
     const left=(st-dayStart)/DAY*100, w=(en-st)/DAY*100;
     segHtml+='<div class="tl-seg '+(kind==='natt'?'night':'nap')+'" style="left:'+left+'%;width:'+w+'%"></div>';
   });
   (data.ukjent||[]).concat(data.state==='pause'?[{fra:data.since,til:nowMs}]:[]).forEach(u=>{
-    const st=Math.max(u.fra,dayStart),en=Math.min(u.til,dayStart+DAY);
+    const st=Math.max(u.fra,dayStart),en=Math.min(u.til,dayEnd);
     if(en<=st)return;
     segHtml+='<div class="tl-seg unk" title="Ikke registrert" style="left:'+((st-dayStart)/DAY*100)+'%;width:'+((en-st)/DAY*100)+'%"></div>';
   });
@@ -1824,52 +2154,46 @@ function renderTimeline(){
 }
 
 // Søyle-bøtter: dag (7d/30d) eller adaptivt for «Totalt» (dag/uke/måned). Verdi = total/dag eller snitt/dag.
+// Dager med mye ikke registrert tid (pause/nullstilling) merkes og holdes utenfor snittene.
+// Itererer på kalenderdatoer, så sommertid ikke gir dobbel eller manglende dag.
 function statsBuckets(){
-  const DAY=86400000, todayKey=dayKey(Date.now());
+  const todayKey=dayKey(Date.now());
   const buckets=[];
+  const dayInfo=t=>{const k=dayKey(t);return {k,night:sleepMsOnDay(k,'natt'),nap:sleepMsOnDay(k,'lur'),ukjent:dayIncomplete(k)};};
+  const daily=starts=>starts.forEach(t=>{
+    const d=dayInfo(t);
+    buckets.push({label:String(new Date(t).getDate()),night:d.night,nap:d.nap,ukjent:d.ukjent,isCurrent:d.k===todayKey});
+  });
+  // Snitt/dag i en gruppe dager – bare hele dager uten mye ukjent tid teller (i dag er ikke ferdig)
+  const group=(starts,label,isCurrent)=>{
+    let night=0,nap=0,n=0;
+    starts.forEach(t=>{const d=dayInfo(t);if(d.ukjent||d.k===todayKey)return;night+=d.night;nap+=d.nap;n++;});
+    buckets.push({label,night:n?night/n:0,nap:n?nap/n:0,ukjent:!n&&!isCurrent,isCurrent});
+  };
   if(statsPeriod==='7d'||statsPeriod==='30d'){
     const n=statsPeriod==='7d'?7:30;
-    for(let i=n-1;i>=0;i--){
-      const d=new Date();d.setHours(0,0,0,0);d.setDate(d.getDate()-i);
-      const k=dayKey(d.getTime());
-      buckets.push({label:String(d.getDate()),night:sleepMsOnDay(k,'natt'),nap:sleepMsOnDay(k,'lur'),isCurrent:k===todayKey});
-    }
+    daily(dayStartsBetween(dayStartOffset(-(n-1)),Date.now()));
   }else if(statsPeriod==='total'){
     const first=firstRecordEpoch();
     if(first===null)return buckets;
-    const startDay=startOfDayEpoch(first);
-    const spanDays=dayDiff(startDay,startOfToday())+1;
-    if(spanDays<=40){
-      // Daglig
-      eachDay(startDay,t=>{
-        const k=dayKey(t);
-        buckets.push({label:String(new Date(t).getDate()),night:sleepMsOnDay(k,'natt'),nap:sleepMsOnDay(k,'lur'),isCurrent:k===todayKey});
-      });
-    }else if(spanDays<=372){
-      // Ukentlig (snitt/dag pr uke)
-      const wk={};
-      eachDay(startDay,t=>{
-        const idx=Math.floor(dayDiff(startDay,t)/7);
-        wk[idx]=wk[idx]||{night:0,nap:0,days:0,start:t};
-        const k=dayKey(t);wk[idx].night+=sleepMsOnDay(k,'natt');wk[idx].nap+=sleepMsOnDay(k,'lur');wk[idx].days++;
-      });
-      const nowIdx=Math.floor(dayDiff(startDay,startOfToday())/7);
-      Object.keys(wk).map(Number).sort((a,b)=>a-b).forEach(idx=>{
-        const w=wk[idx],d=w.days||1;
-        buckets.push({label:new Date(w.start).toLocaleDateString('nb-NO',{day:'numeric',month:'short'}),night:w.night/d,nap:w.nap/d,isCurrent:idx===nowIdx});
-      });
+    const starts=dayStartsBetween(first,Date.now());
+    if(starts.length<=40){
+      daily(starts); // Daglig
+    }else if(starts.length<=372){
+      // Ukentlig (snitt/dag pr uke, regnet fra første dag)
+      const nowIdx=Math.floor((starts.length-1)/7);
+      for(let w=0;w*7<starts.length;w++){
+        const ws=starts.slice(w*7,w*7+7);
+        group(ws,new Date(ws[0]).toLocaleDateString('nb-NO',{day:'numeric',month:'short'}),w===nowIdx);
+      }
     }else{
       // Månedlig (snitt/dag pr måned)
       const MN=['jan','feb','mar','apr','mai','jun','jul','aug','sep','okt','nov','des'];
       const now=new Date(),mo={};
-      eachDay(startDay,t=>{
-        const dt=new Date(t),key=dt.getFullYear()+'-'+dt.getMonth();
-        mo[key]=mo[key]||{night:0,nap:0,days:0,y:dt.getFullYear(),m:dt.getMonth()};
-        const k=dayKey(t);mo[key].night+=sleepMsOnDay(k,'natt');mo[key].nap+=sleepMsOnDay(k,'lur');mo[key].days++;
-      });
-      Object.values(mo).sort((a,b)=>a.y-b.y||a.m-b.m).forEach(v=>{
-        const d=v.days||1;
-        buckets.push({label:MN[v.m],night:v.night/d,nap:v.nap/d,isCurrent:v.y===now.getFullYear()&&v.m===now.getMonth()});
+      starts.forEach(t=>{const dt=new Date(t),key=dt.getFullYear()*12+dt.getMonth();(mo[key]=mo[key]||[]).push(t);});
+      Object.keys(mo).map(Number).sort((a,b)=>a-b).forEach(key=>{
+        const y=Math.floor(key/12),m=key%12;
+        group(mo[key],MN[m],y===now.getFullYear()&&m===now.getMonth());
       });
     }
   }
@@ -1894,10 +2218,15 @@ function renderTrend(pw){
   const naps=data.sessions.filter(s=>sessionKind(s.start)==='lur');
   const half=(a,b)=>{
     const nn=nights.filter(n=>n.end>=a&&n.end<b);
-    const np=naps.filter(s=>s.start>=a&&s.start<b);
-    const days=Math.max(1,(b-a)/86400000);
+    // Lur per dag: bare hele dager (uten mye pause/ukjent tid) i denne halvdelen – i dag er ikke ferdig
+    const todayK=dayKey(now);
+    const fr=firstRecordEpoch(),fk=fr!=null?dayKey(fr):'';
+    const dk=new Set(dayStartsBetween(a,b-1).map(dayKey).filter(k=>k!==todayK&&k>=fk&&!dayIncomplete(k)));
+    const np=naps.filter(s=>s.start>=a&&s.start<b&&dk.has(dayKey(s.start)));
+    const days=Math.max(1,dk.size);
     const nightSum=nn.reduce((t,n)=>t+n.sleepMs,0),napSum=np.reduce((t,s)=>t+(s.end-s.start),0);
-    return {nN:nn.length,nightAvg:nn.length?nightSum/nn.length:0,wakeAvg:nn.length?nn.reduce((t,n)=>t+n.wakeCount,0)/nn.length:0,napDay:napSum/days,totalDay:(nightSum+napSum)/days};
+    const nightAvg=nn.length?nightSum/nn.length:0;
+    return {nN:nn.length,nightAvg,wakeAvg:nn.length?nn.reduce((t,n)=>t+n.wakeCount,0)/nn.length:0,napDay:napSum/days,totalDay:nightAvg+napSum/days};
   };
   const A=half(ws,mid),B=half(mid,now+1);
   if(A.nN<2||B.nN<2)return '';
@@ -1919,7 +2248,8 @@ function renderBarsHtml(){
   const showVal=buckets.length<=10;
   const many=buckets.length>14;
   const sub=statsPeriod==='total'?'snitt/dag over tid':'per dag';
-  const vals=buckets.filter(b=>!b.isCurrent&&metric(b)>0).map(metric);
+  const vals=buckets.filter(b=>!b.isCurrent&&!b.ukjent&&metric(b)>0).map(metric);
+  const anyUkjent=buckets.some(b=>b.ukjent);
   const avg=vals.length?vals.reduce((a,b)=>a+b,0)/vals.length:0;
   let html='<div class="stat-section"><div class="stat-title"><i class="ti ti-chart-bar"></i> Søvn '+sub;
   if(avg)html+='<span style="margin-left:auto;font-weight:600;color:var(--text2);text-transform:none;letter-spacing:0">Snitt '+fmtDur(avg)+'</span>';
@@ -1929,7 +2259,7 @@ function renderBarsHtml(){
     const hPct=Math.round(val/maxVal*100);
     html+='<div class="bar-col">';
     if(showVal)html+='<div class="bar-val">'+(val?fmtDur(val):'')+'</div>';
-    html+='<div class="bar-stack'+(b.isCurrent?' today':'')+'" style="height:'+hPct+'%">';
+    html+='<div class="bar-stack'+(b.isCurrent?' today':'')+(b.ukjent?' ukjent':'')+'" style="height:'+(b.ukjent&&!val?100:hPct)+'%"'+(b.ukjent?' title="Mye tid ikke registrert – holdt utenfor snittet"':'')+'>';
     if(statsType==='all'){
       const tot=b.night+b.nap, napShare=tot?Math.round(b.nap/tot*100):0;
       if(napShare>0)html+='<div class="seg nap" style="height:'+napShare+'%"></div>';
@@ -1943,7 +2273,8 @@ function renderBarsHtml(){
     html+='</div>';
   });
   html+='</div>';
-  if(statsType==='all')html+='<div class="bar-legend"><span><i class="dot night"></i>Natt</span><span><i class="dot nap"></i>Lur</span></div>';
+  if(statsType==='all'||anyUkjent)html+='<div class="bar-legend">'+(statsType==='all'?'<span><i class="dot night"></i>Natt</span><span><i class="dot nap"></i>Lur</span>':'')+(anyUkjent?'<span><i class="dot unk"></i>Ikke registrert</span>':'')+'</div>';
+  if(anyUkjent)html+='<p style="font-size:11px;color:var(--text3);margin-top:6px;text-align:center">Skraverte dager har over '+(UKJENT_DAG_MS/3600000)+' t uten registrering (pause/nullstilt) og telles ikke i snittet.</p>';
   html+='</div>';
   return html;
 }
@@ -2090,6 +2421,7 @@ function deleteSess(){
 function clearAll(){
   if(!confirm('Slette ALL søvnhistorikk for '+aktivBarn.navn+'? Dette kan ikke angres.'))return;
   data.sessions=[];data.ukjent=[];data.nextSid=1;
+  if(data.state==='pause'){data.state='awake';data.since=Date.now();}
   save();render();
 }
 
@@ -2099,12 +2431,13 @@ function clearAll(){
 // Escape lukker åpen modal.
 document.addEventListener('keydown',e=>{
   if(e.key!=='Escape')return;
-  ['since-modal','sess-modal','stat-modal'].forEach(id=>{const m=document.getElementById(id);if(m&&m.style.display==='flex')m.style.display='none';});
+  ['since-modal','sess-modal','stat-modal','bhg-modal'].forEach(id=>{const m=document.getElementById(id);if(m&&m.style.display==='flex')m.style.display='none';});
+  bhgPending=null;
 });
 
 // Modul-scope: funksjoner brukt i on*-attributter (i HTML og JS-bygde strenger)
 // må eksponeres på window. Barnevelgeren bruker delegert lytter og trenger ikke det.
-Object.assign(window,{addSessTag,addWakeWin,applyWakeSuggestion,clearAll,deleteSess,
+Object.assign(window,{addSessTag,addWakeWin,applyWakeSuggestion,bhgAnswer,hideBhg,clearAll,deleteSess,
 exportData,glemtOk,handleSessBg,nullstill,pauseNow,toggleReset,handleSinceBg,hideSessModal,hideSinceModal,hideStatModal,
 openSessAdd,openSessEdit,openSinceEdit,openStatDetail,removeWakeWin,saveSess,saveSettings,saveSince,setSinceAgo,setState,setStatsPeriod,
 setStatsType,setView,setWakeWin,toggleTheme,undoLast,vaerSetMode});

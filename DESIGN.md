@@ -98,15 +98,23 @@ all sikkerhet ligger i security rules (§7).
       "fryser":      { "freezers": [], "categories": [], "history": [], "items": [] },
       "oppgaver":    { "tasks": [], "archive": [], "categories": [], "people": [], "maintenance": [],
                        // valgfri fane «Fred» (Husfreden), av som standard:
-                       "husfreden": { "pa": false, "entries": [], "cats": [], "truce": null, "nextHid": 1 } },
+                       "husfreden": { "pa": false, "entries": [], "cats": [], "truce": null, "nextHid": 1 },
+                       // arkiv = { antall, maxId, oppdatert } når eldre arkiv er flyttet ut (se oppgaverArkiv)
+                     },
+      // Fullførte oppgaver eldre enn 12 mnd flyttes hit av oppgaver.html – leses bare ved «Vis eldre»
+      // og av statistikk. Husfreden: fixed.pending = meldt fikset, venter på bekreftelse fra den som skrev.
+      "oppgaverArkiv": { "items": [] },
       "plikter":     { "kids": [], "chores": [], "log": [], "rewards": [], "spent": [] },  // kids seedes fra personer.barn
 
       // ENDRING 1: søvn per barn (flere barn fra start)
       "sovn": {
         "<barnId>": { "state": "awake", "since": 0, "sessions": [], "ukjent": [], "nextSid": 1, "settings": {} }
         // state: awake | sleeping | pause. ukjent: [{id,fra,til}] = tid som ikke er registrert
-        // (pause/«nullstill fra nå») – holdes utenfor statistikk og læring.
-        // settings.autoWake (standard på): «anbefalt neste søvn» lærer av barnets siste 14 dager.
+        // (pause/«nullstill fra nå») – holdes utenfor statistikk og læring. id = 'u'+fra (tekst).
+        // sovnKjent: true = barnehage besvart (søvnen er kjent) – teller i total søvn, ikke i våkenvinduene.
+        // Dager med ≥ 2 t ukjent tid holdes utenfor snittene.
+        // settings.autoWake (standard på): «anbefalt neste søvn» er et vindu lært av barnets siste 14 dager
+        // (vektet, halveringstid 3 d). settings.showRec viser/skjuler den, settings.barnehage = barnehage-modus.
       },
 
       // ENDRING 2: helse.barn refererer personregisteret (id, ikke navn-streng)
