@@ -14,9 +14,10 @@
       "$uid": {
         ".read": "auth != null && auth.uid === $uid",
         "sistSett": {
-          ".write": "auth != null && auth.uid === $uid"
+          ".write": "auth != null && auth.uid === $uid",
+          ".validate": "newData.isNumber()"
         },
-        ".write": "auth != null && auth.uid === $uid && (root.child('admins').child(auth.uid).val() === true || (!data.exists() && newData.child('kode').val() != null && newData.child('familieId').val() != null && newData.child('kode').val() === root.child('familier').child(newData.child('familieId').val()).child('meta').child('invitasjonskode').val()))",
+        ".write": "auth != null && auth.uid === $uid && (root.child('admins').child(auth.uid).val() === true || (!data.exists() && newData.child('kode').isString() && newData.child('familieId').isString() && newData.child('kode').val() === root.child('familier').child(newData.child('familieId').val()).child('meta').child('invitasjonskode').val() && (!root.child('familier').child(newData.child('familieId').val()).child('meta').child('invitasjonUtloper').exists() || root.child('familier').child(newData.child('familieId').val()).child('meta').child('invitasjonUtloper').val() > now)))",
         "innstillinger": {
           ".write": "auth != null && auth.uid === $uid"
         }
@@ -30,7 +31,7 @@
         ".write": "auth != null && root.child('brukere').child(auth.uid).child('familieId').val() === $familieId",
         "avatarer": {
           "$navn": {
-            ".validate": "!newData.exists() || (newData.isString() && newData.val().length < 80000)"
+            ".validate": "!newData.exists() || (newData.isString() && newData.val().length < 80000 && newData.val().beginsWith('data:image/') && !newData.val().contains('\"') && !newData.val().contains(')') && !newData.val().contains('<'))"
           }
         }
       }

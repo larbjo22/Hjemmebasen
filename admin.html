@@ -168,7 +168,8 @@ function eksporterHusstand(fid) {
   const fam = familier[fid];
   if (!fam) return;
   const navn = (fam.meta?.navn || fid).toLowerCase().replace(/[^a-z0-9æøå]+/gi, '-');
-  const dato = new Date().toISOString().slice(0, 10);
+  const d = new Date(); // lokal dato (toISOString gir UTC – feil dag rundt midnatt)
+  const dato = d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0');
   const blob = new Blob([JSON.stringify(fam, null, 2)], { type: 'application/json' });
   const a = document.createElement('a');
   a.href = URL.createObjectURL(blob);

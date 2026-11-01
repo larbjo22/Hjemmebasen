@@ -38,19 +38,23 @@ function tilRad(ev, occStart) {
 }
 
 const root = (await db.ref('familier').once('value')).val() || {};
-let husst = 0, feeds = 0, hendelser = 0;
+let husst = 0, feeds = 0, hendelser = 0, feil = 0;
 
 for (const [fid, fam] of Object.entries(root)) {
   const ab = fam.kalender_abonnement;
   if (!Array.isArray(ab) || !ab.length) continue;
   husst++;
   const eksMap = {};
+  const forrige = fam.kalender_eksterne || {};
   for (const a of ab) {
     if (!a || !a.url) continue;
+    // Bare https (webcal:// er https i praksis) – ingen interne adresser via http/fil
+    const url = String(a.url).trim().replace(/^webcal:\/\//i, 'https://');
+    if (!/^https:\/\//i.test(url)) continue;
     feeds++;
     const ut = [];
     try {
-      const data = await ical.async.fromURL(a.url);
+      const data = await ical.async.fromURL(url);
       for (const k in data) {
         const ev = data[k];
         if (!ev || ev.type !== 'VEVENT') continue;
@@ -67,8 +71,12 @@ for (const [fid, fam] of Object.entries(root)) {
         if (ut.length >= MAKS) break;
       }
     } catch (e) {
-      console.log('Feil for feed «' + (a.navn || a.id) + '»: ' + e.message);
-      continue; // behold evt. tidligere data for denne feeden urørt? nei – hopp
+      // Repoet er offentlig, og det er Actions-loggen også: ikke skriv navn, URL
+      // eller feilmelding (private iCal-lenker inneholder hemmelige nøkler).
+      feil++;
+      // Midlertidig feil: behold forrige henting i stedet for å viske ut hendelsene
+      if (Array.isArray(forrige[a.id])) eksMap[a.id] = forrige[a.id];
+      continue;
     }
     eksMap[a.id] = ut;
     hendelser += ut.length;
@@ -76,5 +84,5 @@ for (const [fid, fam] of Object.entries(root)) {
   await db.ref('familier/' + fid + '/kalender_eksterne').set(eksMap);
 }
 
-console.log(`Synket ${feeds} feed(er) i ${husst} husstand(er) – ${hendelser} hendelser.`);
+console.log(`Synket ${feeds} feed(er) i ${husst} husstand(er) – ${hendelser} hendelser, ${feil} feilet.`);
 process.exit(0);

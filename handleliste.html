@@ -347,6 +347,7 @@ import { requireAuth } from './felles/auth.js';
 import { dbGet, dbSet, dbListen } from './felles/storage.js';
 import { esc, todayStr, initTheme, toggleTheme, setStatus } from './felles/ui.js';
 import { monterNav } from './felles/nav.js';
+import { visAngre } from './felles/angre.js';
 const APP='handleliste';
 let FAMILIE=null;
 let MITT=''; // fornavnet til innlogget bruker – stemples på avhukede varer
@@ -545,14 +546,14 @@ function deleteTemplate(id){data.templates=data.templates.filter(t=>t.id!==id);s
 // Legg til en vare fra historikken («Kjøpes ofte»-chips) med lagret kategori.
 function addFromHistory(name){
   const h=(data.history||[]).find(x=>x.name.toLowerCase()===name.toLowerCase());
-  const existing=data.items.find(i=>i.name.toLowerCase()===name.toLowerCase()&&!i.checked);
+  const existing=data.items.find(i=>normKey(i.name)===normKey(name)&&!i.checked);
   if(existing){existing.qty++;}
   else data.items.push({id:nextId++,name:h?h.name:name,cat:h?(h.cat||''):'',qty:1,checked:false,added:todayStr()});
   save();render();
 }
 function addFromTemplate(id){
   const t=data.templates.find(t=>t.id===id);if(!t)return;
-  const existing=data.items.find(i=>i.name.toLowerCase()===t.name.toLowerCase()&&!i.checked);
+  const existing=data.items.find(i=>normKey(i.name)===normKey(t.name)&&!i.checked);
   if(existing){existing.qty++;save();render();return;}
   data.items.push({id:nextId++,name:t.name,cat:t.cat,qty:1,checked:false,added:todayStr()});
   save();render();
@@ -565,9 +566,9 @@ function addItem(){
   if(!name){document.getElementById('new-item').focus();return;}
   const qty=Math.max(1,parseInt(document.getElementById('new-qty').value,10)||1);
   const cat=document.getElementById('new-cat').value;
-  const existing=data.items.find(i=>i.name.toLowerCase()===name.toLowerCase()&&!i.checked);
+  const existing=data.items.find(i=>normKey(i.name)===normKey(name)&&!i.checked);
   if(existing){
-    existing.qty+=qty;
+    existing.qty=(existing.qty||1)+qty;
     document.getElementById('new-item').value='';
     document.getElementById('new-qty').value='1';
     document.getElementById('new-cat').value='';
@@ -581,7 +582,22 @@ function addItem(){
 }
 document.getElementById('new-item').addEventListener('keydown',e=>{if(e.key==='Enter')addItem();});
 function toggleCheck(id){const item=data.items.find(i=>i.id===id);if(!item)return;item.checked=!item.checked;if(item.checked&&MITT)item.av=MITT;else delete item.av;save();render();}
-function deleteItem(id){data.items=data.items.filter(i=>i.id!==id);save();render();}
+// Sletting kan angres i noen sekunder: varen legges tilbake på samme plass
+// (i lista slik den er NÅ – andres endringer i mellomtiden beholdes).
+function slettMedAngre(liste,id){
+  const arr=liste==='other'?(data.other||[]):data.items;
+  const idx=arr.findIndex(i=>i.id===id);if(idx<0)return;
+  const item=arr[idx];
+  if(liste==='other')data.other=arr.filter(i=>i.id!==id);else data.items=arr.filter(i=>i.id!==id);
+  save();render();
+  visAngre('«'+item.name+'» slettet',()=>{
+    const cur=liste==='other'?(data.other=data.other||[]):data.items;
+    if(cur.some(i=>i.id===item.id))return;
+    cur.splice(Math.min(idx,cur.length),0,item);
+    save();render();
+  });
+}
+function deleteItem(id){slettMedAngre('items',id);}
 function completeShop(){
   const checked=data.items.filter(i=>i.checked);
   if(!checked.length){alert('Ingen varer er haket av ennå.');return;}
@@ -637,9 +653,7 @@ function saveModal(){
 }
 function deleteFromModal(){
   const id=parseInt(document.getElementById('modal-id').value,10);
-  if(!confirm('Slette varen?'))return;
-  data.items=data.items.filter(i=>i.id!==id);
-  hideModal();save();render();
+  hideModal();slettMedAngre('items',id);
 }
 function openHistEdit(name){
   const h=data.history.find(h=>h.name===name);if(!h)return;
@@ -900,7 +914,7 @@ function openOtherDetaljer(){
   hideOtherSuggest();
 }
 function toggleOther(id){const it=(data.other||[]).find(i=>i.id===id);if(!it)return;it.checked=!it.checked;if(it.checked&&MITT)it.av=MITT;else delete it.av;save();render();}
-function deleteOther(id){data.other=(data.other||[]).filter(i=>i.id!==id);save();render();}
+function deleteOther(id){slettMedAngre('other',id);}
 function clearCheckedOther(){
   const checked=(data.other||[]).filter(i=>i.checked);
   if(!checked.length)return;
@@ -976,9 +990,7 @@ function saveOtherModal(keepOpen){
 function saveOtherModalAndNew(){saveOtherModal(true);}
 function deleteFromOtherModal(){
   const id=parseInt(document.getElementById('other-modal-id').value,10);
-  if(!confirm('Slette varen?'))return;
-  data.other=(data.other||[]).filter(i=>i.id!==id);
-  hideOtherModal();save();render();
+  hideOtherModal();slettMedAngre('other',id);
 }
 
 // ── Diverse: render ──────────────────────────────────────────

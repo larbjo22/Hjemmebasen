@@ -214,12 +214,25 @@ function fmtVarighet(ms){
 }
 function toLocalInput(ts){const d=new Date(ts);return d.getFullYear()+'-'+pad(d.getMonth()+1)+'-'+pad(d.getDate())+'T'+pad(d.getHours())+':'+pad(d.getMinutes());}
 
-function doseStatus(bid,mid){
+// Når kan neste dose gis? Både minste intervall OG maks per døgn teller: er maks
+// nådd, er neste tidspunkt når den eldste av de siste dosene blir 24 t gammel.
+// Doser fram i tid (feil klokkeslett) telles ikke. `at` = tidspunktet vi vurderer.
+// (Samme logikk som nesteDose() i hjem.html – hold dem like.)
+function doseStatus(bid,mid,at=Date.now()){
   const med=helse.medisiner.find(m=>m.id===mid);if(!med)return null;
-  const ds=helse.doser.filter(d=>d.barn===bid&&d.med===mid).sort((a,b)=>b.ts-a.ts);
+  const ds=helse.doser.filter(d=>d.barn===bid&&d.med===mid&&d.ts<=at).sort((a,b)=>a.ts-b.ts);
   if(!ds.length)return null;
-  const last=ds[0];
-  return {med,last,okAt:last.ts+med.intervalH*3600000,count24:ds.filter(d=>d.ts>Date.now()-86400000).length};
+  const last=ds[ds.length-1];
+  const siste24=ds.filter(d=>d.ts>at-86400000);
+  const maks=med.maxDay>0?med.maxDay:Infinity;
+  let okAt=last.ts+(med.intervalH||0)*3600000;
+  const maxed=siste24.length>=maks;
+  if(maxed)okAt=Math.max(okAt,siste24[siste24.length-maks].ts+86400000);
+  return {med,last,okAt,count24:siste24.length,maxed};
+}
+function fmtNarKl(ts){
+  const i=new Date(),d=new Date(ts);
+  return (d.toDateString()===i.toDateString()?'':fmtDatoKort(ts)+' ')+'kl '+fmtKl(ts);
 }
 
 // ── Render ──
@@ -237,11 +250,9 @@ function renderStatus(){
   barn.forEach(b=>helse.medisiner.forEach(m=>{
     const st=doseStatus(b.id,m.id);
     if(!st||now-st.last.ts>48*3600000)return; // kun aktive siste 2 døgn
-    const maxed=st.count24>=st.med.maxDay;
-    const canNow=now>=st.okAt&&!maxed;
+    const canNow=now>=st.okAt;
     const val=canNow?'<span class="h-ok">Kan gis nå ✓</span>'
-      :(maxed&&now>=st.okAt?'<span class="h-wait">Maks per døgn nådd</span>'
-      :'<span class="h-wait">Neste kl '+fmtKl(st.okAt)+'</span>');
+      :'<span class="h-wait">'+(st.maxed?'Maks/døgn · neste ':'Neste ')+fmtNarKl(st.okAt)+'</span>';
     const sub='Siste '+fmtKl(st.last.ts)+(st.last.dose?' · '+esc(st.last.dose):'')+' · '+st.count24+'/'+st.med.maxDay+' siste døgn'
       +(now<st.okAt?' · om '+fmtVarighet(st.okAt-now):'');
     rows.push('<div class="hrow"><div class="hrow-main"><div class="hrow-title">'+esc(b.navn)+' · '+esc(st.med.name)+'</div><div class="hrow-sub">'+sub+'</div></div><div class="hrow-val">'+val+'</div></div>');
@@ -309,13 +320,16 @@ document.getElementById('hd-logg-btn').addEventListener('click',async()=>{
   if(document.getElementById('hd-time-toggle').checked){
     const t=new Date(document.getElementById('hd-time').value).getTime();
     if(isNaN(t)){setStatus('Ugyldig tidspunkt','err');return;}
-    ts=t;
+    // En dose fram i tid ville sperret «neste dose» feil – og er nesten alltid feil dato
+    if(t>Date.now()+5*60000){setStatus('Tidspunktet kan ikke være fram i tid','err');return;}
+    ts=Math.min(t,Date.now());
   }
   const dose=document.getElementById('hd-dose').value.trim();
-  const st=doseStatus(b.id,med.id);
-  if(st&&ts<st.okAt&&ts>st.last.ts){
+  // Vurder mot dosene før dette tidspunktet (også når tidspunktet er satt bakover)
+  const st=doseStatus(b.id,med.id,ts);
+  if(st&&ts<st.last.ts+med.intervalH*3600000){
     if(!confirm('Det er under '+med.intervalH+' timer siden forrige '+med.name+' til '+b.navn+' (kl '+fmtKl(st.last.ts)+'). Logge likevel?'))return;
-  }else if(st&&st.count24>=med.maxDay){
+  }else if(st&&st.maxed){
     if(!confirm(b.navn+' har alt fått '+st.count24+' doser '+med.name+' siste døgn (maks '+med.maxDay+'). Logge likevel?'))return;
   }
   helse.doser.push({id:helse.nextHid++,barn:b.id,med:med.id,dose,ts});

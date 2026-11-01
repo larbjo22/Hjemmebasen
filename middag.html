@@ -984,8 +984,10 @@ function ideaSetToday(id){
 // Fyll alle tomme dager i uka med tilfeldige (ikke gjentatte) retter fra rulett-utvalget.
 function rulettFillWeek(){
   const dates=getWeekDates(weekOffset).map(toDateStr);
-  const empty=dates.filter(ds=>{const m=data.meals.find(x=>x.date===ds);return !m||!m.meal;});
-  if(!empty.length){setStatus('Ingen tomme dager i uka','err');return;}
+  // Bare i dag og framover – passerte dager fylles ikke med middager som aldri ble spist
+  const td=today();
+  const empty=dates.filter(ds=>{if(ds<td)return false;const m=data.meals.find(x=>x.date===ds);return !m||!m.meal;});
+  if(!empty.length){setStatus(dates[6]<td?'Uka er passert – ingenting å fylle':'Ingen tomme dager igjen i uka','err');return;}
   const pool=rulettEligible();
   if(!pool.length){setStatus('Ingen retter å trekke fra','err');return;}
   const used=new Set();
@@ -1220,6 +1222,14 @@ function normKey(s){
   parts[parts.length-1]=stemWord(parts[parts.length-1]);
   return parts.join(' ');
 }
+// Fjerner mengde og enhet foran en ingrediens: «400 g kjøttdeig» → «kjøttdeig»,
+// «2 stk løk, hakket» → «løk». Brukes til å kjenne igjen samme vare på handlelista.
+const ING_UNITS='g|gram|kg|hg|mg|dl|cl|ml|l|liter|ss|ts|ms|krm|stk|pk|pakke|pakker|boks|bokser|glass|neve|klype|skive|skiver|fedd|bunt|beger|pose|poser|stilk|stilker';
+const ING_RE=new RegExp('^(ca\\.?\\s*)?[\\d½¼¾⅓⅔.,/\\-–\\s]+\\s*('+ING_UNITS+')?\\.?\\s+','i');
+function ingCore(s){
+  const k=(s||'').replace(/^[\s\-–•*]+/,'').replace(ING_RE,'').replace(/\(.*?\)/g,'').replace(/,.*$/,'').trim();
+  return k?k.charAt(0).toUpperCase()+k.slice(1):(s||'').trim();
+}
 // Samler ingredienser for ukas planlagte middager (uka som vises nå)
 function weekShopData(){
   const dates=getWeekDates(weekOffset).map(toDateStr);
@@ -1275,13 +1285,15 @@ async function confirmWeekShop(){
     let nextId=Math.max(100,...hl.items.map(i=>i.id||0),...(hl.templates||[]).map(t=>t.id||0),...(hl.other||[]).map(o=>o.id||0))+1;
     const seen=new Set();let added=0,already=0;
     const td=today();
-    sel.forEach(name=>{
+    sel.forEach(raw=>{
+      // «400 g kjøttdeig» er samme vare som «Kjøttdeig» på lista – sammenlign uten mengde
+      const name=ingCore(raw);
       const k=normKey(name);
       if(!k||seen.has(k))return;   // samme ingrediens fra to middager → én vare
       seen.add(k);
-      const exUn=hl.items.find(i=>!i.checked&&normKey(i.name)===k);
+      const exUn=hl.items.find(i=>!i.checked&&normKey(ingCore(i.name))===k);
       if(exUn){already++;return;}  // står allerede på lista
-      const exCh=hl.items.find(i=>i.checked&&normKey(i.name)===k);
+      const exCh=hl.items.find(i=>i.checked&&normKey(ingCore(i.name))===k);
       if(exCh){exCh.checked=false;added++;return;} // gjenbruk avhaket vare
       const h=hist.find(x=>normKey(x.name)===k);   // kategori fra handleliste-historikken
       hl.items.push({id:nextId++,name:h?h.name:name,cat:h?(h.cat||''):'',qty:1,checked:false,added:td});
