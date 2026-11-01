@@ -131,6 +131,8 @@ function normaliser(d){
   b.lister.forEach(l=>{if(!Array.isArray(l.items))l.items=[];});
   const maxId=Math.max(0,...b.lister.map(l=>l.id||0),...b.lister.flatMap(l=>l.items.map(i=>i.id||0)));
   if(!b.nextId||b.nextId<=maxId)b.nextId=maxId+1;
+  // Lister og ting uten id (eldre data) får en – haker, sletting og angre finner dem på id
+  b.lister.forEach(l=>{if(typeof l.id!=='number')l.id=b.nextId++;l.items.forEach(i=>{if(typeof i.id!=='number')i.id=b.nextId++;});});
   return b;
 }
 
@@ -278,7 +280,8 @@ document.getElementById('ny-item').addEventListener('keydown',e=>{if(e.key==='En
 document.getElementById('item-liste').addEventListener('click',async e=>{
   const l=aktivListe();if(!l)return;
   const t=e.target.closest('[data-toggle]');
-  if(t){const i=l.items.find(x=>x.id===parseInt(t.dataset.toggle));if(i){i.pakket=!i.pakket;await save();render();}return;}
+  // Haken vises med en gang (optimistisk) – lagringen går i bakgrunnen
+  if(t){const i=l.items.find(x=>x.id===parseInt(t.dataset.toggle));if(i){i.pakket=!i.pakket;render();save();}return;}
   const f=e.target.closest('[data-fjern]');
   if(f){
     const id=parseInt(f.dataset.fjern),idx=l.items.findIndex(x=>x.id===id);if(idx<0)return;

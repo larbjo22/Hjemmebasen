@@ -145,6 +145,7 @@ input:focus-visible,select:focus-visible,button:focus-visible,[role="button"]:fo
 .btn-danger:hover{background:#fef2f2}
 .dup-warning{background:#fef3c7;border:1px solid #fbbf24;border-radius:7px;padding:7px 10px;font-size:12px;color:#92400e;margin-bottom:8px;display:none}
 .dup-warning i{margin-right:4px}
+.dup-inc{display:block;width:100%;margin-top:6px;min-height:34px;font-size:12px;font-weight:600;border-radius:7px;border:1px solid #f59e0b;background:#fff7e6;color:#92400e;cursor:pointer}
 .status-bar{font-size:11px;color:var(--text3);text-align:right;margin-top:4px;min-height:14px}
 .status-bar.err{color:var(--danger)}
 .status-bar.ok{color:#16a34a}
@@ -175,16 +176,17 @@ input:focus-visible,select:focus-visible,button:focus-visible,[role="button"]:fo
         <span class="cat-link" role="button" tabindex="0" onclick="toggleCatManager()"><i class="ti ti-tag" aria-hidden="true"></i> Kategorier</span>
       </div>
     </div>
-    <div class="dup-warning" id="dup-warning"><i class="ti ti-alert-triangle"></i><span id="dup-text"></span></div>
+    <div class="dup-warning" id="dup-warning"><i class="ti ti-alert-triangle" aria-hidden="true"></i><span id="dup-text"></span>
+      <button type="button" class="dup-inc" id="dup-inc" onclick="okEksisterende()">Øk eksisterende (+1)</button></div>
     <div class="add-full"><input type="text" id="new-name" placeholder="Navn på vare..." aria-label="Navn på vare" autocomplete="off" oninput="onNameInput()" onblur="setTimeout(hideSuggestFryser,200)" /></div>
     <div class="sug-box" id="name-suggest" style="display:none"></div>
     <div class="add-row2">
       <select id="new-cat" aria-label="Kategori"></select>
-      <input type="number" id="new-qty" placeholder="Antall" aria-label="Antall" min="1" value="1" />
+      <input type="number" id="new-qty" placeholder="Antall" aria-label="Antall" min="1" value="1" oninput="checkDuplicate()" />
     </div>
     <div class="weight-row">
       <input type="number" id="new-weight" placeholder="Vekt (valgfritt)" aria-label="Vekt (valgfritt)" min="0" step="any" />
-      <select id="new-weight-unit" aria-label="Vektenhet"><option value="g">g</option><option value="kg">kg</option></select>
+      <select id="new-weight-unit" aria-label="Vektenhet"><option value="g" selected>g</option><option value="kg">kg</option></select>
     </div>
     <div class="add-row2">
       <div><div style="font-size:10px;color:var(--text3);margin-bottom:2px">Inn-dato</div><input type="date" id="new-added" title="Inn-dato" aria-label="Inn-dato" /></div>
@@ -211,7 +213,7 @@ input:focus-visible,select:focus-visible,button:focus-visible,[role="button"]:fo
   <div id="item-list"></div>
   <div class="status-bar" id="status-bar"></div>
 
-  <div class="modal-bg" id="modal" style="display:none" onclick="closeModal(event)">
+  <div class="modal-bg" id="modal" style="display:none" onclick="if(event.target===this)closeModal()">
     <div class="modal" role="dialog" aria-modal="true" aria-labelledby="modal-title" onclick="event.stopPropagation()">
       <h2 class="modal-title" id="modal-title">Rediger</h2>
       <input type="hidden" id="modal-mode" value="edit" />
@@ -224,7 +226,7 @@ input:focus-visible,select:focus-visible,button:focus-visible,[role="button"]:fo
         <label for="modal-weight">Vekt (valgfritt)</label>
         <div class="modal-row">
           <input type="number" id="modal-weight" placeholder="f.eks. 1.5" min="0" step="any" />
-          <select id="modal-weight-unit" aria-label="Vektenhet"><option value="kg">kg</option><option value="g">g</option></select>
+          <select id="modal-weight-unit" aria-label="Vektenhet"><option value="g">g</option><option value="kg">kg</option></select>
         </div>
         <label for="modal-expiry">Utløpsdato (valgfritt)</label>
         <input type="date" id="modal-expiry" />
@@ -253,6 +255,7 @@ import { dbGet, dbSet, dbListen } from './felles/storage.js';
 import { esc, todayStr, initTheme, toggleTheme, setStatus } from './felles/ui.js';
 import { monterNav } from './felles/nav.js';
 import { visAngre } from './felles/angre.js';
+import { finnVare } from './felles/vare.js';
 const APP='fryser';
 const SHOP_APP='handleliste'; // handlelista – for «Legg på handleliste»
 let FAMILIE=null;
@@ -304,19 +307,38 @@ function ageLabel(added){const d=ageDays(added);if(d===null||d<0)return '';if(d<
 function isOld(item){const d=ageDays(item.added);if(d===null||d<OLD_DAYS)return false;const st=expiryStatus(item.expiry);return st!=='expired'&&st!=='danger'&&st!=='warning';}
 
 // ── Duplikatsjekk ────────────────────────────────────────────
+// Samme vare (vare-regelen i felles/vare.js) i fryseren du legger inn i → tilby å øke antallet
+let dupId=null;
+const VEKT_STANDARD='g'; // standard vektenhet i både legg-til-skjema og redigering
 function checkDuplicate(){
-  const name=document.getElementById('new-name').value.trim().toLowerCase();
+  const name=document.getElementById('new-name').value.trim();
   const warn=document.getElementById('dup-warning');
   const txt=document.getElementById('dup-text');
+  dupId=null;
   if(!name){warn.style.display='none';return;}
-  const dupes=data.items.filter(i=>i.fid===activeFid&&i.name.toLowerCase()===name);
-  if(dupes.length>0){
+  const dupe=finnVare(data.items,name,i=>i.fid===activeFid);
+  if(dupe){
+    dupId=dupe.id;
     const f=data.freezers.find(f=>f.id===activeFid);
-    txt.textContent='"'+dupes[0].name+'" finnes allerede i '+(f?.name||'?')+' (antall: '+dupes[0].qty+')';
+    const n=Math.max(1,parseInt(document.getElementById('new-qty').value,10)||1);
+    txt.textContent='«'+dupe.name+'» finnes allerede i '+(f?.name||'?')+' (antall: '+dupe.qty+')';
+    document.getElementById('dup-inc').textContent='Øk eksisterende (+'+n+')';
     warn.style.display='block';
   }else{
     warn.style.display='none';
   }
+}
+// Øker antallet på varen som allerede finnes, i stedet for å lage en ny rad
+function okEksisterende(){
+  const ex=data.items.find(i=>i.id===dupId);
+  if(!ex){checkDuplicate();return;}
+  const n=Math.max(1,parseInt(document.getElementById('new-qty').value,10)||1);
+  ex.qty=(ex.qty||0)+n;
+  rememberFryser(ex.name,ex.cat);
+  nullstillSkjema();
+  save();render();
+  setStatus('«'+ex.name+'» – nå '+ex.qty+' stk ✓','ok');
+  document.getElementById('new-name').focus();
 }
 
 // ── Status ───────────────────────────────────────────────────
@@ -426,7 +448,11 @@ function showModal(mode){
   document.getElementById('modal-freezer-fields').style.display=(mode==='freezer-new'||mode==='freezer-edit')?'block':'none';
   document.getElementById('modal-mode').value=mode;
   document.getElementById('modal').style.display='flex';
+  modalSnap=modalVerdier();
 }
+// Verdiene i skjemaet slik de var da det ble åpnet – så bakgrunnsklikk/Esc ikke kaster endringer i stillhet
+let modalSnap='';
+function modalVerdier(){return [...document.querySelectorAll('#modal input:not([type=hidden]),#modal select')].map(e=>e.value).join('\u0001');}
 function openEditModal(id){
   const item=data.items.find(i=>i.id===id);if(!item)return;
   document.getElementById('modal-title').textContent='Rediger vare';
@@ -435,7 +461,8 @@ function openEditModal(id){
   populateCatSelect('modal-cat',item.cat);
   document.getElementById('modal-qty').value=item.qty;
   document.getElementById('modal-weight').value=item.weight!==null?item.weight:'';
-  document.getElementById('modal-weight-unit').value=item.unit||'kg';
+  // Uten vekt: samme standardenhet som i legg-til-skjemaet (g). Med vekt: enheten varen har.
+  document.getElementById('modal-weight-unit').value=item.weight!=null?(item.unit||'kg'):VEKT_STANDARD;
   document.getElementById('modal-expiry').value=item.expiry||'';
   document.getElementById('modal-added').value=item.added||'';
   document.getElementById('modal-fid').innerHTML=data.freezers.map(f=>'<option value="'+f.id+'"'+(f.id===item.fid?' selected':'')+'>'+esc(f.name)+'</option>').join('');
@@ -466,7 +493,13 @@ function deleteFreezerFromModal(fid){
   document.getElementById('modal').style.display='none';
   save();render();
 }
-function closeModal(){document.getElementById('modal').style.display='none';}
+// Bakgrunnsklikk og Esc: lukk bare uten spørsmål når ingenting er endret («Avbryt» lukker alltid)
+function closeModal(){
+  const m=document.getElementById('modal');
+  if(m.style.display==='none')return;
+  if(modalVerdier()!==modalSnap&&!confirm('Du har endringer som ikke er lagret. Forkaste dem?'))return;
+  m.style.display='none';
+}
 function saveModal(){
   const mode=document.getElementById('modal-mode').value;
   if(mode==='freezer-new'){
@@ -497,16 +530,7 @@ function saveModal(){
 function changeQty(id,delta){const item=data.items.find(i=>i.id===id);if(!item)return;item.qty=Math.max(0,item.qty+delta);save();render();}
 
 // ── Legg på handleliste ──────────────────────────────────────
-// normKey/stemWord: samme normalisering som handleliste.html bruker til å kjenne
-// igjen samme vare («Kjøttdeig» = «kjøttdeigen») – hold dem i synk.
-function stemWord(w){const s=w.replace(/(ene|er|et|en|e|a)$/,'');return s.length>=3?s:w;}
-function normKey(s){
-  let k=(s||'').toLowerCase().trim().replace(/[.,!?;:]+$/,'').replace(/\s+/g,' ');
-  if(!k)return '';
-  const parts=k.split(' ');
-  parts[parts.length-1]=stemWord(parts[parts.length-1]);
-  return parts.join(' ');
-}
+// «Samme vare» avgjøres av vare-regelen i felles/vare.js (finnVare) – samme som handlelista bruker
 // Leser handlelista (Firebase-noden 'handleliste'), legger til / øker antall,
 // og skriver tilbake. Vern: dbGet kaster ved feil, så vi skriver aldri i blinde.
 async function addToShoppingList(id){
@@ -519,15 +543,19 @@ async function addToShoppingList(id){
     // mangle på en ellers gyldig node – reparer KUN items, resten bevares.
     if(!list)list={};
     if(!Array.isArray(list.items))list.items=[];
-    const existing=list.items.find(i=>normKey(i.name)===normKey(item.name)&&!i.checked);
+    const existing=finnVare(list.items,item.name,i=>!i.checked);
+    const checked=existing?null:finnVare(list.items,item.name,i=>i.checked);
     if(existing){
       existing.qty=(existing.qty||1)+1;
+    }else if(checked){
+      checked.checked=false;delete checked.av;checked.qty=1; // gjenbruk avhaket vare
     }else{
       const nid=Math.max(100,
         ...list.items.map(i=>i.id),
         ...((list.templates||[]).map(t=>t.id)),
         ...((list.other||[]).map(o=>o.id)))+1;
-      list.items.push({id:nid,name:item.name,cat:'Frysevarer',qty:1,checked:false,added:TODAY()});
+      const h=finnVare(list.history,item.name); // kategori fra handleliste-historikken
+      list.items.push({id:nid,name:item.name,cat:h&&h.cat?h.cat:'Frysevarer',qty:1,checked:false,added:TODAY()});
     }
     await dbSet(FAMILIE,SHOP_APP,list);
     setStatus('Lagt på handleliste ✓','ok');
@@ -558,21 +586,25 @@ function addItem(){
   const added=document.getElementById('new-added').value||TODAY();
   data.items.push({id:nextId++,fid:activeFid,name,cat,qty,weight:isNaN(w)?null:w,unit,expiry,added});
   rememberFryser(name,cat);
+  nullstillSkjema();
+  save();render();
+}
+function nullstillSkjema(){
   document.getElementById('new-name').value='';
   document.getElementById('new-qty').value='1';
   document.getElementById('new-weight').value='';
   document.getElementById('new-expiry').value='';
   document.getElementById('new-added').value=TODAY();
   document.getElementById('dup-warning').style.display='none';
+  dupId=null;
   hideSuggestFryser();
-  save();render();
 }
 document.getElementById('new-name').addEventListener('keydown',e=>{if(e.key==='Enter')addItem();});
 
 // ── Historikk / forslag (husk tidligere varer m/kategori) ────
 function rememberFryser(name,cat){
   data.history=data.history||[];
-  const h=data.history.find(x=>x.name.toLowerCase()===name.toLowerCase());
+  const h=data.history.find(x=>x.name.toLowerCase()===name.toLowerCase())||finnVare(data.history,name);
   if(h){h.count=(h.count||1)+1;h.last=TODAY();if(cat)h.cat=cat;}
   else data.history.push({name,cat:cat||'',count:1,last:TODAY()});
 }
@@ -752,12 +784,11 @@ document.addEventListener('keydown',e=>{
 // Escape lukker åpen modal.
 document.addEventListener('keydown',e=>{
   if(e.key!=='Escape')return;
-  const m=document.getElementById('modal');
-  if(m&&m.style.display!=='none')m.style.display='none';
+  closeModal();
 });
 
 // Modul-scope: funksjoner brukt i on*-attributter må eksponeres på window.
-Object.assign(window,{addCategory,addItem,addToShoppingList,changeQty,closeModal,
+Object.assign(window,{addCategory,addItem,addToShoppingList,changeQty,closeModal,okEksisterende,checkDuplicate,
 deleteFreezerFromModal,deleteItem,hideSuggestFryser,onNameInput,openAddFreezerModal,
 openEditFreezerModal,openEditModal,render,saveModal,
 selectFreezer,setSort,toggleCatManager,toggleTheme});

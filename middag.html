@@ -382,6 +382,7 @@ import { requireAuth } from './felles/auth.js';
 import { dbGet, dbSet, dbListen } from './felles/storage.js';
 import { esc, todayStr, initTheme, toggleTheme, setStatus } from './felles/ui.js';
 import { monterNav } from './felles/nav.js';
+import { normKey, stemWord, ingCore, vareKey, vareOrd, ordFolge, finnVare, storForbokstav } from './felles/vare.js';
 const APP='middag';
 let FAMILIE=null;
 
@@ -425,15 +426,20 @@ function dayLabel(dateStr){
 }
 
 // ── Statistikk ───────────────────────────────────────────────
+// count = antall ganger spist til og med i dag (planlagte framtidige middager teller ikke,
+// men retten er med i lista med count 0 så den fortsatt kan foreslås). last = sist spist
+// (eller den planlagte datoen hvis retten bare ligger fram i tid).
 function getMealStats(){
-  const counts={},lastDate={};
+  const td=today(),counts={},lastDate={},lastAny={};
   data.meals.forEach(m=>{
+    if(!m.meal)return;
     const key=m.meal.toLowerCase();
-    counts[key]=(counts[key]||0)+1;
-    if(!lastDate[key]||m.date>lastDate[key])lastDate[key]=m.date;
+    counts[key]=(counts[key]||0)+(m.date<=td?1:0);
+    if(m.date<=td&&(!lastDate[key]||m.date>lastDate[key]))lastDate[key]=m.date;
+    if(!lastAny[key]||m.date<lastAny[key])lastAny[key]=m.date;
   });
   return Object.entries(counts)
-    .map(([key,count])=>({key,count,last:lastDate[key],display:data.meals.find(m=>m.meal.toLowerCase()===key)?.meal||key}))
+    .map(([key,count])=>({key,count,last:lastDate[key]||lastAny[key],display:data.meals.find(m=>m.meal.toLowerCase()===key)?.meal||key}))
     .sort((a,b)=>b.count-a.count||b.last.localeCompare(a.last));
 }
 
@@ -456,24 +462,26 @@ function fryserAlderTxt(item){
   return Math.floor(d/365)+' år';
 }
 const IGNORE_WORDS=new Set(['med','og','på','til','fra','ved','for','som','den','det','de','en','et','er','av','i']);
+// Generiske ord som alene ikke er nok til å si at en fryservare er retten
+const GENERISKE_ORD=new Set(['pasta','suppe','gryte','stek','kake','pølse','kjøtt','fisk','kylling'].map(stemWord));
+// Matcher på HELE ord (vare-regelen i felles/vare.js), så «Hamburger» treffer «Hamburger x2»,
+// men ikke «Hamburgerbrød».
 function checkFreezer(mealName){
-  if(!fryserData.items||!fryserData.items.length)return null;
-  const name=mealName.toLowerCase().trim();
-  const words=name.split(/\s+/).filter(w=>w.length>4&&!IGNORE_WORDS.has(w));
+  if(!fryserData.items||!fryserData.items.length||!mealName)return null;
+  const mk=vareKey(mealName);
+  const mOrd=vareOrd(mealName);
+  if(!mOrd.length)return null;
+  const lengde=o=>o.join(' ').length;
+  // Unike nøkkelord i retten (lange, ikke småord eller generiske ord)
+  const unike=mealName.toLowerCase().split(/[^a-z0-9æøåäöüé]+/i)
+    .filter(w=>w.length>4&&!IGNORE_WORDS.has(w)).map(stemWord).filter(w=>!GENERISKE_ORD.has(w));
   const match=fryserData.items.find(i=>{
-    if(i.qty<=0)return false;
-    const iname=i.name.toLowerCase();
-    // Eksakt match
-    if(iname===name)return true;
-    // Middagsnavn inneholder hele varenavnet (minst 5 tegn)
-    if(iname.length>=5&&name===iname)return true;
-    // Varenavnet starter med middagsnavnet
-    if(iname.startsWith(name)&&name.length>=5)return true;
-    // Middagsnavnet starter med varenavnet
-    if(name.startsWith(iname)&&iname.length>=5)return true;
-    // Kun match på unike nøkkelord (ikke generiske ord som "pasta", "suppe" etc)
-    const uniqueWords=words.filter(w=>!['pasta','suppe','gryte','stek','kake','pølse','kjøtt','fisk','kyll'].includes(w));
-    return uniqueWords.length>0&&uniqueWords.some(w=>iname.includes(w));
+    if(!i||!i.name||i.qty<=0)return false;
+    if(vareKey(i.name)===mk)return true;                       // samme vare
+    const iOrd=vareOrd(i.name);
+    if(lengde(iOrd)>=5&&ordFolge(mOrd,iOrd))return true;        // retten inneholder hele varenavnet
+    if(lengde(mOrd)>=5&&ordFolge(iOrd,mOrd))return true;        // varenavnet inneholder hele retten
+    return unike.some(w=>iOrd.includes(w));                     // et unikt nøkkelord som helt ord
   });
   return match||null;
 }
@@ -609,8 +617,11 @@ function inlineSave(dateStr){
   const meal=inp.value.trim();
   if(meal){
     const existing=data.meals.find(m=>m.date===dateStr);
-    if(existing){existing.meal=meal;}
-    else{data.meals.push({date:dateStr,meal,note:'',cook:null});}
+    // Samme rett (bare skrivemåte endret): behold kokk og notat. Ny rett: kokk og notat
+    // hørte til den forrige retten og nullstilles.
+    const sammeRett=existing&&existing.meal&&existing.meal.toLowerCase().trim()===meal.toLowerCase();
+    if(existing&&sammeRett){existing.meal=meal;}
+    else{data.meals=data.meals.filter(m=>m.date!==dateStr);data.meals.push({date:dateStr,meal,note:'',cook:null});}
   }else{
     data.meals=data.meals.filter(m=>m.date!==dateStr);
   }
@@ -912,7 +923,7 @@ function renderHistory(){
   html+='<div class="stat-section">';
   html+='<div class="stat-section-title"><i class="ti ti-trophy"></i> Topp 10 retter</div>';
   html+='<div class="history-list">';
-  stats.slice(0,10).forEach((s,idx)=>{
+  stats.filter(s=>s.count>0).slice(0,10).forEach((s,idx)=>{
     const d=daysSince(s.last);
     const lastLabel=d===0?'I dag':d===1?'I går':'For '+d+' dager siden';
     const recentCnt=recent.filter(m=>m.meal.toLowerCase()===s.key).length;
@@ -937,7 +948,7 @@ function rulettCandidates(){
   const td=today();const counts={},lastDate={},display={};
   data.meals.forEach(m=>{
     if(!m.meal)return;const key=m.meal.toLowerCase().trim();if(!key)return;
-    counts[key]=(counts[key]||0)+1;
+    counts[key]=(counts[key]||0)+(m.date<=td?1:0); // planlagte framtidige teller ikke som «spist»
     if(m.date<=td&&(!lastDate[key]||m.date>lastDate[key]))lastDate[key]=m.date;
     if(!display[key]||m.date<=td)display[key]=m.meal;
   });
@@ -1212,24 +1223,8 @@ function importIdeasFromHistory(){
   save();render();setStatus(added+' ideer importert','ok');
 }
 // ── Ukens ingredienser → handleliste ─────────────────────────
-// normKey/stemWord: samme normalisering som handleliste-appen bruker til
-// duplikat-gruppering – hold dem i synk med handleliste.html.
-function stemWord(w){const s=w.replace(/(ene|er|et|en|e|a)$/,'');return s.length>=3?s:w;}
-function normKey(s){
-  let k=(s||'').toLowerCase().trim().replace(/[.,!?;:]+$/,'').replace(/\s+/g,' ');
-  if(!k)return '';
-  const parts=k.split(' ');
-  parts[parts.length-1]=stemWord(parts[parts.length-1]);
-  return parts.join(' ');
-}
-// Fjerner mengde og enhet foran en ingrediens: «400 g kjøttdeig» → «kjøttdeig»,
-// «2 stk løk, hakket» → «løk». Brukes til å kjenne igjen samme vare på handlelista.
-const ING_UNITS='g|gram|kg|hg|mg|dl|cl|ml|l|liter|ss|ts|ms|krm|stk|pk|pakke|pakker|boks|bokser|glass|neve|klype|skive|skiver|fedd|bunt|beger|pose|poser|stilk|stilker';
-const ING_RE=new RegExp('^(ca\\.?\\s*)?[\\d½¼¾⅓⅔.,/\\-–\\s]+\\s*('+ING_UNITS+')?\\.?\\s+','i');
-function ingCore(s){
-  const k=(s||'').replace(/^[\s\-–•*]+/,'').replace(ING_RE,'').replace(/\(.*?\)/g,'').replace(/,.*$/,'').trim();
-  return k?k.charAt(0).toUpperCase()+k.slice(1):(s||'').trim();
-}
+// normKey/ingCore/finnVare: felles vare-regel i felles/vare.js (samme som handlelista bruker).
+// ingCore fjerner mengde og enhet: «400 g kjøttdeig» → «kjøttdeig».
 // Samler ingredienser for ukas planlagte middager (uka som vises nå)
 function weekShopData(){
   const dates=getWeekDates(weekOffset).map(toDateStr);
@@ -1283,27 +1278,32 @@ async function confirmWeekShop(){
     if(!Array.isArray(hl.items))hl.items=[];       // reparer KUN items – resten av noden bevares
     const hist=Array.isArray(hl.history)?hl.history:[];
     let nextId=Math.max(100,...hl.items.map(i=>i.id||0),...(hl.templates||[]).map(t=>t.id||0),...(hl.other||[]).map(o=>o.id||0))+1;
-    const seen=new Set();let added=0,already=0;
+    let added=0,okt=0;
     const td=today();
-    sel.forEach(raw=>{
-      // «400 g kjøttdeig» er samme vare som «Kjøttdeig» på lista – sammenlign uten mengde
-      const name=ingCore(raw);
-      const k=normKey(name);
-      if(!k||seen.has(k))return;   // samme ingrediens fra to middager → én vare
-      seen.add(k);
-      const exUn=hl.items.find(i=>!i.checked&&normKey(ingCore(i.name))===k);
-      if(exUn){already++;return;}  // står allerede på lista
-      const exCh=hl.items.find(i=>i.checked&&normKey(ingCore(i.name))===k);
-      if(exCh){exCh.checked=false;added++;return;} // gjenbruk avhaket vare
-      const h=hist.find(x=>normKey(x.name)===k);   // kategori fra handleliste-historikken
-      hl.items.push({id:nextId++,name:h?h.name:name,cat:h?(h.cat||''):'',qty:1,checked:false,added:td});
+    // Vare-regelen (felles/vare.js): mengde/enhet tas bort («400 g kjøttdeig» → «Kjøttdeig»), og samme
+    // vare telles sammen – fra to middager blir det én rad med antall 2, ikke to rader.
+    const behov=new Map(); // nøkkel → {navn, antall}
+    sel.forEach(linje=>{
+      const kjerne=ingCore(linje);
+      const k=normKey(kjerne);
+      if(!k)return;
+      const b=behov.get(k);
+      if(b)b.antall++;else behov.set(k,{navn:storForbokstav(kjerne),antall:1});
+    });
+    behov.forEach(b=>{
+      const exUn=finnVare(hl.items,b.navn,i=>!i.checked);
+      if(exUn){exUn.qty=(exUn.qty||1)+b.antall;okt++;return;}   // står på lista → øk antall
+      const exCh=finnVare(hl.items,b.navn,i=>i.checked);
+      if(exCh){exCh.checked=false;delete exCh.av;exCh.qty=b.antall;added++;return;} // gjenbruk avhaket vare
+      const h=finnVare(hist,b.navn);   // navn og kategori fra handleliste-historikken
+      hl.items.push({id:nextId++,name:h?h.name:b.navn,cat:h?(h.cat||''):'',qty:b.antall,checked:false,added:td});
       added++;
     });
-    if(added){
+    if(added||okt){
       await dbSet(FAMILIE,'handleliste',hl); // kaster ved feil → catch under
     }
     hideShopModal();
-    setStatus(added?added+' varer lagt i handlelista'+(already?' · '+already+' sto der fra før':'')+' ✓':'Alt sto i handlelista fra før ✓','ok');
+    setStatus((added?added+' nye varer':'')+(added&&okt?' · ':'')+(okt?okt+' fikk økt antall':'')+(added||okt?' i handlelista ✓':'Ingen varer valgt'),'ok');
   }catch(e){
     setStatus('Kunne ikke oppdatere handlelista','err');
     btn.disabled=false;btn.innerHTML='Prøv igjen';
