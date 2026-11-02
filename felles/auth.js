@@ -26,6 +26,22 @@ function settInnloggetFlagg(pa) {
   } catch (e) { /* localStorage sperret (privat modus) – flagget kan droppes */ }
 }
 
+// Medlemmer kan ikke lese hverandres brukernode, så hvert medlem legger navn og
+// e-post i husstandens egen kontaktliste. Det lar husstanden sende hverandre ny
+// passordlenke (ADR-0007). Skrives bare når noe er endret, for å unngå en
+// skriving (og re-rendring på Hjem) per sidelasting. Egen node per uid og ingen
+// fletting av annen data, så datatap-vernet er ikke relevant her.
+function publiserKontakt(user, medlem) {
+  if (!medlem?.familieId || !user.email) return;
+  const navn = medlem.navn || '';
+  const stempel = [medlem.familieId, user.email, navn].join('|');
+  const nokkel = 'hb-kontakt-' + user.uid;
+  try { if (localStorage.getItem(nokkel) === stempel) return; } catch (e) { /* skriv uansett */ }
+  update(ref(db, 'familier/' + medlem.familieId + '/medlemKontakt/' + user.uid), { navn, epost: user.email })
+    .then(() => { try { localStorage.setItem(nokkel, stempel); } catch (e) { /* neste last skriver igjen */ } })
+    .catch(() => {});
+}
+
 // Venter på at Firebase har avgjort innloggingsstatus (én gang).
 function ventPaaAuth() {
   return new Promise(resolve => {
@@ -57,6 +73,7 @@ export async function requireAuth({ adminKreves = false, utenTilgang = null } = 
   }
   // «Sist sett» – eneste feltet et medlem kan skrive på sin egen brukernode
   if (medlem) update(ref(db, 'brukere/' + user.uid), { sistSett: Date.now() }).catch(() => {});
+  publiserKontakt(user, medlem);
 
   return { user, medlem, erAdmin, familieId: medlem ? medlem.familieId : null };
 }
@@ -71,6 +88,7 @@ export function loggUt() {
   return signOut(auth).then(() => location.replace('login.html'));
 }
 
+// Lenken i e-posten virker i 1 time. Fristen settes av Firebase og kan ikke endres.
 export function glemtPassord(epost) {
   return sendPasswordResetEmail(auth, epost);
 }

@@ -170,6 +170,15 @@
       <input type="password" id="pw-nytt" class="hinput" placeholder="Nytt passord (min. 8 tegn)" autocomplete="new-password" style="margin-bottom:8px" />
       <button class="btn-ghost" id="pw-endre"><i class="ti ti-key"></i> Endre passord</button>
     </div>
+    <div id="hjelp-inn-seksjon" style="border-top:1px solid var(--border);margin-top:12px;padding-top:12px">
+      <div style="font-size:13px;font-weight:600">Hjelp noen i husstanden å logge inn</div>
+      <p style="font-size:11.5px;color:var(--text3);margin:2px 0 8px">Har noen glemt passordet, eller er lenken utløpt? Send dem en ny lenke på e-post. Den virker i 1 time. Du ser ikke passordet deres, og det endres ikke før de selv velger et nytt.</p>
+      <div id="hjelp-inn-liste"></div>
+      <div style="display:flex;gap:8px;margin-top:6px">
+        <input type="email" id="hjelp-inn-epost" class="hinput" style="flex:1;min-width:0" inputmode="email" autocomplete="off" placeholder="Eller skriv e-posten deres" />
+        <button class="btn-ghost" id="hjelp-inn-send" style="flex-shrink:0">Send</button>
+      </div>
+    </div>
     <div class="modal-actions">
       <button class="btn-ghost" id="profil-lukk">Lukk</button>
     </div>
@@ -193,7 +202,7 @@
 </div>
 
 <script type="module">
-import { requireAuth, loggUt, db, auth } from './felles/auth.js';
+import { requireAuth, loggUt, db, auth, glemtPassord } from './felles/auth.js';
 import { EmailAuthProvider, reauthenticateWithCredential, updatePassword } from 'https://www.gstatic.com/firebasejs/10.14.1/firebase-auth.js';
 import { esc, todayStr, initTheme, toggleTheme, setStatus, avatarHtml, avatarKey, finnAvatar, bildeTilAvatar } from './felles/ui.js';
 import { APP_NAVN, APP_IKON } from './felles/seed.js';
@@ -804,11 +813,43 @@ document.getElementById('profil-liste').addEventListener('click', async e => {
 document.getElementById('meny-profil').addEventListener('click', () => {
   document.getElementById('meny').style.display = 'none';
   tegnProfil();
+  tegnHjelpInn();
   oppdaterVarslerKnapp();
   document.getElementById('profil-modal').style.display = 'flex';
 });
 document.getElementById('profil-lukk').addEventListener('click', () => {
   document.getElementById('profil-modal').style.display = 'none';
+});
+// Send ny passordlenke til andre i husstanden (ADR-0007)
+function tegnHjelpInn() {
+  const andre = Object.entries(sisteFam?.medlemKontakt || {}).filter(([uid, k]) => uid !== user.uid && k?.epost);
+  document.getElementById('hjelp-inn-liste').innerHTML = andre.map(([, k]) =>
+    '<div class="hrow"><div class="hrow-main"><div class="hrow-title">' + esc(k.navn || k.epost) + '</div>'
+    + '<div class="hrow-sub">' + esc(k.epost) + '</div></div>'
+    + '<button class="btn-lenke" data-hjelp-epost="' + esc(k.epost) + '"><i class="ti ti-mail"></i> Send ny lenke</button></div>'
+  ).join('');
+}
+async function sendHjelpInn(epost) {
+  try {
+    await glemtPassord(epost);
+    setStatus('Lenke sendt til ' + epost + '. Den virker i 1 time ✓', 'ok');
+    return true;
+  } catch (e) {
+    setStatus(e.code === 'auth/invalid-email' ? 'Ugyldig e-postadresse'
+      : e.code === 'auth/too-many-requests' ? 'For mange forsøk – vent litt'
+      : 'Kunne ikke sende – prøv igjen', 'err');
+    return false;
+  }
+}
+document.getElementById('hjelp-inn-liste').addEventListener('click', e => {
+  const b = e.target.closest('[data-hjelp-epost]');
+  if (b) sendHjelpInn(b.dataset.hjelpEpost);
+});
+document.getElementById('hjelp-inn-send').addEventListener('click', async () => {
+  const inp = document.getElementById('hjelp-inn-epost');
+  const epost = inp.value.trim();
+  if (!epost) { inp.focus(); return; }
+  if (await sendHjelpInn(epost)) inp.value = '';
 });
 document.getElementById('pw-endre').addEventListener('click', async () => {
   const naa = document.getElementById('pw-naa').value;

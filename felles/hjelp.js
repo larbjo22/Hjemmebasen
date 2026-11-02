@@ -12,7 +12,7 @@ const HJELP = {
       'Varslene øverst viser det som haster – oppgaver på overtid, hvem som sover, fryservarer som går ut, dagens middag, ferske beskjeder og neste medisindose.',
       'Trykk på en flis for å åpne appen. Flisene viser status uten at du åpner dem.',
       'Sirkelen ved siden av en oppgave eller handlevare huker den av rett fra forsiden.',
-      'Tannhjulet: «Min profil» (bilde, passord, varsler), «Hvem gjør hva», invitasjon, tilpass forsiden og endre oppsett.',
+      'Tannhjulet: «Min profil» (bilde, passord, varsler, send ny passordlenke til andre i husstanden), «Hvem gjør hva», invitasjon, tilpass forsiden og endre oppsett.',
     ],
     tips: 'Trykk × på et tavle-varsel for å skjule det bare for deg – lappen henger fortsatt på tavla for de andre.',
   },

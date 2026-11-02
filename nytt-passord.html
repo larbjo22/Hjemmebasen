@@ -1,0 +1,168 @@
+<!DOCTYPE html>
+<html lang="no">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<meta name="referrer" content="no-referrer">
+<meta name="robots" content="noindex">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@2.44.0/tabler-icons.min.css">
+<link rel="manifest" href="manifest.webmanifest">
+<meta name="theme-color" content="#2e5d4f">
+<link rel="apple-touch-icon" href="ikoner/apple-touch-icon.png">
+<title>Hjemmebasen – Nytt passord</title>
+<link rel="stylesheet" href="felles/stil.css">
+<style>
+.login-wrap{max-width:360px;margin:0 auto;padding:14vh 1rem 2rem}
+.logo{text-align:center;margin-bottom:1.4rem}
+.logo .emoji{font-size:52px;display:block;margin-bottom:8px}
+.logo h1{font-size:20px;font-weight:800}
+.tekst{font-size:13px;line-height:1.5;margin-bottom:10px}
+.feil{display:none;font-size:12.5px;color:var(--danger);background:rgba(229,62,62,.08);border:1px solid rgba(229,62,62,.3);border-radius:8px;padding:8px 10px;margin-bottom:10px;line-height:1.4}
+.lenke-rad{text-align:center;margin-top:12px}
+</style>
+<link rel="stylesheet" href="felles/gran.css">
+</head>
+<body>
+<div class="login-wrap">
+  <div class="logo">
+    <span class="emoji" style="color:var(--accent-text)"><i class="ti ti-key"></i></span>
+    <h1 id="tittel">Hjemmebasen</h1>
+  </div>
+  <div class="card">
+    <p class="feil" id="feil"></p>
+
+    <p class="tekst" id="laster">Sjekker lenken...</p>
+
+    <div id="sett-passord" style="display:none">
+      <label for="epost-vis">E-post</label>
+      <input class="hinput" id="epost-vis" type="email" autocomplete="username" readonly />
+      <label for="nytt">Nytt passord (min. 8 tegn)</label>
+      <input class="hinput" id="nytt" type="password" autocomplete="new-password" />
+      <div style="margin-top:14px"><button class="btn-primary" id="lagre-btn">Lagre nytt passord</button></div>
+    </div>
+
+    <div id="send-ny" style="display:none">
+      <p class="tekst" id="send-ny-tekst"></p>
+      <label for="epost">E-post</label>
+      <input class="hinput" id="epost" type="email" autocomplete="username" inputmode="email" />
+      <div style="margin-top:14px"><button class="btn-primary" id="send-btn">Send ny lenke</button></div>
+    </div>
+
+    <p class="tekst" id="ferdig" style="display:none"></p>
+
+    <div class="lenke-rad"><a class="btn-lenke" href="login.html" id="login-lenke" style="text-decoration:underline">Til innlogging</a></div>
+  </div>
+</div>
+
+<script type="module">
+// Egen handler for Firebase-lenkene i e-post (Firebase Console → Authentication
+// → Templates → Customize action URL). Fristen på 1 time settes av Firebase;
+// poenget her er at en utløpt lenke ikke er en blindvei (ADR-0007).
+import { auth, glemtPassord } from './felles/auth.js';
+import { initTheme } from './felles/ui.js';
+import {
+  verifyPasswordResetCode, confirmPasswordReset, applyActionCode, signOut,
+} from 'https://www.gstatic.com/firebasejs/10.14.1/firebase-auth.js';
+
+initTheme();
+
+const $ = id => document.getElementById(id);
+const vis = id => { ['laster', 'sett-passord', 'send-ny', 'ferdig'].forEach(x => { $(x).style.display = x === id ? 'block' : 'none'; }); };
+const visFeil = msg => { $('feil').textContent = msg; $('feil').style.display = msg ? 'block' : 'none'; };
+
+const q = new URLSearchParams(location.search);
+const modus = q.get('mode');
+const kode = q.get('oobCode');
+
+function visSendNy(tekst) {
+  $('tittel').textContent = 'Send ny lenke';
+  $('send-ny-tekst').textContent = tekst;
+  try { $('epost').value = localStorage.getItem('hb-reset-epost') || ''; } catch (e) { /* valgfri utfylling */ }
+  visFeil('');
+  vis('send-ny');
+}
+
+$('send-btn').addEventListener('click', async () => {
+  const epost = $('epost').value.trim();
+  if (!epost) { visFeil('Skriv inn e-posten din.'); return; }
+  const btn = $('send-btn');
+  btn.disabled = true;
+  try {
+    await glemtPassord(epost);
+    try { localStorage.setItem('hb-reset-epost', epost); } catch (e) { /* valgfritt */ }
+    visFeil('');
+    $('ferdig').textContent = 'Ny lenke er sendt til ' + epost + '. Den virker i 1 time. Sjekk også søppelpost.';
+    vis('ferdig');
+  } catch (e) {
+    visFeil(e.code === 'auth/invalid-email' ? 'Ugyldig e-postadresse.'
+      : e.code === 'auth/too-many-requests' ? 'For mange forsøk – vent litt og prøv igjen.'
+      : 'Kunne ikke sende lenken. Sjekk nettforbindelsen og prøv igjen.');
+  }
+  btn.disabled = false;
+});
+
+const UTLOPT = 'Lenken er utløpt eller allerede brukt. Få en ny med ett trykk – den virker i 1 time.';
+const ER_DOD_KODE = c => c === 'auth/expired-action-code' || c === 'auth/invalid-action-code';
+
+async function resetFlyt() {
+  let epost;
+  try {
+    epost = await verifyPasswordResetCode(auth, kode);
+  } catch (e) {
+    if (ER_DOD_KODE(e.code)) { visSendNy(UTLOPT); return; }
+    vis('laster');
+    $('laster').textContent = '';
+    visFeil('Fikk ikke sjekket lenken. Sjekk nettforbindelsen og last siden på nytt.');
+    return;
+  }
+  $('tittel').textContent = 'Velg nytt passord';
+  $('epost-vis').value = epost;
+  vis('sett-passord');
+  setTimeout(() => $('nytt').focus(), 50);
+
+  const lagre = async () => {
+    const nytt = $('nytt').value;
+    if (nytt.length < 8) { visFeil('Passordet må ha minst 8 tegn.'); return; }
+    const btn = $('lagre-btn');
+    btn.disabled = true; btn.textContent = 'Lagrer...';
+    try {
+      await confirmPasswordReset(auth, kode, nytt);
+      // Gammel sesjon for samme konto er nå ugyldig – ut av den, så login ikke hopper videre
+      await auth.authStateReady();
+      if ((auth.currentUser?.email || '').toLowerCase() === epost.toLowerCase()) await signOut(auth).catch(() => {});
+      visFeil('');
+      $('tittel').textContent = 'Passordet er endret';
+      $('ferdig').textContent = 'Nå kan du logge inn med det nye passordet.';
+      vis('ferdig');
+    } catch (e) {
+      if (ER_DOD_KODE(e.code)) { visSendNy(UTLOPT); $('epost').value = epost; }
+      else visFeil(e.code === 'auth/weak-password' ? 'Passordet er for svakt – prøv et lengre.'
+        : e.code === 'auth/user-disabled' ? 'Kontoen er deaktivert. Kontakt administrator.'
+        : 'Kunne ikke lagre. Sjekk nettforbindelsen og prøv igjen.');
+    }
+    btn.disabled = false; btn.textContent = 'Lagre nytt passord';
+  };
+  $('lagre-btn').addEventListener('click', lagre);
+  $('nytt').addEventListener('keydown', e => { if (e.key === 'Enter') lagre(); });
+}
+
+// Action URL-en gjelder alle Firebase-e-poster, så de andre typene må også virke.
+async function epostFlyt() {
+  try {
+    await applyActionCode(auth, kode);
+    $('tittel').textContent = 'Ferdig';
+    $('ferdig').textContent = modus === 'recoverEmail' ? 'E-postadressen er gjenopprettet.' : 'E-postadressen er bekreftet.';
+    vis('ferdig');
+  } catch (e) {
+    vis('laster');
+    $('laster').textContent = '';
+    visFeil('Lenken er utløpt eller allerede brukt.');
+  }
+}
+
+if (modus === 'resetPassword' && kode) resetFlyt();
+else if (kode && ['verifyEmail', 'recoverEmail', 'verifyAndChangeEmail'].includes(modus)) epostFlyt();
+else visSendNy('Skriv inn e-posten din, så sender vi en lenke for å velge nytt passord. Den virker i 1 time.');
+</script>
+</body>
+</html>

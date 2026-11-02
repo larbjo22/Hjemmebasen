@@ -220,7 +220,10 @@ async function lagreEndre() {
   const fam = document.getElementById('em-fam').value;
   if (!uid || !navn) { setStatus('Fyll inn navn', 'err'); return; }
   try {
+    const gammelFam = brukere[uid]?.familieId;
     await update(ref(db, 'brukere/' + uid), { navn, familieId: fam });
+    // Flyttet: ut av den gamle husstandens kontaktliste (ny skrives ved neste innlogging)
+    if (gammelFam && gammelFam !== fam) await remove(ref(db, 'familier/' + gammelFam + '/medlemKontakt/' + uid)).catch(() => {});
     document.getElementById('endre-modal').style.display = 'none';
     setStatus('Medlem oppdatert ✓', 'ok');
     await lastAlt();
@@ -281,14 +284,16 @@ document.getElementById('bm-lagre').addEventListener('click', async () => {
 
 async function sendReset(epost) {
   if (!epost) return;
-  try { await glemtPassord(epost); setStatus('Tilbakestillings-e-post sendt til ' + epost + ' ✓', 'ok'); }
+  try { await glemtPassord(epost); setStatus('E-post sendt til ' + epost + '. Lenken virker i 1 time ✓', 'ok'); }
   catch (e) { setStatus('Kunne ikke sende: ' + e.message, 'err'); }
 }
 
 async function fjernTilgang(uid, navn) {
   if (!confirm('Fjerne tilgangen til ' + navn + '? (Kontoen består, men mister all datatilgang. Endelig sletting gjøres i Firebase Console.)')) return;
   try {
+    const fid = brukere[uid]?.familieId;
     await remove(ref(db, 'brukere/' + uid));
+    if (fid) await remove(ref(db, 'familier/' + fid + '/medlemKontakt/' + uid)).catch(() => {});
     setStatus('Tilgang fjernet ✓', 'ok');
     await lastAlt();
   } catch (e) { setStatus('Kunne ikke fjerne: ' + e.message, 'err'); }

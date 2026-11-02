@@ -139,7 +139,7 @@ all sikkerhet ligger i security rules (§7).
 ### 4.1 `login.html`
 E-post/passord (`signInWithEmailAndPassword`), sesjon huskes per enhet.
 Ingen selvregistrering – brukere opprettes av admin. «Glemt passord» →
-reset-e-post. Etter innlogging: `brukere/<uid>` → har familie? → er
+reset-e-post (1 time, se ADR-0007) som åpner `nytt-passord.html`. Etter innlogging: `brukere/<uid>` → har familie? → er
 `meta.onboardet`? → `onboarding.html` eller `hjem.html`.
 
 ### 4.2 `onboarding.html` – veiviser ved første innlogging i huset
