@@ -103,6 +103,7 @@
         <a href="statistikk.html" id="meny-statistikk">Statistikk</a>
         <a href="nyheter.html" id="meny-nyheter">Nytt i Hjemmebasen</a>
         <button id="meny-inviter">Inviter til husstanden</button>
+        <a href="medlemmer.html" id="meny-medlemmer" style="display:none">Medlemmer</a>
         <button id="meny-tilpass">Tilpass forsiden</button>
         <a href="onboarding.html" id="meny-oppsett">Endre oppsett</a>
         <button id="logg-ut-btn">Logg ut</button>
@@ -228,6 +229,7 @@ let innst = medlem?.innstillinger || {}; // per-bruker: rekkefolge + varselAv
 let sisteFam = null; // siste familie-snapshot (deles av hilsen, dashbord, profil)
 let frakobletFra = null; // når forbindelsen til databasen falt ut (null = tilkoblet)
 if (erAdmin) document.getElementById('admin-lenke').style.display = 'block';
+if (medlem?.ansvarlig === true) document.getElementById('meny-medlemmer').style.display = '';
 
 // ── Personlig hilsen ──
 function visHilsen() {

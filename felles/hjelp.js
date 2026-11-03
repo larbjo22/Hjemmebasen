@@ -164,6 +164,17 @@ const HJELP = {
     ],
     tips: 'Passord kan ikke settes herfra – medlemmet bytter selv under «Min profil», eller du sender «reset».',
   },
+  medlemmer: {
+    tittel: 'Medlemmer',
+    hva: 'Her styrer husstandsansvarlige hvem som er med i husstanden.',
+    punkter: [
+      '«send passord-reset» sender en e-post der medlemmet setter nytt passord selv.',
+      '«gjør til ansvarlig» gir et annet medlem de samme rettighetene som deg.',
+      '× fjerner medlemmet fra husstanden. Innloggingen består, så de kan inviteres tilbake.',
+      '«+ Nytt medlem» lager innlogging med et startpassord du deler med dem.',
+    ],
+    tips: 'Du kan ikke fjerne deg selv eller ta fra deg selv rollen – be en annen ansvarlig, eller admin.',
+  },
   onboarding: {
     tittel: 'Oppsett',
     hva: 'Her setter dere navn på husstanden, hvem som bor der, sted og hvilke apper dere vil bruke.',

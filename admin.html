@@ -14,6 +14,7 @@
 <link rel="stylesheet" href="felles/stil.css">
 <style>
 .medlem-rad .hrow-title{font-weight:500}
+.rolle-merke{font-size:10px;font-weight:600;background:var(--accent-bg);color:var(--accent-text);border:1px solid var(--accent-border);border-radius:10px;padding:1px 8px;margin-left:4px}
 .ny-hus-rad{display:flex;gap:8px}
 .ny-hus-rad .hinput{flex:1}
 .ny-hus-rad .btn-ghost{flex-shrink:0}
@@ -130,10 +131,13 @@ function render() {
 
     const medlemHtml = medlemmer.map(([uid, b]) =>
       '<div class="hrow medlem-rad">'
-      + '<div class="hrow-main"><div class="hrow-title">' + esc(b.navn || b.epost) + '</div>'
+      + '<div class="hrow-main"><div class="hrow-title">' + esc(b.navn || b.epost)
+      + (b.ansvarlig === true ? ' <span class="rolle-merke">ansvarlig</span>' : '') + '</div>'
       + '<div class="hrow-sub">' + esc(b.epost || '') + ' · ' + sistSettTxt(b.sistSett) + '</div></div>'
       + '<button class="btn-lenke" data-endre="' + uid + '"><i class="ti ti-edit"></i> endre</button>'
       + '<button class="btn-lenke" data-reset="' + esc(b.epost || '') + '"><i class="ti ti-mail"></i> reset</button>'
+      + '<button class="btn-lenke" data-ansvarlig="' + uid + '" title="Husstandsansvarlig kan styre medlemmene i egen husstand">'
+      + (b.ansvarlig === true ? '<i class="ti ti-user-minus"></i> ta rolle' : '<i class="ti ti-user-check"></i> ansvarlig') + '</button>'
       + '<button class="hrow-del" data-fjern="' + uid + '" data-navn="' + esc(b.navn || b.epost || '') + '" title="Fjern tilgang">×</button>'
       + '</div>'
     ).join('') || '<div class="hrow-sub" style="padding:6px 2px">Ingen medlemmer ennå</div>';
@@ -159,6 +163,7 @@ function render() {
   el.querySelectorAll('[data-nybruker]').forEach(b => b.addEventListener('click', () => aapneBrukerModal(b.dataset.nybruker)));
   el.querySelectorAll('[data-endre]').forEach(b => b.addEventListener('click', () => aapneEndreModal(b.dataset.endre)));
   el.querySelectorAll('[data-reset]').forEach(b => b.addEventListener('click', () => sendReset(b.dataset.reset)));
+  el.querySelectorAll('[data-ansvarlig]').forEach(b => b.addEventListener('click', () => vippAnsvarlig(b.dataset.ansvarlig)));
   el.querySelectorAll('[data-fjern]').forEach(b => b.addEventListener('click', () => fjernTilgang(b.dataset.fjern, b.dataset.navn)));
   el.querySelectorAll('[data-eksport]').forEach(b => b.addEventListener('click', () => eksporterHusstand(b.dataset.eksport)));
 }
@@ -278,6 +283,19 @@ document.getElementById('bm-lagre').addEventListener('click', async () => {
     btn.disabled = false; btn.textContent = 'Opprett medlem';
   }
 });
+
+// Husstandsansvarlig: kan styre medlemmene i egen husstand (medlemmer.html)
+async function vippAnsvarlig(uid) {
+  const b = brukere[uid];
+  if (!b) return;
+  const ny = !(b.ansvarlig === true);
+  try {
+    await update(ref(db, 'brukere/' + uid), { ansvarlig: ny });
+    b.ansvarlig = ny;
+    render();
+    setStatus((b.navn || b.epost) + (ny ? ' er nå husstandsansvarlig ✓' : ' er ikke lenger husstandsansvarlig ✓'), 'ok');
+  } catch (e) { setStatus('Kunne ikke endre rolle: ' + e.message, 'err'); }
+}
 
 async function sendReset(epost) {
   if (!epost) return;

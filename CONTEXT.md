@@ -20,6 +20,13 @@ _Avoid_: bruker (tvetydig mot admin), profil
 administratoren. Kan administrere alle husstander og medlemmer. Definert i `admins`-noden.
 _Avoid_: superbruker, eier
 
+**Husstandsansvarlig**:
+Et medlem med `brukere/<uid>/ansvarlig: true`. Kan i *egen* husstand se medlemmene,
+sende passord-reset, legge til og fjerne medlemmer og gi/ta rollen fra andre
+(`medlemmer.html`). Ser aldri andre husstander og har ingen admin-rettigheter.
+Første ansvarlige utnevnes av admin.
+_Avoid_: eier, husstandsadmin, superbruker
+
 **Launcher**:
 Hjem-siden (`hjem.html`) med app-brettet. Viser kun husstandens aktiverte apper.
 Rotadressen (`index.html`) er den offentlige forsiden, ikke launcheren.
