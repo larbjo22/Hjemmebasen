@@ -1,0 +1,213 @@
+<!DOCTYPE html>
+<html lang="no">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@2.44.0/tabler-icons.min.css">
+<link rel="manifest" href="manifest.webmanifest">
+<meta name="theme-color" content="#2e5d4f">
+<link rel="apple-touch-icon" href="ikoner/apple-touch-icon.png">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="mobile-web-app-capable" content="yes">
+<title>Medlemmer</title>
+<link rel="stylesheet" href="felles/stil.css">
+<style>
+.medlem-rad{flex-wrap:wrap;row-gap:4px}
+.medlem-rad .hrow-title{font-weight:500;display:flex;align-items:center;gap:6px}
+.medlem-handlinger{display:flex;gap:10px;flex-basis:100%;padding-left:2px}
+.rolle-merke{font-size:10px;font-weight:600;background:var(--accent-bg);color:var(--accent-text);border:1px solid var(--accent-border);border-radius:10px;padding:1px 8px}
+.deg-merke{font-size:10px;color:var(--text3);font-weight:400}
+@media(min-width:700px){.fw{max-width:560px}}
+</style>
+<link rel="stylesheet" href="felles/gran.css">
+</head>
+<body>
+<div class="fw">
+  <div class="top-bar">
+    <h1 class="app-title"><i class="ti ti-users"></i> Medlemmer</h1>
+    <div class="top-right">
+      <button class="icon-btn" id="theme-btn"></button>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-title" id="fam-tittel">Husstanden</div>
+    <div id="medlem-liste"><div class="empty-state">Laster medlemmer...</div></div>
+    <button class="btn-ghost" style="width:100%;margin-top:8px" id="ny-btn">+ Nytt medlem</button>
+    <p style="font-size:11px;color:var(--text3);margin-top:8px;line-height:1.5">Du kan også invitere med kode fra menyen på forsiden («Inviter til husstanden»).</p>
+  </div>
+  <div class="status-bar" id="status-bar"></div>
+</div>
+
+<!-- Ny bruker-modal -->
+<div class="modal-bg" id="bruker-modal" style="display:none">
+  <div class="modal">
+    <p class="modal-title">Nytt medlem</p>
+    <label for="bm-navn">Navn</label>
+    <input class="hinput" id="bm-navn" maxlength="40" placeholder="F.eks. Kari" />
+    <label for="bm-epost">E-post (blir innloggingen)</label>
+    <input class="hinput" id="bm-epost" type="email" inputmode="email" />
+    <label for="bm-passord">Startpassord (min. 8 tegn – del med medlemmet)</label>
+    <input class="hinput" id="bm-passord" type="text" autocomplete="off" />
+    <div class="modal-actions">
+      <button class="btn-ghost" id="bm-avbryt">Avbryt</button>
+      <button class="btn-primary" id="bm-lagre">Opprett medlem</button>
+    </div>
+  </div>
+</div>
+
+<script type="module">
+import { firebaseConfig } from './felles/firebase-init.js';
+import { requireAuth, db, glemtPassord } from './felles/auth.js';
+import { esc, initTheme, toggleTheme, setStatus } from './felles/ui.js';
+import { initializeApp, deleteApp } from 'https://www.gstatic.com/firebasejs/10.14.1/firebase-app.js';
+import { getAuth, createUserWithEmailAndPassword, signOut } from 'https://www.gstatic.com/firebasejs/10.14.1/firebase-auth.js';
+import { ref, get, set, update, remove, query, orderByChild, equalTo } from 'https://www.gstatic.com/firebasejs/10.14.1/firebase-database.js';
+
+import { monterHjelp } from './felles/hjelp.js';
+monterHjelp('medlemmer');
+
+initTheme();
+document.getElementById('theme-btn').addEventListener('click', toggleTheme);
+
+const { user, medlem, erAdmin, familieId } = await requireAuth();
+// Kun husstandsansvarlig (eller admin med egen husstand) har noe å gjøre her
+if (!familieId || !(medlem?.ansvarlig === true || erAdmin)) {
+  location.replace('hjem.html');
+  await new Promise(() => {});
+}
+
+let brukere = {}; // uid → {familieId, navn, epost, sistSett, ansvarlig}
+
+async function lastAlt() {
+  // Spørringen MÅ være orderByChild('familieId').equalTo(egen) – det er det
+  // security rules tillater for husstandsansvarlige (se DESIGN.md §7).
+  const [snap, navnSnap] = await Promise.all([
+    get(query(ref(db, 'brukere'), orderByChild('familieId'), equalTo(familieId))),
+    get(ref(db, 'familier/' + familieId + '/meta/navn')).catch(() => null),
+  ]);
+  brukere = snap.exists() ? snap.val() : {};
+  if (navnSnap && navnSnap.exists()) document.getElementById('fam-tittel').textContent = navnSnap.val();
+  render();
+}
+
+function sistSettTxt(ts) {
+  if (!ts) return 'aldri innlogget';
+  const d = Math.floor((Date.now() - ts) / 86400000);
+  if (d === 0) return 'sett i dag';
+  if (d === 1) return 'sett i går';
+  return 'sett for ' + d + ' dager siden';
+}
+
+function render() {
+  const el = document.getElementById('medlem-liste');
+  const liste = Object.entries(brukere)
+    .sort(([, a], [, b]) => (a.navn || a.epost || '').localeCompare(b.navn || b.epost || '', 'nb'));
+  if (!liste.length) { el.innerHTML = '<div class="empty-state">Ingen medlemmer ennå.</div>'; return; }
+
+  el.innerHTML = liste.map(([uid, b]) => {
+    const meg = uid === user.uid;
+    const ansv = b.ansvarlig === true;
+    return '<div class="hrow medlem-rad">'
+      + '<div class="hrow-main"><div class="hrow-title">' + esc(b.navn || b.epost || '')
+      + (ansv ? ' <span class="rolle-merke">ansvarlig</span>' : '')
+      + (meg ? ' <span class="deg-merke">(deg)</span>' : '') + '</div>'
+      + '<div class="hrow-sub">' + esc(b.epost || '') + ' · ' + sistSettTxt(b.sistSett) + '</div></div>'
+      + (meg ? '' : '<button class="hrow-del" data-fjern="' + esc(uid) + '" data-navn="' + esc(b.navn || b.epost || '') + '" title="Fjern fra husstanden">×</button>')
+      + '<div class="medlem-handlinger">'
+      + (b.epost ? '<button class="btn-lenke" data-reset="' + esc(b.epost) + '"><i class="ti ti-mail"></i> send passord-reset</button>' : '')
+      + (meg ? '' : '<button class="btn-lenke" data-rolle="' + esc(uid) + '">'
+          + (ansv ? '<i class="ti ti-user-minus"></i> fjern som ansvarlig' : '<i class="ti ti-user-check"></i> gjør til ansvarlig') + '</button>')
+      + '</div></div>';
+  }).join('');
+
+  el.querySelectorAll('[data-reset]').forEach(b => b.addEventListener('click', () => sendReset(b.dataset.reset)));
+  el.querySelectorAll('[data-rolle]').forEach(b => b.addEventListener('click', () => vippAnsvarlig(b.dataset.rolle)));
+  el.querySelectorAll('[data-fjern]').forEach(b => b.addEventListener('click', () => fjernMedlem(b.dataset.fjern, b.dataset.navn)));
+}
+
+async function sendReset(epost) {
+  try { await glemtPassord(epost); setStatus('Tilbakestillings-e-post sendt til ' + epost + ' ✓', 'ok'); }
+  catch (e) { setStatus('Kunne ikke sende: ' + e.message, 'err'); }
+}
+
+async function vippAnsvarlig(uid) {
+  const b = brukere[uid];
+  if (!b || uid === user.uid) return;
+  const ny = !(b.ansvarlig === true);
+  if (ny && !confirm('Gjøre ' + (b.navn || b.epost) + ' til husstandsansvarlig? De kan da legge til og fjerne medlemmer og gi/ta rollen – også fra deg.')) return;
+  try {
+    await update(ref(db, 'brukere/' + uid), { ansvarlig: ny });
+    b.ansvarlig = ny;
+    render();
+    setStatus(ny ? 'Rollen er gitt ✓' : 'Rollen er fjernet ✓', 'ok');
+  } catch (e) { setStatus('Kunne ikke endre rolle: ' + e.message, 'err'); }
+}
+
+async function fjernMedlem(uid, navn) {
+  if (uid === user.uid) return;
+  if (!confirm('Fjerne ' + navn + ' fra husstanden? De mister tilgangen til all data her. (Innloggingen består; de kan inviteres tilbake senere.)')) return;
+  try {
+    await remove(ref(db, 'brukere/' + uid));
+    delete brukere[uid];
+    render();
+    setStatus(navn + ' er fjernet ✓', 'ok');
+  } catch (e) { setStatus('Kunne ikke fjerne: ' + e.message, 'err'); }
+}
+
+// ── Nytt medlem ──
+document.getElementById('ny-btn').addEventListener('click', () => {
+  ['bm-navn', 'bm-epost', 'bm-passord'].forEach(id => document.getElementById(id).value = '');
+  document.getElementById('bruker-modal').style.display = 'flex';
+  setTimeout(() => document.getElementById('bm-navn').focus(), 50);
+});
+document.getElementById('bm-avbryt').addEventListener('click', () => {
+  document.getElementById('bruker-modal').style.display = 'none';
+});
+document.getElementById('bm-lagre').addEventListener('click', async () => {
+  const navn = document.getElementById('bm-navn').value.trim();
+  const epost = document.getElementById('bm-epost').value.trim();
+  const passord = document.getElementById('bm-passord').value;
+  if (!navn || !epost || passord.length < 8) {
+    setStatus('Fyll inn navn, e-post og passord på minst 8 tegn', 'err');
+    return;
+  }
+  const btn = document.getElementById('bm-lagre');
+  btn.disabled = true; btn.textContent = 'Oppretter...';
+
+  // Sekundær app-instans så du ikke logges ut av opprettelsen (ADR-0002)
+  const sekundaer = initializeApp(firebaseConfig, 'sekundaer-' + Date.now());
+  const sekAuth = getAuth(sekundaer);
+  try {
+    const cred = await createUserWithEmailAndPassword(sekAuth, epost, passord);
+    await set(ref(db, 'brukere/' + cred.user.uid), {
+      familieId, navn, epost,
+      opprettet: Date.now(), sistSett: 0,
+    });
+    document.getElementById('bruker-modal').style.display = 'none';
+    setStatus(navn + ' er opprettet – del e-post og startpassord med dem ✓', 'ok');
+    await lastAlt();
+  } catch (e) {
+    const tekst = e.code === 'auth/email-already-in-use'
+      ? 'E-posten er allerede i bruk. Har personen konto fra før, inviter med kode i stedet (forsiden → meny → Inviter til husstanden).'
+      : e.code === 'auth/invalid-email' ? 'Ugyldig e-postadresse.'
+      : e.code === 'auth/weak-password' ? 'Passordet er for svakt.'
+      : 'Kunne ikke opprette: ' + e.message;
+    setStatus(tekst, 'err');
+  } finally {
+    await signOut(sekAuth).catch(() => {});
+    deleteApp(sekundaer).catch(() => {});
+    btn.disabled = false; btn.textContent = 'Opprett medlem';
+  }
+});
+
+try { await lastAlt(); }
+catch (e) {
+  document.getElementById('medlem-liste').innerHTML =
+    '<div class="empty-state">Kunne ikke hente medlemmer. Er de nye databasereglene publisert?</div>';
+  setStatus('Feil: ' + e.message, 'err');
+}
+</script>
+</body>
+</html>

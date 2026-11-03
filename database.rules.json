@@ -9,7 +9,7 @@
       }
     },
     "brukere": {
-      ".read": "auth != null && root.child('admins').child(auth.uid).val() === true",
+      ".read": "auth != null && (root.child('admins').child(auth.uid).val() === true || (root.child('brukere').child(auth.uid).child('ansvarlig').val() === true && query.orderByChild === 'familieId' && query.equalTo === root.child('brukere').child(auth.uid).child('familieId').val()))",
       ".write": "auth != null && root.child('admins').child(auth.uid).val() === true",
       "$uid": {
         ".read": "auth != null && auth.uid === $uid",
@@ -17,11 +17,17 @@
           ".write": "auth != null && auth.uid === $uid",
           ".validate": "newData.isNumber()"
         },
-        ".write": "auth != null && auth.uid === $uid && (root.child('admins').child(auth.uid).val() === true || (!data.exists() && newData.child('kode').isString() && newData.child('familieId').isString() && newData.child('kode').val() === root.child('familier').child(newData.child('familieId').val()).child('meta').child('invitasjonskode').val() && (!root.child('familier').child(newData.child('familieId').val()).child('meta').child('invitasjonUtloper').exists() || root.child('familier').child(newData.child('familieId').val()).child('meta').child('invitasjonUtloper').val() > now)))",
+        ".write": "auth != null && ((auth.uid === $uid && (root.child('admins').child(auth.uid).val() === true || (!data.exists() && newData.child('kode').isString() && newData.child('familieId').isString() && newData.child('kode').val() === root.child('familier').child(newData.child('familieId').val()).child('meta').child('invitasjonskode').val() && (!root.child('familier').child(newData.child('familieId').val()).child('meta').child('invitasjonUtloper').exists() || root.child('familier').child(newData.child('familieId').val()).child('meta').child('invitasjonUtloper').val() > now)))) || (root.child('brukere').child(auth.uid).child('ansvarlig').val() === true && (!data.exists() || data.child('familieId').val() === root.child('brukere').child(auth.uid).child('familieId').val()) && (!newData.exists() || newData.child('familieId').val() === root.child('brukere').child(auth.uid).child('familieId').val())))",
         "innstillinger": {
           ".write": "auth != null && auth.uid === $uid"
+        },
+        "ansvarlig": {
+          ".validate": "newData.isBoolean() && (root.child('admins').child(auth.uid).val() === true || (root.child('brukere').child(auth.uid).child('ansvarlig').val() === true && newData.parent().child('familieId').val() === root.child('brukere').child(auth.uid).child('familieId').val()))"
         }
-      }
+      },
+      ".indexOn": [
+        "familieId"
+      ]
     },
     "familier": {
       ".read": "auth != null && root.child('admins').child(auth.uid).val() === true",

@@ -70,7 +70,8 @@ all sikkerhet ligger i security rules (§7).
 
   "brukere": {
     "<uid>": { "familieId": "fam_a1b2c3", "navn": "Kari",
-               "epost": "kari@example.com", "opprettet": 0, "sistSett": 0 }
+               "epost": "kari@example.com", "opprettet": 0, "sistSett": 0,
+               "ansvarlig": true }          // valgfri: husstandsansvarlig
   },
 
   "familier": {
@@ -173,6 +174,14 @@ slik ha-apper har i dag – vurderes splittet), alle med:
   app-instans), send passord-reset, fjern tilgang
 - **Re-kjør onboarding** for et hus (setter `meta.onboardet = false`)
 
+### 4.6 `medlemmer.html` – husstandsansvarlig
+- Vises i launcher-menyen («Medlemmer») når `medlem.ansvarlig === true`
+- Lister egen husstands medlemmer via spørringen
+  `brukere` → `orderByChild('familieId').equalTo(egen)` (eneste lesing rules tillater)
+- Send passord-reset, gjør til / fjern som ansvarlig, fjern medlem, nytt medlem
+  (sekundær app-instans, ADR-0002). Kan ikke fjerne seg selv eller ta egen rolle.
+- Admin utnevner første ansvarlige med «ansvarlig»-knappen i `admin.html`
+
 Begrensninger (klient-SDK, akseptert i v1): auth-kontoer slettes helt kun
 via Firebase Console; admin ser aldri passord (kun reset-e-post).
 
@@ -214,12 +223,25 @@ Som v1-skissen: `admins` kun lesbar for admin og aldri skrivbar fra klient;
 `brukere` skrives kun av admin (unntak: egen `sistSett`); `familier/$id`
 les/skriv kun for medlemmer av $id eller admin.
 
+Husstandsansvarlig (`brukere/<uid>/ansvarlig: true`) kan i tillegg lese `brukere`
+med spørring på egen `familieId`, og opprette/endre/slette `brukere/<uid>`-noder
+der både gammel og ny `familieId` er egen. `ansvarlig` kan kun settes av admin
+eller en ansvarlig i samme husstand (`.validate` sjekker *skriverens* eksisterende
+node – en som blir med via invitasjonskode kan ikke gi seg selv rollen).
+
 **Testplan (kjøres før noen inviteres):**
 1. Medlem av familie A: full tilgang A, «permission denied» på B
 2. Bruker uten medlemskap: ingen lesetilgang
 3. Ikke-admin kan ikke skrive `admins`/`brukere`/andres `meta`
 4. Utlogget klient: ingen tilgang
 5. Bruker kan ikke endre egen `familieId` (kun admin)
+6. Ansvarlig i A: spørring på `familieId = A` gir medlemmene; uten spørring, eller
+   med `familieId = B`, gir «permission denied»
+7. Ansvarlig i A kan sette/fjerne `ansvarlig` og slette noder i A, men ikke i B,
+   og kan ikke flytte et medlem fra A til B eller hente et fra B
+8. Vanlig medlem kan ikke sette `ansvarlig: true` på seg selv eller andre – heller
+   ikke i samme skriving som invitasjons-innmeldingen
+9. Ansvarlig kan ikke skrive `admins`
 
 ---
 
