@@ -17,6 +17,7 @@ index.html        Offentlig forside – appene, bli-med-flyt og kontaktskjema
 hjem.html         Dashbord/launcher – status per aktiv app, responsiv (mobil + PC)
 om.html           Videresending til forsiden (gamle lenker)
 login.html        Innlogging (e-post/passord, opprettes av admin)
+nytt-passord.html Velg nytt passord fra e-postlenken; utløpt lenke → send ny
 onboarding.html   Veiviser ved første innlogging: navn, voksne, barn, sted, appvalg
 admin.html        Admin: husstander, medlemmer, app-brytere
 handleliste.html  Butikkliste + «Diverse» + statistikk
@@ -63,6 +64,10 @@ Hver push til `main` deployer automatisk.
    opprett noden `admins/<UID>` med verdien `true`.
    (Denne noden kan med vilje ikke skrives fra klienten.)
 5. Logg inn på `admin.html` og opprett første husstand + medlemmer
+6. **Passordlenker:** Authentication → Templates → Password reset → blyanten →
+   «Customize action URL» → `https://hjemmebasen.no/nytt-passord.html`.
+   (Gjelder alle e-postmalene. Uten dette brukes Firebases egen side, der en
+   utløpt lenke er en blindvei.)
 
 ## Backup
 

@@ -98,7 +98,8 @@ document.getElementById('glemt-btn').addEventListener('click', async () => {
   if (!epost) { visFeil('Skriv inn e-posten din først, og trykk «Glemt passord?» igjen.'); return; }
   try {
     await glemtPassord(epost);
-    setStatus('E-post for tilbakestilling er sendt til ' + epost, 'ok');
+    try { localStorage.setItem('hb-reset-epost', epost); } catch (e) { /* valgfritt */ }
+    setStatus('E-post er sendt til ' + epost + '. Lenken virker i 1 time.', 'ok');
     feilEl.style.display = 'none';
   } catch (e) {
     visFeil('Kunne ikke sende tilbakestillings-e-post. Er adressen riktig?');

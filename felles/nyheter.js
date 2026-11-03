@@ -6,6 +6,20 @@
 
 export const NYHETER = [
   {
+    id: '2026-11-02',
+    tittel: 'Lettere å komme inn igjen',
+    ingress: 'Glemt passord skal ikke stoppe noen. Nå kan dere hjelpe hverandre, og en utløpt lenke er ikke lenger en blindvei.',
+    deler: [
+      {
+        app: 'hjem', ikon: 'ti-key', navn: 'Innlogging',
+        punkter: [
+          'Under <b>Min profil</b> kan du <b>sende ny passordlenke</b> til andre i husstanden. Du ser aldri passordet deres.',
+          'Er lenken i e-posten utløpt, kan du <b>få en ny rett fra siden</b> du havner på. Lenken virker i 1 time.',
+        ]
+      }
+    ]
+  },
+  {
     id: '2026-11-01',
     tittel: 'Smartere søvn, Husfreden og tryggere lagring',
     ingress: 'Den største oppdateringen hittil. Søvn-appen lærer av barnets egne tider, flere kan bruke appene samtidig uten at noe forsvinner, og nesten alle appene har fått angre og små forbedringer.',
