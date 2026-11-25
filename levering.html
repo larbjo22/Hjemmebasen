@@ -1,0 +1,258 @@
+<!DOCTYPE html>
+<html lang="no">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@2.44.0/tabler-icons.min.css">
+<link rel="manifest" href="manifest.webmanifest">
+<meta name="theme-color" content="#2e5d4f">
+<link rel="apple-touch-icon" href="ikoner/apple-touch-icon.png">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="mobile-web-app-capable" content="yes">
+<title>Levering</title>
+<link rel="stylesheet" href="felles/stil.css">
+<style>
+.dag{display:grid;grid-template-columns:62px 1fr 1fr;gap:6px;align-items:center;padding:6px 0;border-bottom:1px solid var(--border2)}
+.dag:last-child{border-bottom:none}
+.dag-navn{font-size:12.5px;font-weight:600;line-height:1.2}
+.dag-navn small{display:block;font-weight:400;color:var(--text3);font-size:11px}
+.dag.idag .dag-navn{color:var(--accent-text)}
+.dag select{width:100%;font-size:13px;padding:7px 6px;border-radius:8px;border:1px solid var(--border);background:var(--surface);color:var(--text)}
+.dag select.unntak{border-color:var(--accent);background:var(--accent-bg);color:var(--accent-text);font-weight:600}
+.dag select.tom{color:var(--text3)}
+.kolonner{display:grid;grid-template-columns:62px 1fr 1fr;gap:6px;font-size:11px;color:var(--text3);font-weight:600;text-transform:uppercase;letter-spacing:.04em;margin-bottom:2px}
+.stor{display:flex;gap:10px}
+.stor>div{flex:1;min-width:0;background:var(--surface2);border:1px solid var(--border);border-radius:12px;padding:10px 12px}
+.stor small{display:block;font-size:11px;color:var(--text3);text-transform:uppercase;letter-spacing:.05em;font-weight:600}
+.stor b{display:block;font-size:20px;margin-top:2px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.stor b.tom{color:var(--text3);font-size:15px;font-weight:600}
+.bytt{width:100%;margin-top:8px}
+.fordeling{display:flex;flex-direction:column;gap:6px}
+.ford-rad{display:flex;align-items:center;gap:8px;font-size:13px}
+.ford-rad span{width:80px;font-weight:600;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.ford-bar{flex:1;height:8px;background:var(--surface2);border-radius:4px;overflow:hidden;display:flex}
+.ford-bar>.l{background:var(--accent)}
+.ford-bar>.h{background:var(--accent-border)}
+.ford-rad small{width:86px;text-align:right;color:var(--text3);font-size:11.5px}
+.forklaring{font-size:11px;color:var(--text3);margin-top:6px}
+.chiprad{display:flex;flex-wrap:wrap;gap:6px}
+.pchip{font-size:12.5px;padding:5px 6px 5px 11px;border-radius:14px;border:1px solid var(--border);background:var(--surface2);display:inline-flex;align-items:center;gap:4px}
+.pchip button{border:none;background:none;color:var(--text3);cursor:pointer;font-size:14px;padding:0 3px}
+@media(min-width:700px){.fw{max-width:560px}}
+</style>
+<link rel="stylesheet" href="felles/gran.css">
+</head>
+<body>
+<div class="fw">
+  <div class="top-bar">
+    <h1 class="app-title"><i class="ti ti-car" aria-hidden="true"></i> Levering og henting</h1>
+    <div class="top-right"><button class="icon-btn" id="theme-btn" aria-label="Bytt mellom lyst og mørkt tema"></button></div>
+  </div>
+  <div id="innhold"></div>
+  <div class="status-bar" id="status-bar"></div>
+</div>
+
+<script type="module">
+// ── Levering og henting ──────────────────────────────────────
+// Hvem leverer og henter i barnehagen/skolen. Et fast ukemønster (man–fre) og unntak per dato.
+//   levering = { fast:{man:{levere,hente},…,fre}, unntak:{'ÅÅÅÅ-MM-DD':{levere,hente}}, ekstra:['Bestemor'] }
+// Verdien er et fornavn, '-' (ingen – fri/stengt) eller mangler (ikke satt).
+// Nøklene er tekst (ukedag og dato): Firebase gjør objekter med tall-nøkler om til lister.
+// Et unntak som blir likt det faste mønsteret, fjernes. Hjem og kveldsvarselet leser det samme.
+import { requireAuth } from './felles/auth.js';
+import { dbGet, dbListen } from './felles/storage.js';
+import { esc, todayStr, initTheme, toggleTheme, setStatus } from './felles/ui.js';
+import { monterNav } from './felles/nav.js';
+import { flettLager } from './felles/flett.js';
+import { monterHjelp } from './felles/hjelp.js';
+monterHjelp('levering');
+initTheme();
+document.getElementById('theme-btn').addEventListener('click', toggleTheme);
+
+const APP='levering';
+const UKEDAG=['son','man','tir','ons','tor','fre','lor'];
+const UKEDAG_NAVN={man:'Mandag',tir:'Tirsdag',ons:'Onsdag',tor:'Torsdag',fre:'Fredag'};
+const HVERDAGER=['man','tir','ons','tor','fre'];
+let FAMILIE=null, voksne=[], data=null, lager=null, dataLoaded=false;
+const $=id=>document.getElementById(id);
+
+function pad(n){return String(n).padStart(2,'0');}
+function dsFra(d){return d.getFullYear()+'-'+pad(d.getMonth()+1)+'-'+pad(d.getDate());}
+function datoPluss(ds,n){const d=new Date(ds+'T12:00:00');d.setDate(d.getDate()+n);return dsFra(d);}
+function ukedag(ds){return UKEDAG[new Date(ds+'T12:00:00').getDay()];}
+function navn(x){return typeof x==='string'?x.trim().slice(0,30):'';}
+
+function normaliser(d){
+  const b=d&&typeof d==='object'?d:{};
+  const par=o=>{const r={};if(o&&typeof o==='object'){const l=navn(o.levere),h=navn(o.hente);if(l)r.levere=l;if(h)r.hente=h;}return r;};
+  const fast={};HVERDAGER.forEach(k=>{const p=par(b.fast&&b.fast[k]);if(Object.keys(p).length)fast[k]=p;});
+  const unntak={};
+  if(b.unntak&&typeof b.unntak==='object')Object.keys(b.unntak).sort().forEach(k=>{
+    if(!/^\d{4}-\d{2}-\d{2}$/.test(k))return;
+    const p=par(b.unntak[k]);if(Object.keys(p).length)unntak[k]=p;
+  });
+  const ekstra=[...new Set((Array.isArray(b.ekstra)?b.ekstra:[]).map(navn).filter(Boolean))];
+  return {fast,unntak,ekstra};
+}
+// Hvem leverer/henter på en dato: unntaket vinner felt for felt over det faste mønsteret
+function forDato(ds){
+  const f=data.fast[ukedag(ds)]||{},u=data.unntak[ds]||{};
+  return {levere:u.levere??f.levere??'',hente:u.hente??f.hente??''};
+}
+function personer(){return [...new Set([...voksne,...data.ekstra])];}
+
+async function load(){
+  setStatus('Laster...');
+  try{
+    const ctx=await requireAuth();
+    if(!ctx.familieId){setStatus('Ingen husstand – kontakt administrator','err');return;}
+    FAMILIE=ctx.familieId;
+    monterNav(FAMILIE,APP);
+    const p=await dbGet(FAMILIE,'personer');
+    voksne=[...new Set(((p&&p.voksne)||[]).filter(v=>typeof v==='string'&&v.trim()).map(v=>v.trim().split(/\s+/)[0]))];
+    const saved=await dbGet(FAMILIE,APP);
+    data=normaliser(saved);
+    lager=flettLager('familier/'+FAMILIE+'/'+APP,{hent:()=>data,bruk:d=>{data=d;if(!opptatt())render();},normaliser});
+    lager.mottatt(saved,{brukDem:false});
+    dataLoaded=true;setStatus('');
+    dbListen(FAMILIE,APP,s=>{if(!lager)return;if(opptatt()){ventende={s};return;}ventende=null;lager.mottatt(s);});
+  }catch(e){setStatus('Kunne ikke laste – '+(e.message||'prøv igjen'),'err');return;}
+  render();
+}
+let ventende=null;
+function opptatt(){const a=document.activeElement;return !!(a&&(a.tagName==='SELECT'||(a.tagName==='INPUT'&&a.value.trim())));}
+setInterval(()=>{if(ventende&&lager&&!opptatt()){const v=ventende;ventende=null;lager.mottatt(v.s);}},3000);
+async function save(){
+  if(!dataLoaded||!lager){setStatus('Ikke lagret – data er ikke lastet','err');return false;}
+  try{const ok=await lager.lagre();setStatus(ok?'Lagret ✓':'Ikke lagret – prøv igjen',ok?'ok':'err');return ok;}
+  catch(e){setStatus('Kunne ikke lagre – prøv igjen','err');return false;}
+}
+function endret(){rydd();render();return save();}
+
+// ── Endringer ────────────────────────────────────────────────
+function settDag(ds,felt,verdi){
+  const f=data.fast[ukedag(ds)]||{};
+  const u={...(data.unntak[ds]||{})};
+  if((f[felt]||'')===verdi)delete u[felt];else u[felt]=verdi||'-';
+  if(Object.keys(u).length)data.unntak[ds]=u;else delete data.unntak[ds];
+  endret();
+}
+function settFast(dag,felt,verdi){
+  const f={...(data.fast[dag]||{})};
+  if(verdi)f[felt]=verdi;else delete f[felt];
+  if(Object.keys(f).length)data.fast[dag]=f;else delete data.fast[dag];
+  // Unntak som nå er like det faste mønsteret, er ikke unntak lenger
+  Object.keys(data.unntak).forEach(ds=>{if(ukedag(ds)!==dag)return;const u=data.unntak[ds];
+    if(f[felt]&&u[felt]===f[felt])delete u[felt];if(!Object.keys(u).length)delete data.unntak[ds];});
+  endret();
+}
+function bytt(ds){
+  const v=forDato(ds);
+  if(!v.levere&&!v.hente)return;
+  const u={...(data.unntak[ds]||{})};
+  const f=data.fast[ukedag(ds)]||{};
+  const ny={levere:v.hente||'-',hente:v.levere||'-'};
+  ['levere','hente'].forEach(k=>{if((f[k]||'-')===ny[k])delete u[k];else u[k]=ny[k];});
+  if(Object.keys(u).length)data.unntak[ds]=u;else delete data.unntak[ds];
+  endret();
+}
+// Gamle unntak (eldre enn 60 dager) ryddes bort ved lagring – fordelingen ser bare 30 dager bakover
+function rydd(){const grense=datoPluss(todayStr(),-60);let n=0;Object.keys(data.unntak).forEach(k=>{if(k<grense){delete data.unntak[k];n++;}});return n;}
+
+// ── Tegning ──────────────────────────────────────────────────
+function valg(verdi,attr,fast,ekstraKls){
+  const alt=personer();
+  if(verdi&&verdi!=='-'&&!alt.includes(verdi))alt.push(verdi);
+  const kls=[fast||verdi!==''?'':'tom',ekstraKls||''].filter(Boolean).join(' ');
+  return '<select '+attr+(kls?' class="'+kls+'"':'')+'>'
+    +'<option value=""'+(verdi===''?' selected':'')+'>'+(fast?'Ikke satt':'–')+'</option>'
+    +alt.map(p=>'<option'+(p===verdi?' selected':'')+'>'+esc(p)+'</option>').join('')
+    +'<option value="-"'+(verdi==='-'?' selected':'')+'>Ingen (fri/stengt)</option></select>';
+}
+function vis(v){return v==='-'?'Ingen':v||'Ikke satt';}
+function stortKort(ds,tittel){
+  const v=forDato(ds),helg=['lor','son'].includes(ukedag(ds));
+  if(helg&&!data.unntak[ds])return '';
+  return '<div class="card"><div class="card-title">'+tittel+'</div><div class="stor">'
+    +'<div><small>Leverer</small><b'+(v.levere&&v.levere!=='-'?'':' class="tom"')+'>'+esc(vis(v.levere))+'</b></div>'
+    +'<div><small>Henter</small><b'+(v.hente&&v.hente!=='-'?'':' class="tom"')+'>'+esc(vis(v.hente))+'</b></div></div>'
+    +(v.levere||v.hente?'<button class="btn-ghost bytt" data-bytt="'+ds+'"><i class="ti ti-arrows-exchange"></i> Bytt levering og henting</button>':'')+'</div>';
+}
+function fordeling(){
+  const per={};personer().forEach(p=>per[p]={l:0,h:0});
+  for(let i=1;i<=30;i++){
+    const ds=datoPluss(todayStr(),-i);if(['lor','son'].includes(ukedag(ds))&&!data.unntak[ds])continue;
+    const v=forDato(ds);
+    if(per[v.levere])per[v.levere].l++;
+    if(per[v.hente])per[v.hente].h++;
+  }
+  const rader=Object.entries(per).filter(([,x])=>x.l||x.h);
+  if(!rader.length)return '';
+  const maks=Math.max(...rader.map(([,x])=>x.l+x.h));
+  return '<div class="card"><div class="card-title">Siste 30 dager</div><div class="fordeling">'
+    +rader.map(([p,x])=>'<div class="ford-rad"><span>'+esc(p)+'</span><div class="ford-bar"><div class="l" style="width:'+x.l/maks*100+'%"></div><div class="h" style="width:'+x.h/maks*100+'%"></div></div>'
+      +'<small>'+x.l+' lev. · '+x.h+' hent.</small></div>').join('')
+    +'</div><p class="forklaring">Regnet ut fra planen (fast mønster + endringer). Mørk = levert, lys = hentet.</p></div>';
+}
+function render(){
+  if(!data)return;
+  const idag=todayStr(),kl=new Date().getHours();
+  // Etter kl. 17 er det morgendagen som er aktuell
+  let neste=datoPluss(idag,1);while(['lor','son'].includes(ukedag(neste))&&!data.unntak[neste])neste=datoPluss(neste,1);
+  const nesteTittel=neste===datoPluss(idag,1)?'I morgen':new Date(neste+'T12:00:00').toLocaleDateString('nb-NO',{weekday:'long'}).replace(/^./,c=>c.toUpperCase());
+  let html=kl>=17?stortKort(neste,nesteTittel)+stortKort(idag,'I dag'):stortKort(idag,'I dag')+stortKort(neste,nesteTittel);
+  if(!voksne.length&&!data.ekstra.length)html='<div class="card"><p style="font-size:13px;color:var(--text2)">Legg inn de voksne i <a href="onboarding.html" style="color:var(--accent-text)">Endre oppsett</a>, eller legg til personer nederst.</p></div>'+html;
+  // De neste 14 hverdagene
+  let rader='',ds=idag,n=0;
+  while(n<10){
+    const ud=ukedag(ds);
+    if(!['lor','son'].includes(ud)||data.unntak[ds]){
+      const v=forDato(ds),u=data.unntak[ds]||{};
+      const d=new Date(ds+'T12:00:00');
+      rader+='<div class="dag'+(ds===idag?' idag':'')+'"><div class="dag-navn">'+(ds===idag?'I dag':d.toLocaleDateString('nb-NO',{weekday:'short'}))
+        +'<small>'+d.getDate()+'.'+(d.getMonth()+1)+'.</small></div>'
+        +valg(v.levere,'data-dag="'+ds+'" data-felt="levere" aria-label="Leverer '+ds+'"',false,'levere' in u?'unntak':'')
+        +valg(v.hente,'data-dag="'+ds+'" data-felt="hente" aria-label="Henter '+ds+'"',false,'hente' in u?'unntak':'')+'</div>';
+      n++;
+    }
+    ds=datoPluss(ds,1);
+  }
+  html+='<div class="card"><div class="card-title">De neste to ukene</div>'
+    +'<div class="kolonner"><span></span><span>Leverer</span><span>Henter</span></div>'+rader
+    +'<p class="forklaring">Uthevet = endret fra det faste mønsteret. Velg samme som mønsteret for å fjerne endringen.</p></div>';
+  html+=fordeling();
+  html+='<div class="card"><div class="card-title">Fast ukemønster</div>'
+    +'<div class="kolonner"><span></span><span>Leverer</span><span>Henter</span></div>'
+    +HVERDAGER.map(k=>{const f=data.fast[k]||{};return '<div class="dag"><div class="dag-navn">'+UKEDAG_NAVN[k]+'</div>'
+      +valg(f.levere||'','data-fast="'+k+'" data-felt="levere" aria-label="'+UKEDAG_NAVN[k]+' leverer"',true)
+      +valg(f.hente||'','data-fast="'+k+'" data-felt="hente" aria-label="'+UKEDAG_NAVN[k]+' henter"',true)+'</div>';}).join('')+'</div>';
+  html+='<div class="card"><div class="card-title">Andre som leverer eller henter</div>'
+    +'<p class="forklaring" style="margin:0 0 8px">De voksne i husstanden er alltid med. Legg til besteforeldre, naboer og andre.</p>'
+    +'<div class="chiprad">'+data.ekstra.map(p=>'<span class="pchip">'+esc(p)+'<button data-fjern-ekstra="'+esc(p)+'" aria-label="Fjern '+esc(p)+'">×</button></span>').join('')+'</div>'
+    +'<div style="display:flex;gap:6px;margin-top:8px"><input type="text" id="ny-ekstra" class="hinput" maxlength="30" placeholder="F.eks. Bestemor" style="flex:1;min-width:0" aria-label="Ny person" />'
+    +'<button class="btn-ghost" id="ny-ekstra-btn">Legg til</button></div></div>';
+  $('innhold').innerHTML=html;
+}
+
+// ── Lyttere ──────────────────────────────────────────────────
+$('innhold').addEventListener('change',e=>{
+  const s=e.target;
+  if(s.dataset.dag){settDag(s.dataset.dag,s.dataset.felt,s.value);s.blur();return;}
+  if(s.dataset.fast){settFast(s.dataset.fast,s.dataset.felt,s.value);s.blur();}
+});
+function leggEkstra(){
+  const i=$('ny-ekstra');const n=navn(i.value);if(!n)return;
+  if(personer().some(p=>p.toLowerCase()===n.toLowerCase())){setStatus(n+' finnes allerede','err');return;}
+  data.ekstra.push(n);i.value='';endret();
+}
+$('innhold').addEventListener('click',e=>{
+  const b=e.target.closest('[data-bytt]');if(b){bytt(b.dataset.bytt);return;}
+  const f=e.target.closest('[data-fjern-ekstra]');if(f){data.ekstra=data.ekstra.filter(x=>x!==f.dataset.fjernEkstra);endret();return;}
+  if(e.target.closest('#ny-ekstra-btn'))leggEkstra();
+});
+$('innhold').addEventListener('keydown',e=>{if(e.key==='Enter'&&e.target.id==='ny-ekstra')leggEkstra();});
+load();
+</script>
+</body>
+</html>

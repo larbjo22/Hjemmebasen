@@ -142,6 +142,51 @@ const HJELP = {
     ],
     tips: 'Alt er synlig for alle i husstanden – gaver til hverandre bør dere holde utenfor.',
   },
+  levering: {
+    tittel: 'Levering og henting',
+    hva: 'Hvem leverer og henter i barnehagen – et fast ukemønster pluss endringer for enkeltdager.',
+    punkter: [
+      'Sett opp det faste ukemønsteret nederst: hvem leverer og hvem henter hver ukedag.',
+      'Endre en enkelt dag i oversikten over de neste to ukene. Endringer er uthevet.',
+      '«Bytt levering og henting» snur dagen med ett trykk.',
+      '«Ingen (fri/stengt)» brukes på planleggingsdager og fridager.',
+      'Legg til besteforeldre og andre som av og til leverer eller henter.',
+    ],
+    tips: 'Planen vises på Hjem, og fra kl. 17 i kortet «I morgen» og i kveldsvarselet.',
+  },
+  klaer: {
+    tittel: 'Klær og utstyr',
+    hva: 'Hva barna har, i hvilken størrelse – og hva som mangler før neste sesong.',
+    punkter: [
+      'Størrelsen barnet bruker nå regnes fra siste høyde i Vekst (klesstørrelse ≈ høyde i cm). Sko likeså.',
+      'Sesonglista viser hva som mangler i riktig størrelse. Trykk «Har» eller «+ Trengs».',
+      '«Klar – neste størrelse» er det som ligger i kassa og venter.',
+      '«Til handlelista» legger alt som trengs i Diverse → Klær.',
+      'Plagg i bruk som er for små, foreslås flyttet til «Vokst ut av» – klart til å gi bort eller selge.',
+    ],
+    tips: 'Skriv hvor ting ligger eller hvem dere har arvet det fra – da finner dere det igjen.',
+  },
+  barnevakt: {
+    tittel: 'Barnevakt',
+    hva: 'Alt barnevakten trenger på én skjerm – i stedet for lapper og en lang muntlig gjennomgang.',
+    punkter: [
+      'Trykk «Rediger» og fyll ut kveldsrutine, mat, allergier, trøst, hvor ting ligger og telefonnumre.',
+      'Leggetid, middag og medisin gitt siste døgn hentes automatisk fra Søvn, Middag og Helse.',
+      '«Gi til barnevakten» skjuler menyer og redigering, så telefonen eller nettbrettet kan gis bort.',
+    ],
+    tips: 'Visningen er ingen sperre – barnevakten kan i prinsippet navigere videre. Bruk gjerne et nettbrett som bare brukes hjemme.',
+  },
+  intervju: {
+    tittel: 'Bursdagsintervju',
+    hva: 'De samme ti spørsmålene til barnet hvert år rundt bursdagen – og svarene side om side år for år.',
+    punkter: [
+      'Trykk «Intervju» rundt bursdagen og skriv svarene med barnets egne ord.',
+      'Er barnet for lite til å svare, skriv det dere ser. Det blir like fint å lese senere.',
+      'Hjem minner dere på det når bursdagen nærmer seg.',
+      'Tidskapselen: skriv brev som åpnes på 18-årsdagen (eller en dato dere velger).',
+    ],
+    tips: 'Brevlåsen er bare i appen – alle i husstanden kan lese dataene. Ta gjerne en kopi også.',
+  },
   kalender: {
     tittel: 'Kalender',
     hva: 'Felles familiekalender – alles avtaler samlet, fargelagt per person.',

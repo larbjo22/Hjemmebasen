@@ -6,6 +6,63 @@
 
 export const NYHETER = [
   {
+    id: '2026-11-26',
+    tittel: 'Hverdagen med småbarn – fire nye apper',
+    ingress: 'Mindre å huske på, færre «tar du henting?»-meldinger, og noen ting dere kommer til å bli glade for om ti år.',
+    deler: [
+      {
+        app: 'hjem', ikon: 'ti-moon-stars', navn: 'Hjem',
+        punkter: [
+          'Fra kl. 17 viser Hjem <b>«I morgen»</b>: hvem som leverer og henter, kalenderen, middagen, hva som må tas ut av fryseren, oppgaver og bursdager.',
+          'Har dere slått på varsler, kommer det samme som et <b>kveldsvarsel</b> rundt kl. 19.',
+          '<b>😮‍💨 Dårlig dag?</b> Ett trykk bytter dagens middag til en nødmiddag fra fryseren, skyver dagens oppgaver til i morgen og legger en lapp til de andre. Alt kan angres.'
+        ]
+      },
+      {
+        app: 'levering', ikon: 'ti-car', navn: 'Levering (ny)',
+        punkter: [
+          'Fast ukemønster for hvem som <b>leverer og henter</b> i barnehagen, og enkle endringer for enkeltdager.',
+          '<b>Bytt</b> levering og henting med ett trykk, og se hvem som har gjort mest den siste måneden.'
+        ]
+      },
+      {
+        app: 'klaer', ikon: 'ti-shirt', navn: 'Klær (ny)',
+        punkter: [
+          'Hva barna har, i hvilken <b>størrelse</b>, og hva som ligger klart i neste størrelse.',
+          'En <b>sesongliste</b> viser hva som mangler før vinteren i størrelsen barnet bruker nå (hentet fra Vekst).',
+          'Det som trengs, legges i handlelista med ett trykk.'
+        ]
+      },
+      {
+        app: 'barnevakt', ikon: 'ti-heart-handshake', navn: 'Barnevakt (ny)',
+        punkter: [
+          'Ett <b>overleveringsark</b>: leggetid, kveldsrutine, middag, medisin gitt siste døgn, allergier, trøst og telefonnumre.',
+          '«Gi til barnevakten» viser bare arket – uten menyer og redigering.'
+        ]
+      },
+      {
+        app: 'intervju', ikon: 'ti-cake', navn: 'Bursdagsintervju (ny)',
+        punkter: [
+          'De samme <b>ti spørsmålene</b> til barnet hvert år, med svarene side om side år for år.',
+          '<b>Tidskapsel:</b> skriv brev som åpnes på 18-årsdagen.'
+        ]
+      },
+      {
+        app: 'helse', ikon: 'ti-first-aid-kit', navn: 'Helse',
+        punkter: [
+          'Sykedager har fått <b>«Hvem var hjemme?»</b>, og en teller viser dagene per voksen i år – og hvem sin tur det er neste gang.',
+          'Registrer <b>flere sykedager</b> på én gang med «Til og med».'
+        ]
+      },
+      {
+        app: 'sovn', ikon: 'ti-moon', navn: 'Søvn',
+        punkter: [
+          'Fra kl. 15: <b>kveldsprognose</b> med når barnet legger seg – og når dere har kvelden for dere selv.'
+        ]
+      }
+    ]
+  },
+  {
     id: '2026-11-25',
     tittel: 'Ny app: Gaver',
     ingress: 'Slutt på gavelister i notat-appen. Skriv ned ønsker og ideer hele året, og hold oversikt over hvem som har fått hva.',

@@ -128,6 +128,19 @@ all sikkerhet ligger i security rules (§7).
         "nextId": 4
       },
 
+      // Hverdagsappene. Nøkler med bokstav foran (man, 'b1', 'a3'): Firebase gjør objekter med
+      // tall-nøkler om til lister.
+      "levering":  { "fast": { "man": { "levere": "Kari", "hente": "Ola" } },        // '-' = ingen (fri/stengt)
+                     "unntak": { "2026-11-27": { "hente": "Bestemor" } }, "ekstra": ["Bestemor"] },
+      "klaer":     { "plagg": [ { "id": 1, "barn": 1, "type": "Vinterdress", "str": "92",
+                                  "status": "bruk", "antall": 1, "sted": "kasse på loftet" } ], "nextId": 2 },
+                                  // status: bruk | neste | trengs | ut
+      "barnevakt": { "felles": { "telefoner": [ { "id": 1, "navn": "Mamma", "tlf": "…" } ], "hvor": "", "viktig": "" },
+                     "barn": { "b1": { "rutine": "", "mat": "", "allergi": "", "trost": "" } }, "nextId": 2 },
+      "intervju":  { "svar": { "b1": { "a3": { "dato": "…", "s1": "…", "notat": "…" } } },
+                     "brev": { "b1": [ { "id": 1, "fra": "Kari", "tekst": "…", "skrevet": "…", "apnes": "2042-03-12" } ] }, "nextId": 2 },
+      // helse.syk[].hjemme = fornavnet til den voksne som var hjemme (eller 'Andre')
+
       // ENDRING 2: helse.barn refererer personregisteret (id, ikke navn-streng)
       "helse": { "medisiner": [], "doser": [], "vaksiner": [], "syk": [], "nextHid": 10 }
     }
