@@ -86,9 +86,10 @@ input:focus-visible,select:focus-visible,button:focus-visible,textarea:focus-vis
 .status-label{font-size:17px;font-weight:700;margin-bottom:6px}
 .status-card.sleeping .status-label{color:var(--sleep-text)}
 .status-card.awake .status-label{color:var(--awake-text)}
-.status-since{font-size:12px;color:var(--text2);display:inline-flex;align-items:center;gap:5px;cursor:pointer;padding:3px 8px;border-radius:8px}
-.status-since:hover{background:rgba(0,0,0,.04)}
-.status-since i{font-size:12px;opacity:.7}
+.status-since{font:inherit;font-size:12.5px;color:var(--text);display:inline-flex;align-items:center;gap:6px;cursor:pointer;padding:6px 12px;margin-top:6px;border-radius:99px;border:1px solid var(--border);background:var(--surface)}
+.status-since:hover{border-color:var(--accent)}
+.status-since:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+.status-since .endre{font-weight:600;color:var(--accent-text,var(--accent))}
 
 /* Tydelige info-rader */
 .info-rows{display:flex;flex-direction:column;gap:8px;margin-bottom:.75rem}
@@ -314,7 +315,7 @@ body.embed .info-row{padding:10px 14px}
     <div class="status-card" id="status-card">
       <div class="status-emoji" id="status-emoji">😊</div>
       <div class="status-label" id="status-label">Våken</div>
-      <div><span class="status-since" id="status-since" onclick="openSinceEdit()"></span></div>
+      <div><button type="button" class="status-since" id="status-since" onclick="openSinceEdit()"></button></div>
     </div>
 
     <div class="action-row">
@@ -483,6 +484,10 @@ body.embed .info-row{padding:10px 14px}
     <div class="modal" onclick="event.stopPropagation()">
       <p class="modal-title" id="bhg-title">🏫 Sov barnet i barnehagen?</p>
       <p style="font-size:12px;color:var(--text3);margin-bottom:8px" id="bhg-info"></p>
+      <div style="display:flex;gap:8px;margin-bottom:6px">
+        <div style="flex:1"><label for="bhg-levert">Levert</label><input type="time" id="bhg-levert" /></div>
+        <div style="flex:1"><label for="bhg-hentet">Hentet</label><input type="time" id="bhg-hentet" /></div>
+      </div>
       <div style="display:flex;gap:8px">
         <div style="flex:1"><label for="bhg-fra">Sovnet</label><input type="time" id="bhg-fra" /></div>
         <div style="flex:1"><label for="bhg-til">Våknet</label><input type="time" id="bhg-til" /></div>
@@ -493,6 +498,22 @@ body.embed .info-row{padding:10px 14px}
         <button class="btn-ghost" style="flex:1" onclick="bhgAnswer('vetikke')">Vet ikke</button>
       </div>
       <button class="btn-ghost" style="width:100%;margin-top:8px;background:transparent;border:none" onclick="hideBhg()">Avbryt</button>
+    </div>
+  </div>
+
+  <!-- Rediger barnehagedag / pause: levert og hentet -->
+  <div class="modal-bg" id="opp-modal" style="display:none" onclick="if(event.target===this)hideOpp()">
+    <div class="modal" onclick="event.stopPropagation()">
+      <p class="modal-title" id="opp-title">Rediger barnehagedagen</p>
+      <label for="opp-fra" id="opp-fra-lab">Levert</label>
+      <input type="datetime-local" id="opp-fra" />
+      <label for="opp-til" id="opp-til-lab">Hentet</label>
+      <input type="datetime-local" id="opp-til" />
+      <p id="opp-info" style="font-size:11px;color:var(--text3);margin:6px 0 0"></p>
+      <div class="modal-actions">
+        <button class="btn-ghost" onclick="hideOpp()">Avbryt</button>
+        <button class="btn-primary" onclick="saveOpp()">Lagre</button>
+      </div>
     </div>
   </div>
 
@@ -664,8 +685,11 @@ function dayRecs(){
   const today=dayKey(Date.now()),byDay={};
   awakeWindows().forEach(w=>{
     if(w.ongoing)return;
-    const h=new Date(w.start).getHours();
-    if(h<nightEndH()||h>=nightStartH())return; // kun dagtid
+    // Kun dagtid: hopp over oppvåkninger om natta (både start og slutt i natt-timene).
+    // Før så vi bare på starten, og med natt til kl. 07 forsvant morgenvinduet (våknet 06:10)
+    // – da fikk ingen dager to vinduer, og anbefalingen falt tilbake til aldersreferansen.
+    const erNatt=t=>{const h=new Date(t).getHours();return h<nightEndH()||h>=nightStartH();};
+    if(erNatt(w.start)&&erNatt(w.end))return;
     const k=dayKey(w.start);if(k===today)return;
     (byDay[k]=byDay[k]||[]).push(w);
   });
@@ -912,6 +936,7 @@ function normalizeData(d,barn){
   if(!d.sessions)d.sessions=[];
   if(!d.since)d.since=Date.now();
   if(!['awake','sleeping','pause'].includes(d.state))d.state='awake';
+  if(d.bhgLur&&(d.state!=='pause'||!d.bhgLur.start))d.bhgLur=null; // lur i barnehagen gjelder bare under oppholdet
   if(!Array.isArray(d.ukjent))d.ukjent=[];
   d.ukjent=d.ukjent.filter(u=>u&&typeof u.fra==='number'&&typeof u.til==='number'&&u.til>u.fra)
     .map(u=>{const o={id:'u'+u.fra,fra:u.fra,til:u.til};if(u.sovnKjent)o.sovnKjent=true;return o;})
@@ -942,6 +967,19 @@ function anchorTime(d){
   const lu=(d.ukjent||[]).length?Math.max(...d.ukjent.map(u=>u.til)):null;
   if(le==null&&lu==null)return null;
   return Math.max(le??0,lu??0);
+}
+// Når barnet våknet sist, også gjennom barnehage/pause: slutten på siste søvnøkt, så lenge tiden
+// etterpå er våken eller kjent uten søvn (barnehage besvart). Under en pågående pause antas
+// barnet våkent (luren i barnehagen er ikke kjent ennå). null = ukjent (f.eks. etter «Vet ikke»).
+function vaakenSiden(){
+  if(data.state==='sleeping')return null;
+  const ls=lastSession();
+  if(data.state==='pause'&&data.bhgLur)return null; // sover i barnehagen
+  if(data.state==='pause'&&ls&&ls.end>data.since)return ls.end; // våknet etter lur i barnehagen
+  if(!ls||ls.end>data.since+60000)return data.state==='awake'?data.since:null;
+  const mellom=(data.ukjent||[]).filter(u=>u.fra<data.since&&u.til>ls.end);
+  if(mellom.some(u=>!u.sovnKjent))return data.state==='awake'?data.since:null;
+  return ls.end;
 }
 // Overlapper tidsrommet en periode som ikke er registrert?
 function overlapsUkjent(a,b){return (data.ukjent||[]).some(u=>u.fra<b&&u.til>a);}
@@ -1062,7 +1100,8 @@ function modalOpen(){
   return document.getElementById('since-modal').style.display==='flex'
       || document.getElementById('sess-modal').style.display==='flex'
       || document.getElementById('stat-modal').style.display==='flex'
-      || document.getElementById('bhg-modal').style.display==='flex';
+      || document.getElementById('bhg-modal').style.display==='flex'
+      || document.getElementById('opp-modal').style.display==='flex';
 }
 let stopListen=null;
 function startListen(){
@@ -1094,6 +1133,26 @@ function setState(newState){
     openSinceEdit();
     return;
   }
+  // I barnehagen: «Sover»/«Våken» registrerer luren der – barnet er ikke hentet ennå.
+  // «Våken» uten registrert lur betyr fortsatt «hentet».
+  if(data.state==='pause'&&barnehageOn()){
+    if(newState==='sleeping'){
+      if(data.bhgLur){openSinceEdit();return;}
+      undoSnapshot=JSON.parse(JSON.stringify(data));
+      data.bhgLur={start:now};
+      save();render();return;
+    }
+    if(data.bhgLur){
+      undoSnapshot=JSON.parse(JSON.stringify(data));
+      data.sessions.push({id:data.nextSid++,start:data.bhgLur.start,end:now,note:'Barnehage'});
+      data.bhgLur=null;
+      save();render();return;
+    }
+    // Lur allerede registrert her: «Våken» retter når barnet våknet – det er ikke hentet.
+    // Bare «🏠 Hentet» avslutter barnehagedagen.
+    const lurer=bhgLurer(now);
+    if(lurer.length){openSessEdit(lurer.reduce((a,b)=>b.end>a.end?b:a).id);return;}
+  }
   // Hentet fra barnehagen: spør om barnet sov der før noe lagres
   if(data.state==='pause'&&barnehageOn()&&now-data.since>=30*60000){openBhg(newState,now);return;}
   undoSnapshot=JSON.parse(JSON.stringify(data)); // for «angre»
@@ -1116,7 +1175,7 @@ let resetOpen=false;
 const GLEMT_SOVER_MS=14*3600000, GLEMT_VAKEN_MS=7*3600000, GLEMT_PAUSE_MS=10*3600000;
 function glemtNokkel(){return APP_KEY+'_glemt_ok_'+(aktivBarn?aktivBarn.id:'');}
 function pauseNow(){
-  if(data&&data.state==='pause'&&barnehageOn())return setState('awake'); // «🏠 Hentet»
+  if(data&&data.state==='pause'&&barnehageOn())return hentet(); // «🏠 Hentet»
   if(!data||data.state==='pause')return;
   const now=Date.now();
   undoSnapshot=JSON.parse(JSON.stringify(data));
@@ -1177,6 +1236,25 @@ function renderResetPanel(){
 // teller med i total søvn, mens våkenvinduene fra barnehagen holdes utenfor læringen.
 // «Vet ikke» → vanlig ikke registrert tid (som før).
 let bhgPending=null; // {state, now, fra, barnId}
+// Lurer som er registrert mens barnet er i barnehagen (pågående opphold)
+function bhgLurer(now){return data.sessions.filter(s=>/barnehage/i.test(s.note||'')&&s.start>=data.since&&s.end<=now);}
+// «Hentet»: er luren registrert i barnehagen, trengs ikke spørsmålet – fullfør direkte.
+// Sover barnet fortsatt ved henting, fortsetter søvnen hjemme.
+function hentet(){
+  if(!data||data.state!=='pause')return;
+  const now=Date.now();
+  if(data.bhgLur||bhgLurer(now).length)return bhgFullfor(now);
+  return setState('awake');
+}
+function bhgFullfor(now){
+  undoSnapshot=JSON.parse(JSON.stringify(data));
+  let cur=data.since;
+  bhgLurer(now).sort((a,b)=>a.start-b.start).forEach(s=>{addUkjent(cur,s.start,true);cur=Math.max(cur,s.end);});
+  if(data.bhgLur){addUkjent(cur,data.bhgLur.start,true);data.state='sleeping';data.since=data.bhgLur.start;data.bhgLur=null;}
+  else{addUkjent(cur,now,true);data.state='awake';data.since=now;}
+  resetOpen=false;
+  save();render();
+}
 // Barnets vanlige lurtid (median start og varighet siste 14 dager) lagt innenfor pausen
 function napSuggestion(fra,til){
   const naps=data.sessions.filter(s=>s.start>=dayStartOffset(-LEARN_DAYS)&&sessionKind(s.start)==='lur');
@@ -1204,7 +1282,9 @@ function openBhg(newState,now){
   bhgPending={state:newState,now,fra:data.since,barnId:aktivBarn.id};
   const sg=napSuggestion(data.since,now);
   document.getElementById('bhg-title').textContent='🏫 Sov '+aktivBarn.navn+' i barnehagen?';
-  document.getElementById('bhg-info').textContent='Levert kl '+fmtTime(data.since)+(dayKey(data.since)!==dayKey(now)?' ('+fmtDateShort(data.since)+')':'')+', hentet kl '+fmtTime(now)+'. Forslaget er den vanlige lurtiden.';
+  document.getElementById('bhg-info').textContent='Rett levert- og hentetid om de ikke stemmer'+(dayKey(data.since)!==dayKey(now)?' (levert '+fmtDateShort(data.since)+')':'')+'. Lurtiden er den vanlige.';
+  document.getElementById('bhg-levert').value=fmtTime(data.since);
+  document.getElementById('bhg-hentet').value=fmtTime(now);
   document.getElementById('bhg-fra').value=fmtTime(sg.a);
   document.getElementById('bhg-til').value=fmtTime(sg.b);
   document.getElementById('bhg-modal').style.display='flex';
@@ -1213,6 +1293,19 @@ function hideBhg(){document.getElementById('bhg-modal').style.display='none';bhg
 function bhgAnswer(ans){
   const p=bhgPending;if(!p)return;
   if(!aktivBarn||aktivBarn.id!==p.barnId||data.state!=='pause'||data.since!==p.fra){hideBhg();alert('Statusen er endret i mellomtiden (annen telefon eller annet barn).');render();return;}
+  // Levert/hentet slik de står i skjemaet (kan være rettet)
+  const levert=bhgTimeToEpoch(document.getElementById('bhg-levert').value,p.fra,p.now);
+  const hentetT=bhgTimeToEpoch(document.getElementById('bhg-hentet').value,p.fra,p.now);
+  if(levert===null||hentetT===null){alert('Ugyldig levert- eller hentetid');return;}
+  if(hentetT<=levert){alert('«Hentet» må være etter «levert»');return;}
+  if(hentetT>Date.now()+60000){alert('Hentetiden kan ikke være i framtiden');return;}
+  const forLevert=data.sessions.find(s=>s.end===p.fra); // sov barnet ved levering, slutter den økta ved levering
+  if(levert!==p.fra){
+    const grense=Math.max(0,...data.sessions.filter(s=>s!==forLevert&&s.end<=p.fra).map(s=>s.end),...(data.ukjent||[]).filter(u=>u.til<=p.fra).map(u=>u.til));
+    if(forLevert&&levert<=forLevert.start){alert('Levert kan ikke være før '+aktivBarn.navn+' sovnet ('+fmtTime(forLevert.start)+').');return;}
+    if(levert<grense){alert('Levert kan ikke være før forrige registrering ('+fmtTime(grense)+').');return;}
+  }
+  p.fra=levert;p.now=hentetT;
   let fra=null,til=null;
   if(ans==='ja'){
     fra=bhgTimeToEpoch(document.getElementById('bhg-fra').value,p.fra,p.now);
@@ -1224,6 +1317,7 @@ function bhgAnswer(ans){
   }
   document.getElementById('bhg-modal').style.display='none';bhgPending=null;
   undoSnapshot=JSON.parse(JSON.stringify(data));
+  if(forLevert&&forLevert.end!==p.fra)forLevert.end=p.fra;
   if(ans==='ja'){
     data.sessions.push({id:data.nextSid++,start:fra,end:til,note:'Barnehage'});
     addUkjent(p.fra,fra,true);
@@ -1410,13 +1504,21 @@ function lastSession(){
   return data.sessions.reduce((a,b)=>(a.end>=b.end?a:b));
 }
 
-// Våkenvinduer = tiden mellom luren (og fram til nå hvis barnet er våkent)
-function awakeWindows(){
+// Våkenvinduer = tiden mellom luren (og fram til nå hvis barnet er våkent).
+// Sover barnet nå, er vinduet fram til det sovnet ferdig – det tas med selv om økta ikke er lagret ennå.
+// Vinduer som overlapper tid som ikke er registrert (pause/nullstilling) hoppes over.
+// medBhg: ta også med vinduer som går gjennom en besvart barnehagedag (bare sovnKjent-tid).
+// De merkes bhg:true og vises i «I dag», men holdes utenfor læring og snitt (kallere uten medBhg).
+function awakeWindows(medBhg){
   const naps=[...data.sessions].sort((a,b)=>a.start-b.start);
+  if(data.state==='sleeping')naps.push({start:data.since,end:Date.now()});
   const wins=[];
   for(let i=0;i<naps.length-1;i++){
-    // Hopp over vinduer som overlapper tid som ikke er registrert (pause/nullstilling)
-    if(naps[i+1].start>naps[i].end&&!overlapsUkjent(naps[i].end,naps[i+1].start))wins.push({start:naps[i].end,end:naps[i+1].start,ongoing:false});
+    const fra=naps[i].end,til=naps[i+1].start;
+    if(til<=fra)continue;
+    const over=(data.ukjent||[]).filter(u=>u.fra<til&&u.til>fra);
+    if(!over.length)wins.push({start:fra,end:til,ongoing:false});
+    else if(medBhg&&over.every(u=>u.sovnKjent))wins.push({start:fra,end:til,ongoing:false,bhg:true});
   }
   if(data.state==='awake')wins.push({start:data.since,end:Date.now(),ongoing:true});
   return wins;
@@ -1437,14 +1539,24 @@ function renderHome(){
   const card=document.getElementById('status-card');
   card.className='status-card '+(paused?'paused':sleeping?'sleeping':'awake');
   const bhg=paused&&barnehageOn();
-  document.getElementById('status-emoji').textContent=bhg?'🏫':paused?'⏸️':sleeping?'😴':'😊';
-  document.getElementById('status-label').textContent=bhg?navn+' er i barnehagen':paused?'På pause – ikke registrert':sleeping?navn+' sover':navn+' er våken';
-  document.getElementById('status-since').innerHTML='<i class="ti ti-clock-edit"></i> Siden '+fmtTime(data.since)+(dayKey(data.since)!==dayKey(now)?' ('+fmtDateShort(data.since)+')':'');
+  const bhgSover=bhg&&!!data.bhgLur;
+  document.getElementById('status-emoji').textContent=bhgSover?'😴':bhg?'🏫':paused?'⏸️':sleeping?'😴':'😊';
+  document.getElementById('status-label').textContent=bhgSover?navn+' sover i barnehagen':bhg?navn+' er i barnehagen':paused?'På pause – ikke registrert':sleeping?navn+' sover':navn+' er våken';
+  // Tydelig knapp for å rette tidspunktet (levert, sovnet, våknet, hentet)
+  const lsS=lastSession(),luS=(data.ukjent||[]).reduce((a,u)=>(!a||u.til>a.til)?u:a,null);
+  const etterPauseS=data.state==='awake'&&luS&&(!lsS||luS.til>=lsS.end);
+  const hva=bhgSover?'Sovnet':bhg?'Levert':paused?'Pause fra':sleeping?'Sovnet':etterPauseS?(barnehageOn()?'Hentet':'Pausen sluttet'):'Våknet';
+  const hvaEndre=bhgSover?'Endre tid':bhg?'Endre levert-tid':etterPauseS&&barnehageOn()?'Endre hentetid':'Endre tid';
+  const ss=document.getElementById('status-since');
+  const tS=bhgSover?data.bhgLur.start:data.since;
+  ss.innerHTML=esc(hva)+' '+fmtTime(tS)+(dayKey(tS)!==dayKey(now)?' ('+fmtDateShort(tS)+')':'')+' · <span class="endre">✏️ '+esc(hvaEndre)+'</span>';
+  ss.setAttribute('aria-label',hva+' '+fmtTime(tS)+'. '+hvaEndre);
   document.getElementById('btn-sleep-txt').textContent=navn+' sover';
   document.getElementById('btn-awake-txt').textContent=navn+' våken';
   document.getElementById('vaer-shortcut-txt').textContent='Hva skal '+navn+' ha på seg?';
 
   const ls=lastSession();
+  const vs=vaakenSiden();
   const r1=document.getElementById('info-row-1');
   const r2=document.getElementById('info-row-2');
   // nullstill evt. våkenvindu-farge fra forrige render
@@ -1452,12 +1564,25 @@ function renderHome(){
   document.getElementById('info-value-1').style.color='';
 
   if(paused){
-    // Rad 1 = hvor lenge pausen har vart, Rad 2 = sov sist
+    // Rad 1 = hvor lenge barnet har vært våkent (fra det våknet, pausen inkludert), Rad 2 = sov sist
     r1.className='info-row pause current';
-    document.getElementById('info-icon-1').className='ti ti-player-pause';
-    document.getElementById('info-label-1').textContent=bhg?'I barnehagen i':'På pause i';
-    document.getElementById('info-sub-1').textContent=bhg?'Trykk «Hentet» (eller Sover/Våken) når '+navn+' er med hjem':'Trykk Sover eller Våken for å starte igjen';
-    document.getElementById('info-value-1').textContent=fmtDur(now-data.since);
+    document.getElementById('info-icon-1').className='ti ti-sun';
+    if(bhgSover){
+      r1.className='info-row sleep current';
+      document.getElementById('info-icon-1').className='ti ti-moon';
+      document.getElementById('info-label-1').textContent=navn+' har sovet i';
+      document.getElementById('info-sub-1').textContent='Sovnet '+fmtTime(data.bhgLur.start)+' i barnehagen · trykk «'+navn+' våken» når '+navn+' våknet';
+      document.getElementById('info-value-1').textContent=fmtDur(now-data.bhgLur.start);
+    }else if(vs!==null){
+      document.getElementById('info-label-1').textContent=navn+' har vært våken i';
+      document.getElementById('info-sub-1').textContent=vs>data.since?'Våknet '+fmtTime(vs)+' etter lur i barnehagen':'Våknet '+fmtTime(vs)+' · '+(bhg?'i barnehagen':'på pause')+' i '+fmtDur(now-data.since)+(bhg?' (trykk «Sover» når '+navn+' sovner der)':'');
+      document.getElementById('info-value-1').textContent=fmtDur(now-vs);
+    }else{
+      document.getElementById('info-icon-1').className='ti ti-player-pause';
+      document.getElementById('info-label-1').textContent=bhg?'I barnehagen i':'På pause i';
+      document.getElementById('info-sub-1').textContent=bhg?'Trykk «Hentet» (eller Sover/Våken) når '+navn+' er med hjem':'Trykk Sover eller Våken for å starte igjen';
+      document.getElementById('info-value-1').textContent=fmtDur(now-data.since);
+    }
     r2.className='info-row sleep';
     document.getElementById('info-icon-2').className='ti ti-moon';
     document.getElementById('info-label-2').textContent=navn+' sov sist';
@@ -1489,11 +1614,11 @@ function renderHome(){
     r1.className='info-row awake current';
     document.getElementById('info-icon-1').className='ti ti-sun';
     document.getElementById('info-label-1').textContent=navn+' har vært våken i';
-    document.getElementById('info-value-1').textContent=fmtDur(now-data.since);
+    document.getElementById('info-value-1').textContent=fmtDur(now-(vs??data.since));
 
     // Farge etter anbefalt vindu: gult inne i vinduet (mot oransje mot slutten), rødt etter at det er over
     const rc=showRecOn()?sleepRec(now):null;
-    let subTxt='Våknet '+fmtTime(data.since);
+    let subTxt='Våknet '+fmtTime(vs??data.since)+(vs!==null&&vs!==data.since?' · '+(barnehageOn()?'hentet':'tilbake')+' '+fmtTime(data.since):'');
     if(rc&&now>=rc.from){
       const span=Math.max(1,rc.to-rc.from);
       const col=now>rc.to?wakeColor(1):wakeColor(Math.min(0.5,(now-rc.from)/span*0.5));
@@ -1518,10 +1643,10 @@ function renderHome(){
   }
 
   // Knapper
-  document.getElementById('btn-sleep').classList.toggle('current',sleeping);
+  document.getElementById('btn-sleep').classList.toggle('current',sleeping||bhgSover);
   document.getElementById('btn-awake').classList.toggle('current',!sleeping&&!paused);
-  document.getElementById('hint-sleep').textContent=sleeping?'Justér tidspunkt':paused?'Sovnet nå':'Legg ned nå';
-  document.getElementById('hint-awake').textContent=(!sleeping&&!paused)?'Justér tidspunkt':'Våknet nå';
+  document.getElementById('hint-sleep').textContent=(sleeping||bhgSover)?'Justér tidspunkt':bhg?'Sovnet i barnehagen':paused?'Sovnet nå':'Legg ned nå';
+  document.getElementById('hint-awake').textContent=(!sleeping&&!paused)?'Justér tidspunkt':bhgSover?'Våknet i barnehagen':bhg&&bhgLurer(now).length?'Justér våknet-tid':bhg?'= hentet, våken':'Våknet nå';
 
   // Estimat for neste søvn (mykt anslag) – kun når barnet er våkent
   const est=document.getElementById('estimate-line');
@@ -1683,7 +1808,19 @@ function vaerSetMode(m){vaerMode=m;document.getElementById('vmode-awake').classL
 
 // ── Justér nåværende tidspunkt ───────────────────────────────
 function openSinceEdit(){
-  document.getElementById('since-title').textContent=data.state==='sleeping'?('Når sovnet '+aktivBarn.navn+'?'):data.state==='pause'?'Når startet pausen?':('Når våknet '+aktivBarn.navn+'?');
+  const navn=aktivBarn.navn;
+  const lsE=lastSession(),luE=(data.ukjent||[]).reduce((a,u)=>(!a||u.til>a.til)?u:a,null);
+  const etterPause=data.state==='awake'&&luE&&(!lsE||luE.til>=lsE.end);
+  if(data.state==='pause'&&data.bhgLur){
+    document.getElementById('since-title').textContent='Når sovnet '+navn+' i barnehagen?';
+    document.getElementById('since-input').value=toLocalInput(data.bhgLur.start);
+    document.getElementById('since-quick').innerHTML=[5,10,15,30,45,60].map(m=>'<span class="quick-time" onclick="setSinceAgo('+m+')">'+m+' min siden</span>').join('');
+    document.getElementById('since-modal').style.display='flex';
+    return;
+  }
+  document.getElementById('since-title').textContent=data.state==='sleeping'?('Når sovnet '+navn+'?')
+    :data.state==='pause'?(barnehageOn()?'Når ble '+navn+' levert?':'Når startet pausen?')
+    :etterPause?(barnehageOn()?'Når ble '+navn+' hentet?':'Når sluttet pausen?'):('Når våknet '+navn+'?');
   document.getElementById('since-input').value=toLocalInput(data.since);
   // Hurtigvalg
   const q=document.getElementById('since-quick');
@@ -1699,6 +1836,11 @@ function saveSince(){
   const t=fromLocalInput(document.getElementById('since-input').value);
   if(t===null){alert('Ugyldig tidspunkt');return;}
   if(t>Date.now()){alert('Tidspunktet kan ikke være i framtiden');return;}
+  if(data.state==='pause'&&data.bhgLur){
+    if(t<data.since){alert('Kan ikke være før '+aktivBarn.navn+' ble levert ('+fmtTime(data.since)+')');return;}
+    data.bhgLur={start:t};
+    hideSinceModal();save();render();return;
+  }
   const ls=lastSession();
   // Etter pause/nullstilling er «siden» slutten på den ukjente perioden – flytt den, ikke en gammel økt
   const lu=(data.ukjent||[]).reduce((a,u)=>(!a||u.til>a.til)?u:a,null);
@@ -2005,7 +2147,7 @@ function renderTodayOverview(todayKey,showNatt,showLur){
     html+='</div><div class="stat-grid" style="margin-top:8px">'+nowBox+'</div>';
   }else if(statsType==='lur'){
     const napSleep=sleepMsOnDay(todayKey,'lur'),naps=napsOnDay(todayKey),longest=longestNapOnDay(todayKey);
-    const wins=awakeWindows().filter(w=>dayKey(w.start)===todayKey);
+    const wins=awakeWindows(true).filter(w=>dayKey(w.start)===todayKey);
     const longestAwake=wins.length?Math.max(...wins.map(w=>w.end-w.start)):0;
     html+='<div class="stat-grid">';
     html+='<div class="stat-box"><div class="stat-num">'+naps+'</div><div class="stat-lbl">Lurer</div></div>';
@@ -2015,7 +2157,7 @@ function renderTodayOverview(todayKey,showNatt,showLur){
       +'<div class="stat-box"><div class="stat-num">'+(longestAwake?fmtDur(longestAwake):'–')+'</div><div class="stat-lbl">Lengste våkenvindu</div></div></div>';
   }else{
     const napSleep=sleepMsOnDay(todayKey,'lur'),naps=napsOnDay(todayKey),longest=longestNapOnDay(todayKey),totalSleep=sleepMsOnDay(todayKey);
-    const wins=awakeWindows().filter(w=>dayKey(w.start)===todayKey);
+    const wins=awakeWindows(true).filter(w=>dayKey(w.start)===todayKey);
     const longestAwake=wins.length?Math.max(...wins.map(w=>w.end-w.start)):0;
     html+='<div class="stat-grid">';
     html+='<div class="stat-box"><div class="stat-num">'+naps+'</div><div class="stat-lbl">Lurer</div></div>';
@@ -2133,14 +2275,14 @@ function renderLastNight(){
 }
 
 function renderTodayWindows(todayKey){
-  const todayWins=awakeWindows().filter(w=>dayKey(w.start)===todayKey).sort((a,b)=>b.start-a.start);
+  const todayWins=awakeWindows(true).filter(w=>dayKey(w.start)===todayKey).sort((a,b)=>b.start-a.start);
   const dayWins=todayWins.filter(w=>{const h=new Date(w.start).getHours();return h>=nightEndH()&&h<nightStartH();});
   if(!dayWins.length)return '';
   let html='<div class="stat-section"><div class="stat-title"><i class="ti ti-sun"></i> Våkenvinduer i dag</div><div class="sess-list">';
   dayWins.forEach(w=>{
     html+='<div class="sess-item"'+(w.ongoing?' style="background:var(--awake-bg)"':'')+'>'
       +'<i class="ti ti-sun sess-icon" style="color:var(--awake)"></i>'
-      +'<div class="sess-info"><div class="sess-time">'+fmtTime(w.start)+' – '+(w.ongoing?'<span style="color:var(--awake-text)">nå</span>':fmtTime(w.end))+'</div><div class="sess-date">'+(w.ongoing?'Pågår':'Mellom lurer')+'</div></div>'
+      +'<div class="sess-info"><div class="sess-time">'+fmtTime(w.start)+' – '+(w.ongoing?'<span style="color:var(--awake-text)">nå</span>':fmtTime(w.end))+'</div><div class="sess-date">'+(w.ongoing?'Pågår':w.bhg?'Gjennom barnehagen':(data.state==='sleeping'&&w.end===data.since)?'Før '+esc(aktivBarn.navn)+' sovnet':'Mellom lurer')+'</div></div>'
       +'<span class="sess-dur" style="background:var(--awake-bg);color:var(--awake-text)">'+fmtDur(w.end-w.start)+'</span>'
       +'</div>';
   });
@@ -2302,10 +2444,77 @@ function renderBarsHtml(){
   return html;
 }
 
+// ── Opphold: barnehage/pause som kan redigeres (levert–hentet) ──
+// Ett opphold er én ikke registrert periode, eller to som ligger rett rundt en barnehagelur.
+function opphold(){
+  const U=(data.ukjent||[]).slice().sort((a,b)=>a.fra-b.fra),ut=[];
+  for(let k=0;k<U.length;k++){
+    const u=U[k],nap=data.sessions.find(s=>/barnehage/i.test(s.note||'')&&s.start===u.til);
+    const neste=nap?U.find(x=>x.fra===nap.end):null;
+    if(nap&&neste){ut.push({fra:u.fra,til:neste.til,deler:[u,neste],nap,bhg:true});k=U.indexOf(neste);}
+    else ut.push({fra:u.fra,til:u.til,deler:[u],nap:null,bhg:!!u.sovnKjent});
+  }
+  return ut;
+}
+function oppholdRad(o){
+  const bhg=o.bhg||barnehageOn();
+  const tid=bhg?'🏫 '+fmtTime(o.fra)+' – '+fmtTime(o.til):fmtTime(o.fra)+' – '+fmtTime(o.til);
+  const sub=fmtDateShort(o.fra)+(dayKey(o.fra)!==dayKey(o.til)?' → '+fmtDateShort(o.til):'')
+    +(o.bhg?(o.nap?' · lur '+fmtTime(o.nap.start)+'–'+fmtTime(o.nap.end):' · sov ikke'):' · ikke registrert');
+  return '<div class="sess-item" style="background:var(--surface2)">'
+    +'<i class="ti '+(bhg?'ti-school':'ti-player-pause')+' sess-icon" style="color:var(--text3)"></i>'
+    +'<div class="sess-info"><div class="sess-time">'+tid+' <span class="kind-badge" style="background:var(--surface);color:var(--text2)">'+(bhg?'Barnehage':'Pause')+'</span></div>'
+    +'<div class="sess-date">'+sub+'</div></div>'
+    +'<span class="sess-dur" style="background:var(--surface);color:var(--text2)">'+fmtDur(o.til-o.fra)+'</span>'
+    +'<button class="icon-btn" onclick="openOppEdit('+o.fra+')" title="Rediger levert og hentet" aria-label="Rediger levert og hentet"><i class="ti ti-edit"></i></button>'
+    +'</div>';
+}
+let oppRed=null;
+function openOppEdit(fra){
+  const o=opphold().find(x=>x.fra===fra);if(!o)return;
+  oppRed=o;
+  const bhg=o.bhg||barnehageOn();
+  document.getElementById('opp-title').textContent=bhg?'Rediger barnehagedagen':'Rediger pausen';
+  document.getElementById('opp-fra-lab').textContent=bhg?'Levert':'Pausen startet';
+  document.getElementById('opp-til-lab').textContent=bhg?'Hentet':'Pausen sluttet';
+  document.getElementById('opp-fra').value=toLocalInput(o.fra);
+  document.getElementById('opp-til').value=toLocalInput(o.til);
+  document.getElementById('opp-info').textContent=o.nap?'Luren i barnehagen ('+fmtTime(o.nap.start)+'–'+fmtTime(o.nap.end)+') blir liggende – den redigeres som en vanlig søvnøkt.':'';
+  document.getElementById('opp-modal').style.display='flex';
+}
+function hideOpp(){document.getElementById('opp-modal').style.display='none';oppRed=null;}
+function saveOpp(){
+  const o=oppRed;if(!o)return;
+  const fra=fromLocalInput(document.getElementById('opp-fra').value),til=fromLocalInput(document.getElementById('opp-til').value);
+  const lab=document.getElementById('opp-til-lab').textContent,labF=document.getElementById('opp-fra-lab').textContent;
+  if(fra===null||til===null){alert('Ugyldig tidspunkt');return;}
+  if(til<=fra){alert('«'+lab+'» må være etter «'+labF+'»');return;}
+  if(til>Date.now()+60000){alert('Tidspunktet kan ikke være i framtiden');return;}
+  if(o.nap&&(fra>o.nap.start||til<o.nap.end)){alert('Luren i barnehagen ('+fmtTime(o.nap.start)+'–'+fmtTime(o.nap.end)+') må ligge mellom «'+labF.toLowerCase()+'» og «'+lab.toLowerCase()+'».');return;}
+  // Det som grenser til oppholdet flytter med: økta som sluttet ved levering, økta som startet ved henting,
+  // og «siden» hvis dette er siste opphold
+  const deler=o.deler.map(d=>data.ukjent.find(u=>u.id===d.id)||d);
+  const forO=data.sessions.find(s=>s.end===o.fra),etterO=data.sessions.find(s=>s.start===o.til);
+  const sinceFolger=data.state!=='pause'&&data.since===o.til;
+  if(forO&&fra<=forO.start){alert('Kan ikke være før '+aktivBarn.navn+' sovnet ('+fmtTime(forO.start)+').');return;}
+  if(etterO&&til>=etterO.end){alert('Kan ikke være etter at '+aktivBarn.navn+' våknet ('+fmtTime(etterO.end)+').');return;}
+  if(data.sessions.some(s=>s!==forO&&s!==etterO&&s.id!==(o.nap&&o.nap.id)&&s.start<til&&s.end>fra)){alert('Tidsrommet overlapper en annen søvnøkt.');return;}
+  if((data.ukjent||[]).some(u=>!deler.includes(u)&&u.fra<til&&u.til>fra)){alert('Tidsrommet overlapper en annen pause.');return;}
+  if(sinceFolger&&data.state==='sleeping'&&til>Date.now()){alert('Tidspunktet kan ikke være i framtiden');return;}
+  deler[0].fra=fra;deler[deler.length-1].til=til;
+  // id følger starten ('u'+fra), som ellers ved normalisering
+  deler[0].id='u'+deler[0].fra;
+  if(forO)forO.end=fra;
+  if(etterO)etterO.start=til;
+  if(sinceFolger)data.since=til;
+  hideOpp();save();render();
+}
+
 function renderSessionList(pw){
-  let html='<div class="stat-section"><div class="stat-title"><i class="ti ti-list"></i> Søvnøkter</div>';
+  let html='<div class="stat-section"><div class="stat-title"><i class="ti ti-list"></i> '+(statsType==='all'?'Søvnøkter og barnehage':'Søvnøkter')+'</div>';
   let pool=data.sessions.filter(s=>s.end>=pw.ws);
   if(statsType!=='all')pool=pool.filter(s=>sessionKind(s.start)===statsType);
+  else pool=pool.concat(opphold().filter(o=>o.til>=pw.ws).map(o=>({opp:o,start:o.fra})));
   pool.sort((a,b)=>b.start-a.start);
   const cap=40, total=pool.length, sorted=pool.slice(0,cap);
   if(!sorted.length){
@@ -2313,6 +2522,7 @@ function renderSessionList(pw){
   }else{
     html+='<div class="sess-list">';
     sorted.forEach(s=>{
+      if(s.opp){html+=oppholdRad(s.opp);return;}
       const sameDay=dayKey(s.start)===dayKey(s.end);
       const kind=sessionKind(s.start);
       const isNight=kind==='natt';
@@ -2454,13 +2664,13 @@ function clearAll(){
 // Escape lukker åpen modal.
 document.addEventListener('keydown',e=>{
   if(e.key!=='Escape')return;
-  ['since-modal','sess-modal','stat-modal','bhg-modal'].forEach(id=>{const m=document.getElementById(id);if(m&&m.style.display==='flex')m.style.display='none';});
-  bhgPending=null;
+  ['since-modal','sess-modal','stat-modal','bhg-modal','opp-modal'].forEach(id=>{const m=document.getElementById(id);if(m&&m.style.display==='flex')m.style.display='none';});
+  bhgPending=null;oppRed=null;
 });
 
 // Modul-scope: funksjoner brukt i on*-attributter (i HTML og JS-bygde strenger)
 // må eksponeres på window. Barnevelgeren bruker delegert lytter og trenger ikke det.
-Object.assign(window,{addSessTag,addWakeWin,applyWakeSuggestion,bhgAnswer,hideBhg,clearAll,deleteSess,
+Object.assign(window,{addSessTag,addWakeWin,applyWakeSuggestion,bhgAnswer,hideBhg,hideOpp,saveOpp,openOppEdit,clearAll,deleteSess,
 exportData,glemtOk,handleSessBg,nullstill,pauseNow,toggleReset,handleSinceBg,hideSessModal,hideSinceModal,hideStatModal,
 openSessAdd,openSessEdit,openSinceEdit,openStatDetail,removeWakeWin,saveSess,saveSettings,saveSince,setSinceAgo,setState,setStatsPeriod,
 setStatsType,setView,setWakeWin,toggleTheme,undoLast,vaerSetMode});
