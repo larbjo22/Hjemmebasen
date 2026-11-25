@@ -25,6 +25,7 @@ middag.html       Ukesplanlegger, idébank, rulett, uke→handleliste
 oppgaver.html     Oppgaver + hus-vedlikehold + gamification
 fryser.html       Fryseroversikt («bruk opp»-logikk)
 plikter.html      Pliktsporing for barn (poeng/belønninger)
+gaver.html        Gavebanken: idébank per person, anledninger med budsjett, status per gave
 nyheter.html      «Nytt i Hjemmebasen» – release notes for brukerne (innhold i felles/nyheter.js)
 felles/           Delte moduler: firebase-init, auth, storage, seed, ui + stil.css
 database.rules.json  Security rules (limes inn i Firebase Console)

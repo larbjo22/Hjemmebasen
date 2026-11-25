@@ -230,7 +230,7 @@ document.getElementById('meny-btn').addEventListener('click', () => {
 });
 document.getElementById('logg-ut-btn').addEventListener('click', loggUt);
 
-const BYGGET = new Set(['kalender', 'handleliste', 'middag', 'oppgaver', 'fryser', 'plikter', 'sovn', 'helse', 'beskjeder', 'pakkelister', 'vekst']);
+const BYGGET = new Set(['kalender', 'handleliste', 'middag', 'oppgaver', 'fryser', 'plikter', 'sovn', 'helse', 'beskjeder', 'pakkelister', 'vekst', 'gaver']);
 const UKEDAG = ['søndag', 'mandag', 'tirsdag', 'onsdag', 'torsdag', 'fredag', 'lørdag'];
 
 const { user, erAdmin, familieId, medlem } = await requireAuth();
@@ -566,6 +566,22 @@ function appStatus(app, fam) {
       const navn = barnNavn(fam, siste.barn);
       const deler = [siste.hoyde ? siste.hoyde + ' cm' : null, siste.vekt ? siste.vekt + ' kg' : null, siste.sko ? 'sko ' + siste.sko : null].filter(Boolean);
       return { txt: 'Sist: ' + navn + ' – ' + deler.join(' · ') };
+    }
+    if (app === 'gaver') {
+      // Nærmeste anledning som ikke er avsluttet: hvor mange har fått gaven sin kjøpt
+      const gaver = d?.gaver || [];
+      const idag = todayStr();
+      const kommende = (d?.anledninger || []).filter(a => a && !a.avsluttet && (a.mottakere || []).length)
+        .sort((x, y) => (x.dato || '9999').localeCompare(y.dato || '9999'));
+      const a = kommende.find(x => !x.dato || x.dato >= idag) || kommende[0];
+      if (!a) return { txt: gaver.length ? gaver.length + ' ideer i banken' : 'Ingen gaveideer ennå' };
+      const klare = a.mottakere.filter(id => {
+        const egne = gaver.filter(g => g && g.anledning === a.id && g.mottaker === id);
+        return egne.length && egne.every(g => g.status && g.status !== 'ide');
+      }).length;
+      const dager = a.dato ? Math.round((new Date(a.dato + 'T12:00:00') - new Date(idag + 'T12:00:00')) / 86400000) : null;
+      return { txt: a.navn + ': ' + klare + '/' + a.mottakere.length + ' klare' + (dager !== null && dager >= 0 ? ' · ' + (dager === 0 ? 'i dag' : dager + ' d') : ''),
+        varsel: dager !== null && dager >= 0 && dager <= 14 && klare < a.mottakere.length };
     }
   } catch (e) { /* defensivt */ }
   return { txt: '' };

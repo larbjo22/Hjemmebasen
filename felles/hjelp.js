@@ -129,6 +129,19 @@ const HJELP = {
     ],
     tips: 'Alderen regnes ut fra fødselsdatoen i husstandens oppsett.',
   },
+  gaver: {
+    tittel: 'Gaver',
+    hva: 'Hvem skal ha gave, hva ønsker de seg, og hva har dere kjøpt – til jul, bursdager og alt imellom.',
+    punkter: [
+      'Under «Personer» skriver dere ned ønsker og ideer hele året. De blir liggende til dere bruker dem.',
+      'Lag en anledning (f.eks. «Jul»), legg inn hvem som skal ha gave, og hent ideer rett fra idébanken med «+ gave».',
+      'Trykk på statusknappen for å gå videre: Idé → Kjøpt → Pakket → Gitt. Trykk på teksten for pris, lenke, hvem som kjøper og notat.',
+      'Sett et budsjett på anledningen, så ser dere hvor mye som er brukt og planlagt.',
+      'Lim inn-knappen tar et helt notat på én gang: én person per linje, med gaven i parentes.',
+      '«Avslutt» flytter anledningen til «Tidligere». Da ser dere neste år hva alle fikk sist.',
+    ],
+    tips: 'Alt er synlig for alle i husstanden – gaver til hverandre bør dere holde utenfor.',
+  },
   kalender: {
     tittel: 'Kalender',
     hva: 'Felles familiekalender – alles avtaler samlet, fargelagt per person.',

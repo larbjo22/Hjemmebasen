@@ -118,6 +118,16 @@ all sikkerhet ligger i security rules (§7).
         // (vektet, halveringstid 3 d). settings.showRec viser/skjuler den, settings.barnehage = barnehage-modus.
       },
 
+      // Gavebanken (gaver.html). mottaker uten anledning = idébank, uten mottaker = løs idé.
+      // status: ide | kjopt | pakket | gitt. Alt er synlig for hele husstanden.
+      "gaver": {
+        "mottakere":   [ { "id": 1, "navn": "Bestemor og bestefar", "onsk": "https://…", "notat": "" } ],
+        "anledninger": [ { "id": 2, "navn": "Jul 2026", "dato": "2026-12-24", "budsjett": 5000, "mottakere": [1], "avsluttet": false } ],
+        "gaver":       [ { "id": 3, "tekst": "Kaffekvern", "status": "ide", "mottaker": 1, "anledning": 2,
+                           "pris": 499, "lenke": "https://…", "kjoper": "Kari", "notat": "", "usikker": true } ],
+        "nextId": 4
+      },
+
       // ENDRING 2: helse.barn refererer personregisteret (id, ikke navn-streng)
       "helse": { "medisiner": [], "doser": [], "vaksiner": [], "syk": [], "nextHid": 10 }
     }

@@ -6,6 +6,25 @@
 
 export const NYHETER = [
   {
+    id: '2026-11-25',
+    tittel: 'Ny app: Gaver',
+    ingress: 'Slutt på gavelister i notat-appen. Skriv ned ønsker og ideer hele året, og hold oversikt over hvem som har fått hva.',
+    deler: [
+      {
+        app: 'gaver', ikon: 'ti-gift', navn: 'Gaver',
+        punkter: [
+          '<b>Idébank per person</b> (eller par og grupper): skriv ned ønsker når dere hører dem, og legg ved lenke til ønskelista deres.',
+          '<b>Anledninger</b> som «Jul» og bursdager: hvem skal ha gave, hvem mangler idé, og hva er kjøpt.',
+          'Hver gave har <b>status</b> (Idé → Kjøpt → Pakket → Gitt), pris, lenke til butikk, hvem som kjøper og notat.',
+          '<b>Budsjett</b> per anledning, med brukt og planlagt.',
+          '<b>Lim inn</b> et notat dere har fra før – én person per linje, med gaven i parentes.',
+          'Avsluttede anledninger blir stående, så dere ser <b>hva alle fikk i fjor</b>.',
+          'Appen kan slås av for husstanden under <b>Endre oppsett</b>.'
+        ]
+      }
+    ]
+  },
+  {
     id: '2026-11-02',
     tittel: 'Lettere å komme inn igjen',
     ingress: 'Glemt passord skal ikke stoppe noen. Nå kan dere hjelpe hverandre, og en utløpt lenke er ikke lenger en blindvei.',
