@@ -183,6 +183,8 @@ input:focus-visible,select:focus-visible,button:focus-visible,textarea:focus-vis
 .rec-basis{font-size:11px;font-weight:400;color:var(--text3)}
 .rec-usikker{font-size:10px;font-weight:700;padding:1px 6px;border-radius:8px;background:var(--surface2);border:1px solid var(--border2);color:var(--text2);text-transform:uppercase;letter-spacing:.03em}
 #estimate-line i{font-size:13px}
+.kveld-prognose{margin:8px auto 0;max-width:340px;font-size:12.5px;line-height:1.45;text-align:center;color:var(--text2);background:var(--surface);border:1px dashed var(--border);border-radius:12px;padding:8px 12px}
+.kveld-prognose b{color:var(--text)}
 .vindu-rad{display:flex;gap:6px;justify-content:center;margin-top:7px;flex-wrap:wrap}
 .vindu-chip{font-size:11.5px;font-weight:600;padding:5px 11px;border-radius:14px;border:1px solid var(--border);background:var(--surface2);color:var(--text2);cursor:pointer}
 .vindu-chip.on{background:var(--accent-bg);border-color:var(--accent-border);color:var(--accent-text)}
@@ -358,6 +360,7 @@ body.embed .info-row{padding:10px 14px}
 
     <div id="estimate-line"></div>
     <div class="vindu-rad" id="vindu-overstyr"></div>
+    <div id="kveld-prognose" class="kveld-prognose" style="display:none"></div>
 
     <button class="vaer-shortcut" onclick="setView('vaer')"><i class="ti ti-shirt"></i> <span id="vaer-shortcut-txt">Hva skal barnet ha på seg?</span><i class="ti ti-chevron-right" style="margin-left:auto"></i></button>
   </div>
@@ -1540,6 +1543,7 @@ function renderHome(){
     est.innerHTML='';
     document.getElementById('vindu-overstyr').innerHTML='';
   }
+  renderKveldPrognose(now,rec);
 
   // Angre-knapp etter en handling
   const ub=document.getElementById('undo-bar');
@@ -1551,6 +1555,35 @@ function renderHome(){
     ub.innerHTML='';
   }
   renderResetPanel();
+}
+
+// ── Kveldsprognose ───────────────────────────────────────────
+// Fra kl. 15: når legger barnet seg i kveld, og når har de voksne kvelden for seg selv?
+// Leggetid = anbefalt vindu når neste søvn er natta, ellers barnets vanlige leggetid (±20 min).
+// «Kveld fra» = midten av vinduet + barnets vanlige tid fra lagt ned til sovnet (standard 15 min).
+const PROGNOSE_FRA_KL=15;
+function innsovningMin(){
+  const fra=dayStartOffset(-LEARN_DAYS);
+  const v=data.sessions.filter(s=>s.start>=fra&&s.laidDown&&s.start>s.laidDown&&sessionKind(s.start)==='natt')
+    .map(s=>(s.start-s.laidDown)/60000).filter(m=>m<120);
+  return v.length>=3?Math.round(medianOf(v)/5)*5:15;
+}
+function renderKveldPrognose(now,rec){
+  const el=document.getElementById('kveld-prognose');if(!el)return;
+  const skjul=()=>{el.style.display='none';el.innerHTML='';};
+  if(!showRecOn()||new Date(now).getHours()<PROGNOSE_FRA_KL||data.state==='sleeping')return skjul();
+  let fra,til,midt,grunnlag;
+  if(rec&&rec.isBed){fra=rec.from;til=rec.to;midt=rec.center;grunnlag=rec.unsure?'usikkert anslag':'anbefalt vindu';}
+  else{
+    const vanlig=learnedBedtimeMin();if(vanlig===null)return skjul();
+    midt=todayAtMin(vanlig);fra=midt-20*60000;til=midt+20*60000;
+    grunnlag=data.state==='pause'?'vanlig leggetid':'vanlig leggetid – en lur kan flytte den';
+  }
+  if(til<now)return skjul(); // vinduet er passert – da er prognosen ikke til hjelp
+  const kveld=Math.ceil((midt+innsovningMin()*60000)/300000)*300000;
+  el.innerHTML='🌙 <b>Kveldsprognose:</b> '+esc(aktivBarn.navn)+' legger seg ca. <b>'+fmtTime(fra)+'–'+fmtTime(til)+'</b>.'
+    +' Dere har kveld fra ca. <b>'+fmtTime(kveld)+'</b>.<br><span style="font-size:11px;color:var(--text3)">'+esc(grunnlag)+'</span>';
+  el.style.display='block';
 }
 
 function tick(){
