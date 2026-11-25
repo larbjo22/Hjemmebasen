@@ -1,0 +1,307 @@
+<!DOCTYPE html>
+<html lang="no">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@2.44.0/tabler-icons.min.css">
+<link rel="manifest" href="manifest.webmanifest">
+<meta name="theme-color" content="#2e5d4f">
+<link rel="apple-touch-icon" href="ikoner/apple-touch-icon.png">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="mobile-web-app-capable" content="yes">
+<title>Bursdagsintervju</title>
+<link rel="stylesheet" href="felles/stil.css">
+<style>
+.chips{display:flex;gap:5px;overflow-x:auto;scrollbar-width:none;margin-bottom:10px}
+.chip{flex-shrink:0;font-size:12.5px;font-weight:600;padding:6px 12px;border-radius:14px;border:1px solid var(--border);background:var(--surface2);color:var(--text2);cursor:pointer}
+.chip.on{background:var(--accent);border-color:var(--accent);color:#fff}
+.hode h2{font-size:19px}
+.hode p{font-size:13px;color:var(--text2);margin-top:2px}
+.sp{padding:9px 0;border-bottom:1px solid var(--border2)}
+.sp:last-child{border-bottom:none}
+.sp-tittel{font-size:13px;font-weight:700;margin-bottom:4px}
+.sv{display:flex;gap:8px;font-size:14px;line-height:1.4;padding:2px 0}
+.sv span{flex-shrink:0;width:46px;font-size:11.5px;font-weight:700;color:var(--accent-text);padding-top:2px}
+.sv.tom{color:var(--text3);font-style:italic;font-size:12.5px}
+.ar-rad{display:flex;gap:6px;flex-wrap:wrap;margin-top:8px}
+.brev{display:flex;align-items:center;gap:10px;padding:9px 0;border-bottom:1px solid var(--border2)}
+.brev:last-child{border-bottom:none}
+.brev i{font-size:22px;color:var(--text3)}
+.brev .b-tekst{flex:1;min-width:0;font-size:13px}
+.brev .b-tekst small{display:block;color:var(--text3);font-size:11.5px}
+.mini{flex-shrink:0;font-size:12px;padding:4px 9px;border-radius:12px;border:1px solid var(--border);background:var(--surface2);color:var(--text2);cursor:pointer}
+textarea.hinput{resize:vertical;font-family:inherit;line-height:1.45}
+.forklaring{font-size:11.5px;color:var(--text3);margin-top:6px}
+.lest{white-space:pre-wrap;font-size:14.5px;line-height:1.55;background:var(--surface2);border-radius:10px;padding:12px;margin-top:6px}
+@media(min-width:700px){.fw{max-width:600px}}
+</style>
+<link rel="stylesheet" href="felles/gran.css">
+</head>
+<body>
+<div class="fw">
+  <div class="top-bar">
+    <h1 class="app-title"><i class="ti ti-cake" aria-hidden="true"></i> Bursdagsintervju</h1>
+    <div class="top-right"><button class="icon-btn" id="theme-btn" aria-label="Bytt mellom lyst og mørkt tema"></button></div>
+  </div>
+  <div class="chips" id="barn-chips"></div>
+  <div id="innhold"></div>
+
+  <div class="modal-bg" id="int-modal" style="display:none">
+    <div class="modal" role="dialog" aria-modal="true" aria-labelledby="im-tittel" style="max-width:440px">
+      <p class="modal-title" id="im-tittel">Intervju</p>
+      <p class="forklaring" id="im-hjelp" style="margin:0 0 6px"></p>
+      <div id="im-felt"></div>
+      <div class="modal-actions">
+        <button class="btn-danger" id="im-slett">Slett</button>
+        <button class="btn-ghost" id="im-avbryt">Avbryt</button>
+        <button class="btn-primary" id="im-lagre">Lagre</button>
+      </div>
+    </div>
+  </div>
+  <div class="modal-bg" id="brev-modal" style="display:none">
+    <div class="modal" role="dialog" aria-modal="true" aria-labelledby="bm-tittel" style="max-width:440px">
+      <p class="modal-title" id="bm-tittel">Brev</p>
+      <div id="bm-innhold"></div>
+      <div class="modal-actions" id="bm-knapper"></div>
+    </div>
+  </div>
+  <div class="status-bar" id="status-bar"></div>
+</div>
+
+<script type="module">
+// ── Bursdagsintervju og tidskapsel ───────────────────────────
+// De samme ti spørsmålene hvert år rundt bursdagen, vist side om side år for år.
+// Og brev til barnet som er «låst» til en dato (standard: 18-årsdagen).
+// Låsen er bare i visningen – alle i husstanden kan lese dataene, og det sies ærlig.
+//   intervju = { svar:{'b<barn>':{'a<alder>':{dato,s1..s10,notat}}}, brev:{'b<barn>':[{id,fra,tekst,skrevet,apnes}]}, nextId }
+// Nøklene har bokstav foran: Firebase gjør objekter med tall-nøkler om til lister.
+import { requireAuth } from './felles/auth.js';
+import { dbGet, dbListen } from './felles/storage.js';
+import { esc, todayStr, initTheme, toggleTheme, setStatus } from './felles/ui.js';
+import { monterNav } from './felles/nav.js';
+import { visAngre } from './felles/angre.js';
+import { flettLager } from './felles/flett.js';
+import { monterHjelp } from './felles/hjelp.js';
+monterHjelp('intervju');
+initTheme();
+document.getElementById('theme-btn').addEventListener('click', toggleTheme);
+
+const APP='intervju';
+// Faste spørsmål – samme hvert år er hele poenget. Rekkefølgen og id-ene må ikke endres.
+const SP=[
+  ['s1','Hva er favorittmaten din?'],['s2','Hva er favorittleken din?'],['s3','Hvem er bestevennen din?'],
+  ['s4','Hva liker du best å gjøre?'],['s5','Hva gjør deg glad?'],['s6','Hva er du redd for?'],
+  ['s7','Hva er favorittsangen din?'],['s8','Hva er det morsomste du vet?'],['s9','Hva vil du bli når du blir stor?'],
+  ['s10','Hva ønsker du deg mest?'],
+];
+let FAMILIE=null, MITT='', barn=[], data=null, lager=null, dataLoaded=false, aktivBarn=null;
+const $=id=>document.getElementById(id);
+
+function tekst(x,m){return typeof x==='string'?x.slice(0,m):'';}
+function normaliser(d){
+  const b=d&&typeof d==='object'?d:{};
+  const svar={},brev={};
+  if(b.svar&&typeof b.svar==='object')Object.keys(b.svar).sort().forEach(bk=>{
+    if(!/^b/.test(bk)||!b.svar[bk]||typeof b.svar[bk]!=='object')return;
+    const per={};
+    Object.keys(b.svar[bk]).sort().forEach(ak=>{
+      if(!/^[ay]\d+$/.test(ak))return;const s=b.svar[bk][ak]||{};const o={};
+      if(/^\d{4}-\d{2}-\d{2}$/.test(s.dato||''))o.dato=s.dato;
+      SP.forEach(([k])=>{const v=tekst(s[k],400);if(v)o[k]=v;});
+      const n=tekst(s.notat,1000);if(n)o.notat=n;
+      if(Object.keys(o).some(k=>k!=='dato'))per[ak]=o;
+    });
+    if(Object.keys(per).length)svar[bk]=per;
+  });
+  let maks=0;
+  if(b.brev&&typeof b.brev==='object')Object.keys(b.brev).sort().forEach(bk=>{
+    if(!/^b/.test(bk))return;
+    const l=(Array.isArray(b.brev[bk])?b.brev[bk]:[]).filter(x=>x&&typeof x.id==='number'&&x.tekst).map(x=>{
+      maks=Math.max(maks,x.id);
+      return {id:x.id,fra:tekst(x.fra,30)||'Noen',tekst:tekst(x.tekst,8000),skrevet:tekst(x.skrevet,10),apnes:tekst(x.apnes,10)};
+    });
+    if(l.length)brev[bk]=l;
+  });
+  return {svar,brev,nextId:typeof b.nextId==='number'&&b.nextId>maks?b.nextId:maks+1};
+}
+const bk=()=>'b'+aktivBarn.id;
+function pad(n){return String(n).padStart(2,'0');}
+function alderAar(fodt,dato){
+  if(!fodt)return null;const [fy,fm,fd]=fodt.split('-').map(Number),[y,m,d]=dato.split('-').map(Number);
+  return y-fy-((m<fm||(m===fm&&d<fd))?1:0);
+}
+function nesteBursdag(fodt){
+  const [fy,fm,fd]=fodt.split('-').map(Number);const idag=todayStr();const y=Number(idag.slice(0,4));
+  let ds=y+'-'+pad(fm)+'-'+pad(fd);if(ds<idag)ds=(y+1)+'-'+pad(fm)+'-'+pad(fd);
+  return {dato:ds,alder:Number(ds.slice(0,4))-fy,dager:Math.round((new Date(ds+'T12:00:00')-new Date(idag+'T12:00:00'))/86400000)};
+}
+// Hvilket intervju «hører» til nå? Med fødselsdato: alderen barnet har nå, eller fyller
+// innen 30 dager (intervjuet tas gjerne rett før bursdagen). Uten: kalenderåret.
+function naaNokkel(){
+  if(!aktivBarn.fodt)return {k:'y'+todayStr().slice(0,4),navn:todayStr().slice(0,4)};
+  const nb=nesteBursdag(aktivBarn.fodt);
+  const a=nb.dager<=30?nb.alder:alderAar(aktivBarn.fodt,todayStr());
+  return {k:'a'+a,navn:a+' år'};
+}
+function nokkelNavn(k){return k[0]==='a'?k.slice(1)+' år':k.slice(1);}
+function fmtD(ds){return ds?new Date(ds+'T12:00:00').toLocaleDateString('nb-NO',{day:'numeric',month:'short',year:'numeric'}):'';}
+
+async function load(){
+  setStatus('Laster...');
+  try{
+    const ctx=await requireAuth();
+    if(!ctx.familieId){setStatus('Ingen husstand – kontakt administrator','err');return;}
+    FAMILIE=ctx.familieId;MITT=(ctx.medlem?.navn||'').trim().split(/\s+/)[0]||'';
+    monterNav(FAMILIE,APP);
+    const p=await dbGet(FAMILIE,'personer');
+    barn=((p&&p.barn)||[]).filter(b=>b&&b.navn);
+    const saved=await dbGet(FAMILIE,APP);
+    data=normaliser(saved);
+    lager=flettLager('familier/'+FAMILIE+'/'+APP,{hent:()=>data,bruk:d=>{data=d;if(!opptatt())render();},normaliser});
+    lager.mottatt(saved,{brukDem:false});
+    dataLoaded=true;setStatus('');
+    const husk=localStorage.getItem('intervju_barn');
+    aktivBarn=barn.find(b=>String(b.id)===husk)||barn[0]||null;
+    dbListen(FAMILIE,APP,s=>{if(lager&&!opptatt())lager.mottatt(s);});
+  }catch(e){setStatus('Kunne ikke laste – '+(e.message||'prøv igjen'),'err');return;}
+  render();
+}
+function opptatt(){return $('int-modal').style.display==='flex'||$('brev-modal').style.display==='flex';}
+async function save(){
+  if(!dataLoaded||!lager){setStatus('Ikke lagret – data er ikke lastet','err');return false;}
+  try{const ok=await lager.lagre();setStatus(ok?'Lagret ✓':'Ikke lagret – prøv igjen',ok?'ok':'err');return ok;}
+  catch(e){setStatus('Kunne ikke lagre – prøv igjen','err');return false;}
+}
+function endret(){render();return save();}
+
+function render(){
+  $('barn-chips').innerHTML=barn.length>1?barn.map(b=>'<button class="chip'+(b===aktivBarn?' on':'')+'" data-barn="'+esc(String(b.id))+'">'+esc(b.navn)+'</button>').join(''):'';
+  if(!aktivBarn){$('innhold').innerHTML='<div class="empty-state" style="padding:3rem 1rem">Ingen barn registrert.<br><a href="onboarding.html" style="color:var(--accent-text)">Legg til barn i Endre oppsett</a></div>';return;}
+  const navn=aktivBarn.navn,mine=data.svar[bk()]||{},naa=naaNokkel();
+  const nokler=Object.keys(mine).sort((a,b)=>(a[0]===b[0]?parseInt(a.slice(1))-parseInt(b.slice(1)):a<b?-1:1));
+  let sub='';
+  if(aktivBarn.fodt){const nb=nesteBursdag(aktivBarn.fodt);sub=navn+' er '+alderAar(aktivBarn.fodt,todayStr())+' år · fyller '+nb.alder+' '+(nb.dager===0?'i dag 🎉':'om '+nb.dager+' dager');}
+  else sub='Legg inn fødselsdato i Endre oppsett for å knytte intervjuene til alderen.';
+  let h='<div class="card hode"><h2>'+esc(navn)+'</h2><p>'+esc(sub)+'</p>'
+    +'<button class="btn-primary" style="margin-top:10px" data-intervju="'+naa.k+'">'+(mine[naa.k]?'<i class="ti ti-edit"></i> Rediger intervjuet for '+esc(naa.navn):'<i class="ti ti-microphone"></i> Intervju '+esc(navn)+' ('+esc(naa.navn)+')')+'</button>'
+    +(nokler.filter(k=>k!==naa.k).length?'<div class="ar-rad">'+nokler.filter(k=>k!==naa.k).map(k=>'<button class="mini" data-intervju="'+k+'">'+esc(nokkelNavn(k))+'</button>').join('')+'<button class="mini" id="eldre-ar">+ tidligere år</button></div>'
+      :'<div class="ar-rad"><button class="mini" id="eldre-ar">+ Legg inn et tidligere år</button></div>')
+    +'</div>';
+  if(nokler.length){
+    h+='<div class="card"><div class="card-title">Svarene år for år</div>'
+      +SP.map(([k,t])=>{
+        const rader=nokler.filter(n=>mine[n][k]);
+        return '<div class="sp"><div class="sp-tittel">'+esc(t)+'</div>'
+          +(rader.length?rader.map(n=>'<div class="sv"><span>'+esc(nokkelNavn(n))+'</span>'+esc(mine[n][k])+'</div>').join(''):'<div class="sv tom">Ikke besvart ennå</div>')+'</div>';
+      }).join('')
+      +(nokler.some(n=>mine[n].notat)?'<div class="sp"><div class="sp-tittel">Foreldrenes notat</div>'+nokler.filter(n=>mine[n].notat).map(n=>'<div class="sv"><span>'+esc(nokkelNavn(n))+'</span>'+esc(mine[n].notat)+'</div>').join('')+'</div>':'')
+      +'</div>';
+  }else h+='<div class="empty-state">Ingen intervjuer ennå.<br>Ta det første rundt bursdagen – om to år er det gull å lese.</div>';
+  // Tidskapsel
+  const brev=data.brev[bk()]||[];
+  const atten=aktivBarn.fodt?(Number(aktivBarn.fodt.slice(0,4))+18)+aktivBarn.fodt.slice(4):'';
+  h+='<div class="card"><div class="card-title"><i class="ti ti-mail"></i> Tidskapsel</div>'
+    +'<p style="font-size:12.5px;color:var(--text2);margin-bottom:8px">Brev til '+esc(navn)+' som åpnes '+(atten?'på 18-årsdagen ('+esc(fmtD(atten))+')':'en dato dere velger')+'.</p>'
+    +brev.map(b=>{const aapen=b.apnes&&b.apnes<=todayStr();
+      return '<div class="brev"><i class="ti '+(aapen?'ti-mail-opened':'ti-lock')+'"></i><div class="b-tekst">Fra '+esc(b.fra)+'<small>Skrevet '+esc(fmtD(b.skrevet))+' · '+(aapen?'kan leses':'åpnes '+esc(fmtD(b.apnes)))+'</small></div>'
+        +'<button class="mini" data-brev="'+b.id+'">'+(aapen?'Les':'Åpne')+'</button></div>';}).join('')
+    +'<button class="btn-ghost" id="nytt-brev" style="width:100%;margin-top:8px"><i class="ti ti-pencil"></i> Skriv et brev</button>'
+    +'<p class="forklaring">Låsen er bare i appen: alle i husstanden har tilgang til dataene. Ta gjerne en kopi utenfor appen også.</p></div>';
+  $('innhold').innerHTML=h;
+}
+
+// ── Intervju-dialogen ────────────────────────────────────────
+let imK=null;
+function aapneIntervju(k){
+  imK=k;const s=(data.svar[bk()]||{})[k]||{};
+  $('im-tittel').textContent=aktivBarn.navn+' – '+nokkelNavn(k);
+  $('im-hjelp').textContent='Skriv svarene med barnets egne ord. Er barnet for lite til å svare, skriv det dere ser – det blir like fint å lese senere.';
+  $('im-felt').innerHTML='<label for="im-dato">Dato</label><input class="hinput" type="date" id="im-dato" value="'+esc(s.dato||todayStr())+'" />'
+    +SP.map(([key,t])=>'<label for="im-'+key+'">'+esc(t)+'</label><textarea class="hinput" rows="2" id="im-'+key+'" maxlength="400">'+esc(s[key]||'')+'</textarea>').join('')
+    +'<label for="im-notat">Foreldrenes notat (høyde, nye ord, hva som skjedde i år)</label><textarea class="hinput" rows="3" id="im-notat" maxlength="1000">'+esc(s.notat||'')+'</textarea>';
+  $('im-slett').style.display=(data.svar[bk()]||{})[k]?'':'none';
+  $('int-modal').style.display='flex';
+}
+function lukk(id){$(id).style.display='none';}
+$('im-lagre').addEventListener('click',()=>{
+  const o={};const d=$('im-dato').value;if(d)o.dato=d;
+  SP.forEach(([k])=>{const v=$('im-'+k).value.trim();if(v)o[k]=v.slice(0,400);});
+  const n=$('im-notat').value.trim();if(n)o.notat=n.slice(0,1000);
+  if(!Object.keys(o).some(k=>k!=='dato')){setStatus('Skriv minst ett svar','err');return;}
+  data.svar[bk()]={...(data.svar[bk()]||{}),[imK]:o};
+  lukk('int-modal');endret();
+});
+$('im-slett').addEventListener('click',()=>{
+  const per=data.svar[bk()];if(!per||!per[imK])return;
+  if(!confirm('Slette intervjuet for '+nokkelNavn(imK)+'?'))return;
+  const k=imK,b=bk(),gammel=per[k];delete per[k];if(!Object.keys(per).length)delete data.svar[b];
+  lukk('int-modal');endret();
+  visAngre('Intervjuet slettet',()=>{data.svar[b]={...(data.svar[b]||{}),[k]:gammel};endret();});
+});
+$('im-avbryt').addEventListener('click',()=>lukk('int-modal'));
+
+// ── Brev ─────────────────────────────────────────────────────
+function aapneBrev(id){
+  const l=data.brev[bk()]||[];const b=id?l.find(x=>x.id===id):null;
+  const atten=aktivBarn.fodt?(Number(aktivBarn.fodt.slice(0,4))+18)+aktivBarn.fodt.slice(4):'';
+  if(!b){
+    $('bm-tittel').textContent='Brev til '+aktivBarn.navn;
+    $('bm-innhold').innerHTML='<label for="bm-tekst">Brevet</label><textarea class="hinput" rows="9" id="bm-tekst" maxlength="8000" placeholder="Kjære '+esc(aktivBarn.navn)+' …"></textarea>'
+      +'<label for="bm-apnes">Åpnes</label><input class="hinput" type="date" id="bm-apnes" value="'+esc(atten)+'" min="'+todayStr()+'" />';
+    $('bm-knapper').innerHTML='<button class="btn-ghost" data-lukk-brev>Avbryt</button><button class="btn-primary" id="bm-lagre">Forsegl brevet</button>';
+  }else{
+    const aapen=b.apnes&&b.apnes<=todayStr();
+    $('bm-tittel').textContent='Fra '+b.fra+' · '+fmtD(b.skrevet);
+    if(!aapen&&!$('brev-modal').dataset.vis){
+      $('bm-innhold').innerHTML='<p style="font-size:14px">🔒 Dette brevet skal åpnes <b>'+esc(fmtD(b.apnes))+'</b>.</p><p class="forklaring">Vil du likevel lese det nå (for eksempel for å rette noe)?</p>';
+      $('bm-knapper').innerHTML='<button class="btn-ghost" data-lukk-brev>Lukk</button><button class="btn-ghost" data-les-likevel="'+b.id+'">Les likevel</button>';
+    }else{
+      $('bm-innhold').innerHTML='<div class="lest">'+esc(b.tekst)+'</div>';
+      $('bm-knapper').innerHTML='<button class="btn-danger" data-slett-brev="'+b.id+'">Slett</button><button class="btn-ghost" data-lukk-brev>Lukk</button>';
+    }
+  }
+  $('brev-modal').style.display='flex';
+}
+$('brev-modal').addEventListener('click',e=>{
+  if(e.target.id==='brev-modal'||e.target.closest('[data-lukk-brev]')){delete $('brev-modal').dataset.vis;lukk('brev-modal');return;}
+  const l=e.target.closest('[data-les-likevel]');if(l){$('brev-modal').dataset.vis='1';aapneBrev(parseInt(l.dataset.lesLikevel));delete $('brev-modal').dataset.vis;return;}
+  const s=e.target.closest('[data-slett-brev]');
+  if(s){
+    if(!confirm('Slette brevet for godt?'))return;
+    const b=bk(),id=parseInt(s.dataset.slettBrev),gml=(data.brev[b]||[]).find(x=>x.id===id);
+    data.brev[b]=(data.brev[b]||[]).filter(x=>x.id!==id);if(!data.brev[b].length)delete data.brev[b];
+    lukk('brev-modal');endret();
+    if(gml)visAngre('Brevet slettet',()=>{data.brev[b]=[...(data.brev[b]||[]),gml];endret();});
+    return;
+  }
+  if(e.target.closest('#bm-lagre')){
+    const t=$('bm-tekst').value.trim();if(!t){$('bm-tekst').focus();return;}
+    const apnes=$('bm-apnes').value;if(!apnes){$('bm-apnes').focus();return;}
+    data.brev[bk()]=[...(data.brev[bk()]||[]),{id:data.nextId++,fra:MITT||'Noen',tekst:t.slice(0,8000),skrevet:todayStr(),apnes}];
+    lukk('brev-modal');endret();
+  }
+});
+
+// ── Lyttere ──────────────────────────────────────────────────
+$('barn-chips').addEventListener('click',e=>{
+  const b=e.target.closest('[data-barn]');if(!b)return;
+  aktivBarn=barn.find(x=>String(x.id)===b.dataset.barn)||aktivBarn;
+  try{localStorage.setItem('intervju_barn',String(aktivBarn.id));}catch(e){}
+  render();
+});
+$('innhold').addEventListener('click',e=>{
+  const i=e.target.closest('[data-intervju]');if(i){aapneIntervju(i.dataset.intervju);return;}
+  const b=e.target.closest('[data-brev]');if(b){aapneBrev(parseInt(b.dataset.brev));return;}
+  if(e.target.closest('#nytt-brev')){aapneBrev(null);return;}
+  if(e.target.closest('#eldre-ar')){
+    const v=prompt(aktivBarn.fodt?'Hvilken alder (år)?':'Hvilket år?');if(!v)return;
+    const n=parseInt(v);if(isNaN(n)||n<0||(aktivBarn.fodt?n>25:n<1990||n>2100)){setStatus('Ugyldig','err');return;}
+    aapneIntervju((aktivBarn.fodt?'a':'y')+n);
+  }
+});
+document.addEventListener('keydown',e=>{if(e.key==='Escape')['int-modal','brev-modal'].forEach(id=>{if($(id).style.display==='flex')lukk(id);});});
+load();
+</script>
+</body>
+</html>

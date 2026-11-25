@@ -1,0 +1,265 @@
+<!DOCTYPE html>
+<html lang="no">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@2.44.0/tabler-icons.min.css">
+<link rel="manifest" href="manifest.webmanifest">
+<meta name="theme-color" content="#2e5d4f">
+<link rel="apple-touch-icon" href="ikoner/apple-touch-icon.png">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="mobile-web-app-capable" content="yes">
+<title>Barnevakt</title>
+<link rel="stylesheet" href="felles/stil.css">
+<style>
+.chips{display:flex;gap:5px;overflow-x:auto;scrollbar-width:none;margin-bottom:10px}
+.chip{flex-shrink:0;font-size:12.5px;font-weight:600;padding:6px 12px;border-radius:14px;border:1px solid var(--border);background:var(--surface2);color:var(--text2);cursor:pointer}
+.chip.on{background:var(--accent);border-color:var(--accent);color:#fff}
+.ark h2{font-size:20px;margin:2px 0 2px}
+.ark .dato{font-size:13px;color:var(--text3);margin-bottom:10px}
+.blokk{background:var(--surface);border:1px solid var(--border);border-radius:14px;padding:12px 14px;margin-bottom:10px}
+.blokk h3{font-size:12px;font-weight:700;color:var(--text3);text-transform:uppercase;letter-spacing:.05em;margin-bottom:6px;display:flex;align-items:center;gap:6px}
+.blokk p,.blokk li{font-size:15px;line-height:1.5}
+.blokk .stor{font-size:22px;font-weight:700}
+.blokk .sub{font-size:13px;color:var(--text2)}
+.blokk .tekst{white-space:pre-wrap;font-size:15px;line-height:1.5}
+.blokk .tom{font-size:13px;color:var(--text3);font-style:italic}
+.blokk.varsel{border-color:var(--accent-border);background:var(--accent-bg)}
+.tlf{display:flex;align-items:center;gap:10px;padding:8px 0;border-bottom:1px solid var(--border2)}
+.tlf:last-child{border-bottom:none}
+.tlf b{flex:1;font-size:15px}
+.tlf a{font-size:16px;font-weight:700;color:var(--accent-text);text-decoration:none;padding:6px 12px;border:1px solid var(--accent-border);border-radius:20px;background:var(--accent-bg)}
+.tlf button{border:none;background:none;color:var(--text3);font-size:16px;cursor:pointer}
+textarea.hinput{resize:vertical;font-family:inherit;font-size:14px;line-height:1.45}
+.verktoy{display:flex;gap:8px;margin-bottom:10px}
+.verktoy>*{flex:1}
+body.vakt .app-nav,body.vakt .top-bar,body.vakt .chips,body.vakt .verktoy,body.vakt .kun-forelder{display:none!important}
+body.vakt .ark .blokk p,body.vakt .ark .blokk .tekst{font-size:17px}
+.avslutt-vakt{display:none;margin:18px auto 0;font-size:12px;color:var(--text3);background:none;border:none;text-decoration:underline;cursor:pointer}
+body.vakt .avslutt-vakt{display:block}
+@media(min-width:700px){.fw{max-width:600px}}
+</style>
+<link rel="stylesheet" href="felles/gran.css">
+</head>
+<body>
+<div class="fw">
+  <div class="top-bar">
+    <h1 class="app-title"><i class="ti ti-heart-handshake" aria-hidden="true"></i> Barnevakt</h1>
+    <div class="top-right"><button class="icon-btn" id="theme-btn" aria-label="Bytt mellom lyst og mørkt tema"></button></div>
+  </div>
+  <div class="chips" id="barn-chips"></div>
+  <div class="verktoy">
+    <button class="btn-ghost" id="rediger-btn"><i class="ti ti-edit"></i> Rediger</button>
+    <button class="btn-primary" id="vakt-btn" style="width:auto"><i class="ti ti-device-mobile"></i> Gi til barnevakten</button>
+  </div>
+  <div id="innhold"></div>
+  <button class="avslutt-vakt" id="avslutt-vakt">Avslutt barnevakt-visning</button>
+  <div class="status-bar" id="status-bar"></div>
+</div>
+
+<script type="module">
+// ── Barnevakt (overleveringsarket) ───────────────────────────
+// Alt barnevakten trenger på én skjerm: leggetid, kveldsrutine, middag, medisin gitt i dag,
+// allergier, trøst, hvor ting ligger og telefonnumre. Leser søvn, helse og middag; de voksne
+// skriver resten (node «barnevakt»). Barnevakt-visningen skjuler menyer og redigering, så
+// telefonen kan gis bort. Det er ingen sperre – bare en ryddig visning.
+//   barnevakt = { felles:{telefoner:[{id,navn,tlf}],hvor,viktig}, barn:{'b<id>':{rutine,mat,allergi,trost}}, nextId }
+import { requireAuth } from './felles/auth.js';
+import { dbGet, dbListen } from './felles/storage.js';
+import { esc, todayStr, initTheme, toggleTheme, setStatus } from './felles/ui.js';
+import { monterNav } from './felles/nav.js';
+import { flettLager } from './felles/flett.js';
+import { monterHjelp } from './felles/hjelp.js';
+monterHjelp('barnevakt');
+initTheme();
+document.getElementById('theme-btn').addEventListener('click', toggleTheme);
+
+const APP='barnevakt';
+let FAMILIE=null, barn=[], fam={}, data=null, lager=null, dataLoaded=false, aktivBarn=null, redigerer=false;
+const $=id=>document.getElementById(id);
+const BARN_FELT=[['rutine','Kveldsrutine','F.eks. bad 18:30, pysj, to bøker, smokk og kosedyr, lyset av 19:00'],
+  ['mat','Mat og drikke','F.eks. kveldsmat 18:00, grøt eller brødskive, vann i flaske'],
+  ['allergi','Allergier og viktig','F.eks. ingen nøtter. Astmamedisin står i skapet over kjøleskapet'],
+  ['trost','Trøst og tips','F.eks. syng «Bæ bæ lille lam», han roer seg hvis du bærer ham']];
+const FELLES_FELT=[['hvor','Hvor ting ligger','F.eks. bleier på badet, pysj i øverste skuff, nøkkel i skålen'],
+  ['viktig','Annet','F.eks. alarmkode, hunden må ut kl 21']];
+
+function tekst(x,m){return typeof x==='string'?x.slice(0,m):'';}
+function normaliser(d){
+  const b=d&&typeof d==='object'?d:{};
+  const f=b.felles&&typeof b.felles==='object'?b.felles:{};
+  const felles={};
+  const tlf=(Array.isArray(f.telefoner)?f.telefoner:[]).filter(t=>t&&typeof t.id==='number').map(t=>({id:t.id,navn:tekst(t.navn,40),tlf:tekst(t.tlf,30)}));
+  if(tlf.length)felles.telefoner=tlf;
+  FELLES_FELT.forEach(([k])=>{const v=tekst(f[k],1500);if(v)felles[k]=v;});
+  const barnO={};
+  if(b.barn&&typeof b.barn==='object')Object.keys(b.barn).sort().forEach(k=>{
+    if(!/^b/.test(k))return;const o={};BARN_FELT.forEach(([f2])=>{const v=tekst(b.barn[k]?.[f2],1500);if(v)o[f2]=v;});if(Object.keys(o).length)barnO[k]=o;
+  });
+  const maks=Math.max(0,...tlf.map(t=>t.id));
+  return {felles,barn:barnO,nextId:typeof b.nextId==='number'&&b.nextId>maks?b.nextId:maks+1};
+}
+const bk=()=>'b'+aktivBarn.id;
+
+async function load(){
+  setStatus('Laster...');
+  try{
+    const ctx=await requireAuth();
+    if(!ctx.familieId){setStatus('Ingen husstand – kontakt administrator','err');return;}
+    FAMILIE=ctx.familieId;
+    monterNav(FAMILIE,APP);
+    const p=await dbGet(FAMILIE,'personer');
+    barn=((p&&p.barn)||[]).filter(b=>b&&b.navn);
+    // Lesestoff fra de andre appene (sanntid, så medisin og søvn er ferske når barnevakten ser)
+    ['sovn','helse','middag'].forEach(a=>dbListen(FAMILIE,a,v=>{fam[a]=v||{};if(!opptatt())render();}));
+    const saved=await dbGet(FAMILIE,APP);
+    data=normaliser(saved);
+    lager=flettLager('familier/'+FAMILIE+'/'+APP,{hent:()=>data,bruk:d=>{data=d;if(!opptatt())render();},normaliser});
+    lager.mottatt(saved,{brukDem:false});
+    dataLoaded=true;setStatus('');
+    const husk=localStorage.getItem('barnevakt_barn');
+    aktivBarn=barn.find(b=>String(b.id)===husk)||barn[0]||null;
+    dbListen(FAMILIE,APP,s=>{if(lager&&!opptatt())lager.mottatt(s);});
+    if(sessionStorage.getItem('barnevakt_modus')==='1')document.body.classList.add('vakt');
+  }catch(e){setStatus('Kunne ikke laste – '+(e.message||'prøv igjen'),'err');return;}
+  render();
+}
+function opptatt(){return redigerer;}
+async function save(){
+  if(!dataLoaded||!lager){setStatus('Ikke lagret – data er ikke lastet','err');return false;}
+  try{const ok=await lager.lagre();setStatus(ok?'Lagret ✓':'Ikke lagret – prøv igjen',ok?'ok':'err');return ok;}
+  catch(e){setStatus('Kunne ikke lagre – prøv igjen','err');return false;}
+}
+
+// ── Utledet fra de andre appene ──────────────────────────────
+function pad(n){return String(n).padStart(2,'0');}
+function kl(t){const d=new Date(t);return pad(d.getHours())+':'+pad(d.getMinutes());}
+function median(a){if(!a.length)return null;const s=[...a].sort((x,y)=>x-y),m=Math.floor(s.length/2);return s.length%2?s[m]:(s[m-1]+s[m])/2;}
+function klMin(m){m=Math.round(m/5)*5;m=((m%1440)+1440)%1440;return pad(Math.floor(m/60))+':'+pad(m%60);}
+function varighet(ms){const m=Math.round(ms/60000);return m<60?m+' min':Math.floor(m/60)+' t'+(m%60?' '+(m%60)+' min':'');}
+// Vanlig leggetid og lur siste 14 dager (fra søvnøktene)
+function sovnInfo(){
+  const blob=(fam.sovn||{})[aktivBarn.id];if(!blob)return null;
+  const ns=(blob.settings&&blob.settings.nightStart)??18,ne=(blob.settings&&blob.settings.nightEnd)??5;
+  const fra=Date.now()-14*86400000;
+  const s=(Array.isArray(blob.sessions)?blob.sessions:[]).filter(x=>x&&x.start>=fra&&x.end>x.start);
+  const natt=s.filter(x=>{const h=new Date(x.start).getHours();return h>=ns||h<ne;});
+  const lur=s.filter(x=>{const h=new Date(x.start).getHours();return h>=ne&&h<ns;});
+  const minAv=t=>{const d=new Date(t);let m=d.getHours()*60+d.getMinutes();if(d.getHours()<ne)m+=1440;return m;};
+  const legg=median(natt.map(x=>minAv(x.start)));
+  const innsov=median(natt.filter(x=>x.laidDown&&x.start>x.laidDown&&x.start-x.laidDown<7200000).map(x=>(x.start-x.laidDown)/60000));
+  const vakn=median(natt.map(x=>{const d=new Date(x.end);return d.getHours()*60+d.getMinutes();}));
+  const lurStart=median(lur.map(x=>minAv(x.start))),lurLengde=median(lur.map(x=>(x.end-x.start)/60000));
+  return {blob,legg,innsov,vakn,lurStart,lurLengde,n:natt.length};
+}
+// Medisin siste døgn og når neste dose tidligst kan gis (samme regel som Helse: intervall og maks per døgn)
+function medisinInfo(){
+  const h=fam.helse||{},now=Date.now();
+  const doser=(h.doser||[]).filter(d=>d&&String(d.barn)===String(aktivBarn.id)&&d.ts<=now&&now-d.ts<86400000).sort((a,b)=>a.ts-b.ts);
+  const per={};doser.forEach(d=>(per[d.med]=per[d.med]||[]).push(d));
+  return Object.entries(per).map(([mid,l])=>{
+    const med=(h.medisiner||[]).find(m=>String(m.id)===String(mid))||{name:'Medisin'};
+    const siste=l[l.length-1];
+    let ok=siste.ts+(med.intervalH||0)*3600000;
+    if(med.maxDay&&l.length>=med.maxDay)ok=Math.max(ok,l[l.length-med.maxDay].ts+86400000);
+    return {navn:med.name,doser:l,ok};
+  });
+}
+
+// ── Tegning ──────────────────────────────────────────────────
+function blokk(ikon,tittel,innhold,kls){return '<div class="blokk'+(kls?' '+kls:'')+'"><h3><i class="ti '+ikon+'"></i> '+tittel+'</h3>'+innhold+'</div>';}
+function tekstBlokk(ikon,tittel,v,hint){return blokk(ikon,tittel,v?'<div class="tekst">'+esc(v)+'</div>':'<p class="tom kun-forelder">Ikke fylt ut – trykk «Rediger». '+esc(hint)+'</p>');}
+function render(){
+  $('barn-chips').innerHTML=barn.length>1?barn.map(b=>'<button class="chip'+(b===aktivBarn?' on':'')+'" data-barn="'+esc(String(b.id))+'">'+esc(b.navn)+'</button>').join(''):'';
+  $('rediger-btn').innerHTML=redigerer?'<i class="ti ti-check"></i> Ferdig':'<i class="ti ti-edit"></i> Rediger';
+  $('vakt-btn').style.display=redigerer?'none':'';
+  if(!data)return;
+  if(redigerer){renderRediger();return;}
+  const navn=aktivBarn?aktivBarn.navn:'barna';
+  const dato=new Date().toLocaleDateString('nb-NO',{weekday:'long',day:'numeric',month:'long'});
+  const b=aktivBarn?(data.barn[bk()]||{}):{};
+  let h='<div class="ark"><h2>'+(aktivBarn?'Kvelden med '+esc(navn):'Barnevakt')+'</h2><div class="dato">'+esc(dato)+'</div>';
+  if(aktivBarn){
+    const s=sovnInfo();
+    if(s&&s.legg!==null){
+      const naa=s.blob.state==='sleeping'?'Sover nå – sovnet kl '+kl(s.blob.since):s.blob.state==='awake'&&s.blob.since?'Våken siden kl '+kl(s.blob.since):'';
+      h+=blokk('ti-moon','Søvn','<p class="stor">Legges ca. kl '+klMin(s.legg-(s.innsov||15))+'</p>'
+        +'<p class="sub">Sovner vanligvis rundt '+klMin(s.legg)+(s.innsov?' (etter ca. '+Math.round(s.innsov)+' min)':'')+(s.vakn!==null?' · våkner ca. '+klMin(s.vakn):'')+'</p>'
+        +(s.lurStart!==null?'<p class="sub">Lur ca. kl '+klMin(s.lurStart)+(s.lurLengde?', '+varighet(s.lurLengde*60000):'')+'</p>':'')
+        +(naa?'<p class="sub" style="margin-top:4px;font-weight:600">'+esc(naa)+'</p>':''));
+    }
+    h+=tekstBlokk('ti-list-check','Kveldsrutine',b.rutine,'Hva skjer fra middag til lyset slukkes?');
+    const middag=((fam.middag||{}).meals||[]).find(m=>m&&m.date===todayStr());
+    h+=blokk('ti-tools-kitchen-2','Mat','<p>'+(middag?'Middag i dag: <b>'+esc(middag.meal)+'</b>':'<span class="tom">Ingen middag planlagt i dag</span>')+'</p>'+(b.mat?'<div class="tekst" style="margin-top:4px">'+esc(b.mat)+'</div>':''));
+    const med=medisinInfo();
+    if(med.length)h+=blokk('ti-pill','Medisin gitt siste døgn',med.map(m=>'<p><b>'+esc(m.navn)+'</b> kl '+m.doser.map(d=>kl(d.ts)).join(', ')
+      +'<br><span class="sub">Neste tidligst kl '+kl(m.ok)+(new Date(m.ok).toDateString()!==new Date().toDateString()?' i morgen':'')+'</span></p>').join('')
+      +'<p class="sub" style="margin-top:6px">Ring oss før du gir medisin.</p>','varsel');
+    h+=tekstBlokk('ti-alert-circle','Allergier og viktig',b.allergi,'Allergier, medisiner, ting som ikke må skje.');
+    h+=tekstBlokk('ti-heart','Trøst og tips',b.trost,'Hva hjelper når det er tungt?');
+  }
+  h+=tekstBlokk('ti-map-pin','Hvor ting ligger',data.felles.hvor,'Bleier, pysj, nøkler, lommelykt.');
+  if(data.felles.viktig)h+=tekstBlokk('ti-info-circle','Annet',data.felles.viktig,'');
+  const tlf=data.felles.telefoner||[];
+  h+=blokk('ti-phone','Ring',tlf.length?tlf.map(t=>'<div class="tlf"><b>'+esc(t.navn)+'</b>'+(t.tlf?'<a href="tel:'+esc(t.tlf.replace(/[^\d+]/g,''))+'">'+esc(t.tlf)+'</a>':'')+'</div>').join('')
+    :'<p class="tom kun-forelder">Ingen telefonnumre – trykk «Rediger».</p>')
+    +'<p class="sub" style="margin-top:6px">Nødnumre: brann 110 · politi 112 · ambulanse 113 · legevakt 116 117</p>';
+  h+='</div>';
+  $('innhold').innerHTML=h;
+}
+function renderRediger(){
+  const b=aktivBarn?(data.barn[bk()]||{}):{};
+  let h='';
+  if(aktivBarn)h+='<div class="card"><div class="card-title">'+esc(aktivBarn.navn)+'</div>'
+    +BARN_FELT.map(([k,t,hint])=>'<label for="f-'+k+'">'+t+'</label><textarea class="hinput" rows="3" id="f-'+k+'" data-barnfelt="'+k+'" maxlength="1500" placeholder="'+esc(hint)+'">'+esc(b[k]||'')+'</textarea>').join('')+'</div>';
+  h+='<div class="card"><div class="card-title">For hele huset</div>'
+    +FELLES_FELT.map(([k,t,hint])=>'<label for="f-'+k+'">'+t+'</label><textarea class="hinput" rows="3" id="f-'+k+'" data-fellesfelt="'+k+'" maxlength="1500" placeholder="'+esc(hint)+'">'+esc(data.felles[k]||'')+'</textarea>').join('')
+    +'<label>Telefonnumre</label>'
+    +(data.felles.telefoner||[]).map(t=>'<div class="tlf"><b>'+esc(t.navn)+'</b><span>'+esc(t.tlf)+'</span><button data-fjern-tlf="'+t.id+'" aria-label="Fjern '+esc(t.navn)+'">×</button></div>').join('')
+    +'<div style="display:flex;gap:6px;margin-top:6px"><input class="hinput" id="ny-tlf-navn" maxlength="40" placeholder="Hvem (Mamma, Bestemor)" style="flex:1;min-width:0" />'
+    +'<input class="hinput" id="ny-tlf" maxlength="30" placeholder="Nummer" inputmode="tel" style="width:120px" /><button class="btn-ghost" id="ny-tlf-btn">+</button></div></div>'
+    +'<p style="font-size:11.5px;color:var(--text3);margin-bottom:10px">Søvn, middag og medisin hentes automatisk fra appene. Alt lagres når du trykker «Ferdig».</p>';
+  $('innhold').innerHTML=h;
+}
+function lesSkjema(){
+  if(aktivBarn){
+    const o={};document.querySelectorAll('[data-barnfelt]').forEach(t=>{const v=t.value.trim();if(v)o[t.dataset.barnfelt]=v.slice(0,1500);});
+    if(Object.keys(o).length)data.barn[bk()]=o;else delete data.barn[bk()];
+  }
+  document.querySelectorAll('[data-fellesfelt]').forEach(t=>{const v=t.value.trim();if(v)data.felles[t.dataset.fellesfelt]=v.slice(0,1500);else delete data.felles[t.dataset.fellesfelt];});
+}
+
+// ── Lyttere ──────────────────────────────────────────────────
+$('rediger-btn').addEventListener('click',async()=>{
+  if(redigerer){lesSkjema();redigerer=false;render();await save();}
+  else{redigerer=true;render();}
+});
+$('vakt-btn').addEventListener('click',()=>{
+  sessionStorage.setItem('barnevakt_modus','1');document.body.classList.add('vakt');window.scrollTo(0,0);
+});
+$('avslutt-vakt').addEventListener('click',()=>{
+  if(!confirm('Avslutte barnevakt-visningen?'))return;
+  sessionStorage.removeItem('barnevakt_modus');document.body.classList.remove('vakt');
+});
+$('barn-chips').addEventListener('click',e=>{
+  const b=e.target.closest('[data-barn]');if(!b)return;
+  if(redigerer)lesSkjema();
+  aktivBarn=barn.find(x=>String(x.id)===b.dataset.barn)||aktivBarn;
+  try{localStorage.setItem('barnevakt_barn',String(aktivBarn.id));}catch(e){}
+  render();
+});
+$('innhold').addEventListener('click',e=>{
+  const f=e.target.closest('[data-fjern-tlf]');
+  if(f){lesSkjema();data.felles.telefoner=(data.felles.telefoner||[]).filter(t=>t.id!==parseInt(f.dataset.fjernTlf));if(!data.felles.telefoner.length)delete data.felles.telefoner;render();return;}
+  if(e.target.closest('#ny-tlf-btn')){
+    const n=$('ny-tlf-navn').value.trim(),t=$('ny-tlf').value.trim();if(!n){$('ny-tlf-navn').focus();return;}
+    lesSkjema();
+    data.felles.telefoner=[...(data.felles.telefoner||[]),{id:data.nextId++,navn:n.slice(0,40),tlf:t.slice(0,30)}];
+    render();
+  }
+});
+load();
+</script>
+</body>
+</html>

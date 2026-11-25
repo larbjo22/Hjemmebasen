@@ -1,0 +1,322 @@
+<!DOCTYPE html>
+<html lang="no">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@2.44.0/tabler-icons.min.css">
+<link rel="manifest" href="manifest.webmanifest">
+<meta name="theme-color" content="#2e5d4f">
+<link rel="apple-touch-icon" href="ikoner/apple-touch-icon.png">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="mobile-web-app-capable" content="yes">
+<title>Klær</title>
+<link rel="stylesheet" href="felles/stil.css">
+<style>
+.chips{display:flex;gap:5px;overflow-x:auto;scrollbar-width:none;margin-bottom:10px}
+.chips::-webkit-scrollbar{display:none}
+.chip{flex-shrink:0;font-size:12.5px;font-weight:600;padding:6px 12px;border-radius:14px;border:1px solid var(--border);background:var(--surface2);color:var(--text2);cursor:pointer}
+.chip.on{background:var(--accent);border-color:var(--accent);color:#fff}
+.naa{display:flex;gap:8px}
+.naa>div{flex:1;min-width:0;background:var(--surface2);border:1px solid var(--border);border-radius:12px;padding:9px 10px}
+.naa small{display:block;font-size:10.5px;color:var(--text3);text-transform:uppercase;letter-spacing:.05em;font-weight:600}
+.naa b{display:block;font-size:20px;margin-top:2px}
+.naa span{display:block;font-size:11px;color:var(--text3);margin-top:1px}
+.sjekk{display:flex;align-items:center;gap:8px;padding:6px 0;border-bottom:1px solid var(--border2);font-size:13.5px}
+.sjekk:last-child{border-bottom:none}
+.sjekk .ok{color:var(--green);font-weight:700;width:18px;text-align:center}
+.sjekk .mangler{color:var(--danger);font-weight:700;width:18px;text-align:center}
+.sjekk .tekst{flex:1;min-width:0}
+.sjekk .tekst small{display:block;font-size:11px;color:var(--text3)}
+.mini{flex-shrink:0;font-size:12px;padding:4px 9px;border-radius:12px;border:1px solid var(--border);background:var(--surface2);color:var(--text2);cursor:pointer}
+.mini.prim{border-color:var(--accent-border);background:var(--accent-bg);color:var(--accent-text);font-weight:600}
+.plagg{display:flex;align-items:center;gap:8px;padding:7px 0;border-bottom:1px solid var(--border2)}
+.plagg:last-child{border-bottom:none}
+.plagg .p-tekst{flex:1;min-width:0;background:none;border:none;color:inherit;font:inherit;text-align:left;cursor:pointer;padding:0}
+.plagg .p-tekst b{font-size:13.5px;font-weight:600}
+.plagg .p-tekst small{display:block;font-size:11px;color:var(--text3)}
+.str{flex-shrink:0;min-width:40px;text-align:center;font-size:12px;font-weight:700;padding:4px 6px;border-radius:8px;background:var(--surface2);border:1px solid var(--border)}
+.str.liten{color:var(--text3);text-decoration:line-through}
+.legg{display:grid;grid-template-columns:1fr 70px;gap:6px}
+.legg2{display:grid;grid-template-columns:1fr 1fr auto;gap:6px;margin-top:6px}
+select.hinput{appearance:auto}
+.gruppe{font-size:11px;font-weight:600;color:var(--text3);text-transform:uppercase;letter-spacing:.05em;margin:4px 0 2px;display:flex;justify-content:space-between;align-items:center}
+@media(min-width:700px){.fw{max-width:560px}}
+</style>
+<link rel="stylesheet" href="felles/gran.css">
+</head>
+<body>
+<div class="fw">
+  <div class="top-bar">
+    <h1 class="app-title"><i class="ti ti-shirt" aria-hidden="true"></i> Klær og utstyr</h1>
+    <div class="top-right"><button class="icon-btn" id="theme-btn" aria-label="Bytt mellom lyst og mørkt tema"></button></div>
+  </div>
+  <div class="chips" id="barn-chips"></div>
+  <div id="innhold"></div>
+
+  <div class="modal-bg" id="plagg-modal" style="display:none">
+    <div class="modal" role="dialog" aria-modal="true" aria-labelledby="pm-tittel">
+      <p class="modal-title" id="pm-tittel">Rediger</p>
+      <label for="pm-type">Hva</label><input class="hinput" id="pm-type" maxlength="40" list="typer" />
+      <div style="display:flex;gap:8px">
+        <div style="flex:1"><label for="pm-str">Størrelse</label><input class="hinput" id="pm-str" maxlength="10" list="storrelser" /></div>
+        <div style="flex:1"><label for="pm-antall">Antall</label><input class="hinput" id="pm-antall" type="number" min="1" max="99" inputmode="numeric" /></div>
+      </div>
+      <label for="pm-status">Status</label><select class="hinput" id="pm-status"></select>
+      <label for="pm-sted">Hvor ligger det / arvet eller lånt fra</label><input class="hinput" id="pm-sted" maxlength="60" placeholder="F.eks. kasse på loftet, arvet fra kusine" />
+      <div class="modal-actions">
+        <button class="btn-danger" id="pm-slett">Slett</button>
+        <button class="btn-ghost" id="pm-avbryt">Avbryt</button>
+        <button class="btn-primary" id="pm-lagre">Lagre</button>
+      </div>
+    </div>
+  </div>
+  <datalist id="typer"></datalist><datalist id="storrelser"></datalist>
+  <div class="status-bar" id="status-bar"></div>
+</div>
+
+<script type="module">
+// ── Klær og utstyr («Vokseskapet») ───────────────────────────
+// Hva barna har, i hvilken størrelse, og hva som mangler før neste sesong.
+//   klaer = { plagg:[{id,barn,type,str,status,antall?,sted?}], nextId }
+//   status: bruk (i bruk) | neste (ligger klar i neste størrelse) | trengs | ut (vokst ut av)
+// Størrelsen barnet bruker nå regnes fra siste høyde i Vekst (klesstørrelse ≈ høyde i cm),
+// skostørrelsen likeså. Sesonglista viser hva som mangler i størrelsen barnet bruker nå.
+import { requireAuth } from './felles/auth.js';
+import { dbGet, dbListen } from './felles/storage.js';
+import { esc, todayStr, initTheme, toggleTheme, setStatus } from './felles/ui.js';
+import { monterNav } from './felles/nav.js';
+import { visAngre } from './felles/angre.js';
+import { flettLager, endreTrygt } from './felles/flett.js';
+import { monterHjelp } from './felles/hjelp.js';
+monterHjelp('klaer');
+initTheme();
+document.getElementById('theme-btn').addEventListener('click', toggleTheme);
+
+const APP='klaer';
+const STATUS=[['bruk','I bruk'],['neste','Klar – neste størrelse'],['trengs','Trengs'],['ut','Vokst ut av']];
+const ST_NAVN=Object.fromEntries(STATUS);
+const STR=[44,50,56,62,68,74,80,86,92,98,104,110,116,122,128,134,140,146,152,158,164,170];
+// Sesonglister: det de fleste barn i Norge trenger. Treff på del av ordet («Ullsett» treffer «ullsett str 92»).
+const SESONG={
+  vinter:{navn:'Vinter',ting:['Vinterdress','Ullsett','Ullsokker','Lue','Votter','Hals','Vintersko','Innesko']},
+  host:{navn:'Høst og vår',ting:['Regndress','Støvler','Fleece','Ulldress','Lue','Fingervotter','Innesko']},
+  sommer:{navn:'Sommer',ting:['Solhatt','Sandaler','Shorts','Badetøy','Tynn jakke','Joggesko']},
+};
+const SKO_TYPER=/sko|støvl|sandal/i;
+let FAMILIE=null, barn=[], maalinger=[], data=null, lager=null, dataLoaded=false, aktivBarn=null;
+const $=id=>document.getElementById(id);
+
+function normaliser(d){
+  const b=d&&typeof d==='object'?d:{};
+  const plagg=(Array.isArray(b.plagg)?b.plagg:[]).filter(p=>p&&typeof p.id==='number').map(p=>{
+    const o={id:p.id,barn:p.barn,type:String(p.type||'').slice(0,40)||'Plagg',str:String(p.str??'').slice(0,10),
+      status:ST_NAVN[p.status]?p.status:'bruk'};
+    if(p.antall>1)o.antall=Math.min(99,Math.round(p.antall));
+    if(p.sted)o.sted=String(p.sted).slice(0,60);
+    return o;
+  });
+  const maks=Math.max(0,...plagg.map(p=>p.id));
+  return {plagg,nextId:typeof b.nextId==='number'&&b.nextId>maks?b.nextId:maks+1};
+}
+function sesongNa(){const m=new Date().getMonth()+1;return m>=11||m<=3?'vinter':m>=6&&m<=8?'sommer':'host';}
+function nesteSesong(){const m=new Date().getMonth()+1;return m>=8&&m<=10?'vinter':m>=2&&m<=4?(m===4?'sommer':'host'):null;}
+function sisteMaal(felt){
+  return [...maalinger].filter(m=>String(m.barn)===String(aktivBarn.id)&&m[felt])
+    .sort((a,b)=>(b.dato||'').localeCompare(a.dato||''))[0]||null;
+}
+function strFraHoyde(cm){return STR.find(s=>s>=cm)||STR[STR.length-1];}
+function nesteStr(s){const i=STR.indexOf(s);return i>=0&&i<STR.length-1?STR[i+1]:null;}
+function strTall(s){const m=/(\d+)/.exec(String(s||''));return m?parseInt(m[1]):null;}
+// Klesstørrelse og sko akkurat nå
+function naa(){
+  const h=sisteMaal('hoyde'),k=sisteMaal('sko');
+  const str=h?strFraHoyde(Number(h.hoyde)):null;
+  return {str,neste:str?nesteStr(str):null,hoyde:h,sko:k?Number(k.sko):null,skoMaal:k};
+}
+// Passer plagget nå? Klær: str ≥ dagens størrelse. Sko: str ≥ siste skostørrelse.
+function passer(p,n){
+  const t=strTall(p.str);if(t===null)return true; // «onesize», «M» o.l.
+  if(SKO_TYPER.test(p.type))return n.sko?t>=n.sko:true;
+  return n.str?t>=n.str:true;
+}
+const egne=()=>data.plagg.filter(p=>String(p.barn)===String(aktivBarn.id));
+
+async function load(){
+  setStatus('Laster...');
+  try{
+    const ctx=await requireAuth();
+    if(!ctx.familieId){setStatus('Ingen husstand – kontakt administrator','err');return;}
+    FAMILIE=ctx.familieId;
+    monterNav(FAMILIE,APP);
+    const p=await dbGet(FAMILIE,'personer');
+    barn=((p&&p.barn)||[]).filter(b=>b&&b.navn);
+    maalinger=((await dbGet(FAMILIE,'vekst'))?.maalinger)||[];
+    const saved=await dbGet(FAMILIE,APP);
+    data=normaliser(saved);
+    lager=flettLager('familier/'+FAMILIE+'/'+APP,{hent:()=>data,bruk:d=>{data=d;if(!opptatt())render();},normaliser});
+    lager.mottatt(saved,{brukDem:false});
+    dataLoaded=true;setStatus('');
+    const husk=localStorage.getItem('klaer_barn');
+    aktivBarn=barn.find(b=>String(b.id)===husk)||barn[0]||null;
+    dbListen(FAMILIE,APP,s=>{if(!lager)return;if(opptatt()){ventende={s};return;}ventende=null;lager.mottatt(s);});
+  }catch(e){setStatus('Kunne ikke laste – '+(e.message||'prøv igjen'),'err');return;}
+  render();
+}
+let ventende=null;
+function opptatt(){
+  if($('plagg-modal').style.display==='flex')return true;
+  return [...document.querySelectorAll('#innhold input')].some(i=>i.value.trim()&&i.id!=='ny-str');
+}
+setInterval(()=>{if(ventende&&lager&&!opptatt()){const v=ventende;ventende=null;lager.mottatt(v.s);}},3000);
+async function save(){
+  if(!dataLoaded||!lager){setStatus('Ikke lagret – data er ikke lastet','err');return false;}
+  try{const ok=await lager.lagre();setStatus(ok?'Lagret ✓':'Ikke lagret – prøv igjen',ok?'ok':'err');return ok;}
+  catch(e){setStatus('Kunne ikke lagre – prøv igjen','err');return false;}
+}
+function endret(){render();return save();}
+
+// ── Tegning ──────────────────────────────────────────────────
+function render(){
+  $('barn-chips').innerHTML=barn.length>1?barn.map(b=>'<button class="chip'+(b===aktivBarn?' on':'')+'" data-barn="'+esc(String(b.id))+'">'+esc(b.navn)+'</button>').join(''):'';
+  if(!aktivBarn){$('innhold').innerHTML='<div class="empty-state" style="padding:3rem 1rem">Ingen barn registrert.<br><a href="onboarding.html" style="color:var(--accent-text)">Legg til barn i Endre oppsett</a></div>';return;}
+  const n=naa(),pl=egne();
+  const typer=[...new Set([...Object.values(SESONG).flatMap(s=>s.ting),...data.plagg.map(p=>p.type)])];
+  $('typer').innerHTML=typer.map(t=>'<option value="'+esc(t)+'">').join('');
+  $('storrelser').innerHTML=STR.map(s=>'<option value="'+s+'">').join('');
+  let html='<div class="card"><div class="naa">'
+    +'<div><small>Klær nå</small><b>'+(n.str?'str '+n.str:'?')+'</b><span>'+(n.hoyde?esc(n.hoyde.hoyde+' cm · målt '+fmtD(n.hoyde.dato)):'Mål høyden i Vekst')+'</span></div>'
+    +'<div><small>Neste</small><b>'+(n.neste?'str '+n.neste:'–')+'</b><span>kjøp eller arv i denne</span></div>'
+    +'<div><small>Sko</small><b>'+(n.sko?n.sko:'?')+'</b><span>'+(n.skoMaal?'målt '+esc(fmtD(n.skoMaal.dato)):'Legg inn i Vekst')+'</span></div>'
+    +'</div></div>';
+  // Sesongsjekk
+  const ses=[sesongNa(),nesteSesong()].filter((x,i,a)=>x&&a.indexOf(x)===i);
+  ses.forEach((k,i)=>{
+    const s=SESONG[k];
+    const rader=s.ting.map(t=>{
+      const har=pl.filter(p=>p.type.toLowerCase().includes(t.toLowerCase())&&(p.status==='bruk'||p.status==='neste')&&passer(p,n));
+      const trengs=pl.find(p=>p.type.toLowerCase().includes(t.toLowerCase())&&p.status==='trengs');
+      return '<div class="sjekk"><span class="'+(har.length?'ok':'mangler')+'">'+(har.length?'✓':trengs?'…':'✗')+'</span>'
+        +'<span class="tekst">'+esc(t)+(har.length?'<small>'+esc(har.map(p=>'str '+(p.str||'?')+(p.status==='neste'?' (klar)':'')).join(', '))+'</small>':trengs?'<small>Står på «trengs»</small>':'')+'</span>'
+        +(!har.length&&!trengs?'<button class="mini" data-trengs="'+esc(t)+'">+ Trengs</button>':'')
+        +(!har.length?'<button class="mini" data-har="'+esc(t)+'">Har</button>':'')+'</div>';
+    }).join('');
+    const mangler=s.ting.filter(t=>!pl.some(p=>p.type.toLowerCase().includes(t.toLowerCase())&&(p.status==='bruk'||p.status==='neste')&&passer(p,n))).length;
+    html+='<div class="card"><div class="card-title">'+(i?'Snart: ':'')+s.navn+(n.str?' i str '+n.str:'')+'<span style="margin-left:auto;font-weight:600;color:'+(mangler?'var(--danger)':'var(--green)')+'">'+(mangler?mangler+' mangler':'Alt på plass ✓')+'</span></div>'+rader+'</div>';
+  });
+  // Legg til
+  html+='<div class="card"><div class="card-title">Legg til</div>'
+    +'<div class="legg"><input class="hinput" id="ny-type" maxlength="40" list="typer" placeholder="Hva – f.eks. vinterdress" aria-label="Hva" />'
+    +'<input class="hinput" id="ny-str" maxlength="10" list="storrelser" placeholder="str" value="'+esc(String(n.str||''))+'" aria-label="Størrelse" /></div>'
+    +'<div class="legg2"><select class="hinput" id="ny-status" aria-label="Status">'+STATUS.map(([k,v])=>'<option value="'+k+'">'+v+'</option>').join('')+'</select>'
+    +'<input class="hinput" id="ny-sted" maxlength="60" placeholder="Hvor / arvet fra" aria-label="Hvor" />'
+    +'<button class="btn-ghost" id="ny-btn">+</button></div></div>';
+  // Lister per status
+  const gruppe=(st,tittel,ekstra)=>{
+    const l=pl.filter(p=>p.status===st).sort((a,b)=>(strTall(a.str)||0)-(strTall(b.str)||0)||a.type.localeCompare(b.type,'nb'));
+    if(!l.length)return '';
+    return '<div class="card"><div class="gruppe"><span>'+tittel+' ('+l.reduce((s,p)=>s+(p.antall||1),0)+')</span>'+(ekstra||'')+'</div>'
+      +l.map(p=>{const liten=st==='bruk'&&!passer(p,n);return '<div class="plagg"><span class="str'+(liten?' liten':'')+'">'+esc(p.str||'?')+'</span>'
+        +'<button class="p-tekst" data-rediger="'+p.id+'"><b>'+esc(p.type)+(p.antall>1?' ×'+p.antall:'')+'</b>'
+        +((p.sted||liten)?'<small>'+esc([liten?'Kan være for lite':'',p.sted||''].filter(Boolean).join(' · '))+'</small>':'')+'</button>'
+        +(st==='trengs'?'<button class="mini prim" data-kjopt="'+p.id+'">Kjøpt</button>':'')
+        +(st==='neste'?'<button class="mini" data-ta-i-bruk="'+p.id+'">Ta i bruk</button>':'')
+        +(st==='bruk'&&liten?'<button class="mini" data-ut="'+p.id+'">Vokst ut</button>':'')+'</div>';}).join('')+'</div>';
+  };
+  html+=gruppe('trengs','Trengs','<button class="mini prim" id="til-handleliste"><i class="ti ti-shopping-cart"></i> Til handlelista</button>')
+    +gruppe('bruk','I bruk')+gruppe('neste','Klar – neste størrelse')
+    +gruppe('ut','Vokst ut av – gi bort eller selg','<button class="mini" id="rydd-ut">Fjern alle</button>');
+  if(!pl.length)html+='<div class="empty-state">Ingen plagg registrert ennå.<br>Start med det som mangler i sesonglista over.</div>';
+  $('innhold').innerHTML=html;
+}
+function fmtD(ds){return ds?new Date(ds+'T12:00:00').toLocaleDateString('nb-NO',{day:'numeric',month:'short'}):'';}
+
+// ── Handlinger ───────────────────────────────────────────────
+function nyttPlagg(type,str,status,sted){
+  const p={id:data.nextId++,barn:aktivBarn.id,type:type.slice(0,40),str:String(str||'').slice(0,10),status};
+  if(sted)p.sted=sted.slice(0,60);
+  data.plagg.push(p);return p;
+}
+function leggTil(){
+  const t=$('ny-type').value.trim();if(!t){$('ny-type').focus();return;}
+  nyttPlagg(t,$('ny-str').value.trim(),$('ny-status').value,$('ny-sted').value.trim());
+  $('ny-type').value='';$('ny-sted').value='';
+  endret();$('ny-type')?.focus();
+}
+// «Trengs» → Diverse i handlelista (sted «Klær»), én rad per plagg som ikke står der fra før
+async function tilHandleliste(){
+  const l=egne().filter(p=>p.status==='trengs');if(!l.length)return;
+  const linjer=l.map(p=>p.type+(p.str?' str '+p.str:'')+' ('+aktivBarn.navn+')');
+  let lagt=0;
+  const ok=await endreTrygt('familier/'+FAMILIE+'/handleliste',hl=>{
+    if(!Array.isArray(hl.other))hl.other=[];
+    if(!Array.isArray(hl.otherPlaces))hl.otherPlaces=[];
+    if(!hl.otherPlaces.includes('Klær'))hl.otherPlaces.push('Klær');
+    let max=Math.max(100,...['items','templates','other'].flatMap(k=>(Array.isArray(hl[k])?hl[k]:[]).map(x=>x&&typeof x.id==='number'?x.id:0)));
+    lagt=0;
+    linjer.forEach(n=>{
+      if(hl.other.some(o=>o&&!o.checked&&String(o.name).toLowerCase()===n.toLowerCase()))return;
+      hl.other.push({id:++max,name:n,place:'Klær',qty:1,note:'',url:'',prio:false,checked:false,added:todayStr()});lagt++;
+    });
+    return hl;
+  });
+  setStatus(ok?(lagt?lagt+' lagt i handlelista under Diverse → Klær ✓':'Står allerede på handlelista'):'Fikk ikke lagt det i handlelista – prøv igjen',ok?'ok':'err');
+}
+function settStatus(id,st){const p=data.plagg.find(x=>x.id===id);if(!p)return;p.status=st;endret();}
+
+let redId=null;
+function aapne(id){
+  const p=data.plagg.find(x=>x.id===id);if(!p)return;
+  redId=id;
+  $('pm-tittel').textContent='Rediger '+p.type;
+  $('pm-type').value=p.type;$('pm-str').value=p.str||'';$('pm-antall').value=p.antall||1;$('pm-sted').value=p.sted||'';
+  $('pm-status').innerHTML=STATUS.map(([k,v])=>'<option value="'+k+'"'+(k===p.status?' selected':'')+'>'+v+'</option>').join('');
+  $('plagg-modal').style.display='flex';
+}
+function lukk(){$('plagg-modal').style.display='none';redId=null;}
+$('pm-lagre').addEventListener('click',()=>{
+  const p=data.plagg.find(x=>x.id===redId);if(!p){lukk();return;}
+  const t=$('pm-type').value.trim();if(!t){$('pm-type').focus();return;}
+  p.type=t.slice(0,40);p.str=$('pm-str').value.trim().slice(0,10);p.status=$('pm-status').value;
+  const a=parseInt($('pm-antall').value);if(a>1)p.antall=Math.min(99,a);else delete p.antall;
+  const s=$('pm-sted').value.trim();if(s)p.sted=s.slice(0,60);else delete p.sted;
+  lukk();endret();
+});
+$('pm-slett').addEventListener('click',()=>{
+  const i=data.plagg.findIndex(x=>x.id===redId);if(i<0){lukk();return;}
+  const p=data.plagg.splice(i,1)[0];lukk();endret();
+  visAngre('«'+p.type+'» slettet',()=>{if(data.plagg.some(x=>x.id===p.id))return;data.plagg.splice(Math.min(i,data.plagg.length),0,p);endret();});
+});
+$('pm-avbryt').addEventListener('click',lukk);
+$('plagg-modal').addEventListener('click',e=>{if(e.target.id==='plagg-modal')lukk();});
+document.addEventListener('keydown',e=>{if(e.key==='Escape'&&$('plagg-modal').style.display==='flex')lukk();});
+
+$('barn-chips').addEventListener('click',e=>{
+  const b=e.target.closest('[data-barn]');if(!b)return;
+  aktivBarn=barn.find(x=>String(x.id)===b.dataset.barn)||aktivBarn;
+  try{localStorage.setItem('klaer_barn',String(aktivBarn.id));}catch(e){}
+  render();
+});
+$('innhold').addEventListener('click',e=>{
+  const t=s=>e.target.closest(s);let b;
+  const n=naa();
+  if((b=t('[data-trengs]'))){nyttPlagg(b.dataset.trengs,n.str&&!SKO_TYPER.test(b.dataset.trengs)?n.str:(n.sko||''),'trengs');endret();return;}
+  if((b=t('[data-har]'))){nyttPlagg(b.dataset.har,n.str&&!SKO_TYPER.test(b.dataset.har)?n.str:(n.sko||''),'bruk');endret();return;}
+  if((b=t('[data-kjopt]'))){settStatus(parseInt(b.dataset.kjopt),'bruk');return;}
+  if((b=t('[data-ta-i-bruk]'))){settStatus(parseInt(b.dataset.taIBruk),'bruk');return;}
+  if((b=t('[data-ut]'))){settStatus(parseInt(b.dataset.ut),'ut');return;}
+  if((b=t('[data-rediger]'))){aapne(parseInt(b.dataset.rediger));return;}
+  if(t('#ny-btn')){leggTil();return;}
+  if(t('#til-handleliste')){tilHandleliste();return;}
+  if(t('#rydd-ut')){
+    const ut=egne().filter(p=>p.status==='ut');if(!ut.length)return;
+    const for_=data.plagg.slice();
+    data.plagg=data.plagg.filter(p=>!ut.includes(p));endret();
+    visAngre(ut.length+' plagg fjernet',()=>{const ids=new Set(data.plagg.map(p=>p.id));ut.forEach(p=>{if(!ids.has(p.id))data.plagg.push(p);});data.plagg.sort((a,b)=>for_.indexOf(a)-for_.indexOf(b));endret();});
+  }
+});
+$('innhold').addEventListener('keydown',e=>{if(e.key==='Enter'&&['ny-type','ny-str','ny-sted'].includes(e.target.id))leggTil();});
+load();
+</script>
+</body>
+</html>

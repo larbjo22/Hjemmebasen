@@ -16,6 +16,10 @@ export const APP_NAVN = {
   pakkelister: 'Pakkelister',
   vekst: 'Vekst',
   gaver: 'Gaver',
+  levering: 'Levering',
+  klaer: 'Klær',
+  barnevakt: 'Barnevakt',
+  intervju: 'Intervju',
 };
 
 // Tabler-ikonklasser (gran-designet): render som <i class="ti ${APP_IKON[app]}">
@@ -25,6 +29,7 @@ export const APP_IKON = {
   plikter: 'ti-star', sovn: 'ti-moon', helse: 'ti-first-aid-kit',
   beskjeder: 'ti-pin', pakkelister: 'ti-backpack', vekst: 'ti-ruler-2',
   gaver: 'ti-gift',
+  levering: 'ti-car', klaer: 'ti-shirt', barnevakt: 'ti-heart-handshake', intervju: 'ti-cake',
 };
 
 export function seedFamilie(navn, opprettetAv) {
@@ -34,7 +39,7 @@ export function seedFamilie(navn, opprettetAv) {
       opprettet: Date.now(),
       opprettetAv,
       onboardet: false,
-      apper: { handleliste: true, middag: true, oppgaver: true, fryser: true, plikter: true, sovn: true, helse: true, beskjeder: true, pakkelister: true, vekst: true, gaver: true },
+      apper: { handleliste: true, middag: true, oppgaver: true, fryser: true, plikter: true, sovn: true, helse: true, beskjeder: true, pakkelister: true, vekst: true, gaver: true, levering: true, klaer: true, barnevakt: true, intervju: true },
     },
     personer: { voksne: [], barn: [] },
 

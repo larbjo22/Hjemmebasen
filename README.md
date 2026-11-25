@@ -26,6 +26,11 @@ oppgaver.html     Oppgaver + hus-vedlikehold + gamification
 fryser.html       Fryseroversikt («bruk opp»-logikk)
 plikter.html      Pliktsporing for barn (poeng/belønninger)
 gaver.html        Gavebanken: idébank per person, anledninger med budsjett, status per gave
+levering.html     Hvem leverer og henter: fast ukemønster + unntak per dato
+klaer.html        Klær og utstyr per barn og størrelse, sesongliste (størrelse fra Vekst)
+barnevakt.html    Overleveringsark til barnevakt (leser Søvn, Middag og Helse)
+intervju.html     Bursdagsintervju (samme ti spørsmål hvert år) og tidskapsel-brev
+felles/imorgen.js «I morgen»-oppsummeringen – brukes av Hjem og kveldsvarselet (Node)
 nyheter.html      «Nytt i Hjemmebasen» – release notes for brukerne (innhold i felles/nyheter.js)
 felles/           Delte moduler: firebase-init, auth, storage, seed, ui + stil.css
 database.rules.json  Security rules (limes inn i Firebase Console)
