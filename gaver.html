@@ -1,0 +1,792 @@
+<!DOCTYPE html>
+<html lang="no">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@2.44.0/tabler-icons.min.css">
+<link rel="manifest" href="manifest.webmanifest">
+<meta name="theme-color" content="#2e5d4f">
+<link rel="apple-touch-icon" href="ikoner/apple-touch-icon.png">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="mobile-web-app-capable" content="yes">
+<title>Gaver</title>
+<link rel="stylesheet" href="felles/stil.css">
+<style>
+.faner{display:flex;gap:4px;margin-bottom:.75rem;background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:4px}
+.fane{flex:1;text-align:center;padding:7px 4px;font-size:12.5px;font-weight:600;border-radius:7px;cursor:pointer;color:var(--text2);border:none;background:transparent}
+.fane.on{background:var(--accent);color:#fff}
+.tilbake{font-size:13px;color:var(--text2);display:inline-flex;align-items:center;gap:4px;margin-bottom:8px;background:none;border:none;cursor:pointer;padding:4px 0}
+.rad2{display:flex;gap:8px;align-items:center;margin-top:8px}
+.rad2 label{font-size:11.5px;color:var(--text3);margin:0;flex-shrink:0}
+.rad2 .hinput{font-size:12.5px;padding:6px 8px;margin:0}
+.kort-knapp{cursor:pointer;display:block;width:100%;text-align:left;font:inherit;color:inherit}
+.k-topp{display:flex;align-items:center;gap:10px}
+.k-emoji{font-size:24px;flex-shrink:0}
+.k-navn{flex:1;font-size:15px;font-weight:700;min-width:0;overflow:hidden;text-overflow:ellipsis}
+.k-tall{font-size:12px;font-weight:600;color:var(--text3);white-space:nowrap}
+.k-tall.ferdig{color:var(--green)}
+.k-sub{display:flex;flex-wrap:wrap;gap:3px 10px;margin-top:5px;font-size:11.5px;color:var(--text3)}
+.k-sub .over{color:var(--danger);font-weight:600}
+.bar{height:6px;background:var(--surface2);border-radius:3px;overflow:hidden;margin-top:8px}
+.bar>div{height:100%;background:var(--accent);border-radius:3px;transition:width .25s}
+.bar.ferdig>div{background:var(--green)}
+.chips{display:flex;gap:5px;overflow-x:auto;scrollbar-width:none;margin-top:10px;padding-bottom:2px}
+.chips::-webkit-scrollbar{display:none}
+.chip{flex-shrink:0;font-size:12px;font-weight:600;padding:5px 10px;border-radius:14px;border:1px solid var(--border);background:var(--surface2);color:var(--text2);cursor:pointer;white-space:nowrap}
+.chip.on{background:var(--accent);border-color:var(--accent);color:#fff}
+.mot{padding:9px 0;border-bottom:1px solid var(--border2)}
+.mot:last-child{border-bottom:none}
+.mot-topp{display:flex;align-items:center;gap:6px}
+.mot-navn{flex:1;min-width:0;font-size:14px;font-weight:700;background:none;border:none;color:inherit;text-align:left;cursor:pointer;padding:2px 0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.mangler{font-size:11.5px;font-weight:600;color:var(--accent-text)}
+.mini{flex-shrink:0;font-size:12px;padding:4px 9px;border-radius:12px;border:1px solid var(--border);background:var(--surface2);color:var(--text2);cursor:pointer}
+.gave{display:flex;align-items:center;gap:8px;padding:5px 0 5px 2px}
+.st{flex-shrink:0;min-width:58px;font-size:11px;font-weight:700;padding:5px 6px;border-radius:10px;border:1px solid var(--border);background:var(--surface2);color:var(--text3);cursor:pointer;text-align:center}
+.st.kjopt{background:var(--accent-bg);border-color:var(--accent-border);color:var(--accent-text)}
+.st.pakket{background:var(--accent);border-color:var(--accent);color:#fff}
+.st.gitt{background:transparent;border-color:var(--green);color:var(--green)}
+.g-tekst{flex:1;min-width:0;background:none;border:none;color:inherit;font:inherit;font-size:13.5px;text-align:left;cursor:pointer;padding:2px 0}
+.g-tekst.gitt{color:var(--text3)}
+.g-meta{display:block;font-size:11px;color:var(--text3);margin-top:1px}
+.g-lenke{flex-shrink:0;color:var(--text3);font-size:16px;text-decoration:none;padding:4px}
+.gruppe-tittel{font-size:11px;font-weight:600;color:var(--text3);text-transform:uppercase;letter-spacing:.05em;margin:12px 0 2px;display:flex;justify-content:space-between}
+.legg-rad{display:flex;gap:6px;margin-top:10px}
+.legg-rad .hinput{flex:1;min-width:0}
+.forslag{display:flex;flex-wrap:wrap;gap:5px;margin:4px 0 8px}
+.forslag .chip{max-width:100%;overflow:hidden;text-overflow:ellipsis}
+.st-velg{display:flex;gap:5px}
+.st-velg .chip{flex:1;text-align:center}
+.to-felt{display:flex;gap:8px}
+.to-felt>div{flex:1;min-width:0}
+select.hinput{appearance:auto}
+.sjekk{display:flex;align-items:center;gap:8px;font-size:13px;color:var(--text);margin-top:10px}
+.sjekk input{width:18px;height:18px}
+details.eldre>summary{cursor:pointer;color:var(--text3);font-size:12.5px;padding:6px 2px}
+textarea.hinput{resize:vertical;font-family:inherit}
+@media(min-width:700px){.fw{max-width:560px}}
+</style>
+<link rel="stylesheet" href="felles/gran.css">
+</head>
+<body>
+<div class="fw">
+  <div class="top-bar">
+    <h1 class="app-title"><i class="ti ti-gift" aria-hidden="true"></i> Gaver</h1>
+    <div class="top-right">
+      <button class="icon-btn" id="theme-btn" aria-label="Bytt mellom lyst og mørkt tema"></button>
+    </div>
+  </div>
+
+  <div class="faner" id="faner" role="tablist">
+    <button class="fane on" data-fane="anledninger" role="tab">Anledninger</button>
+    <button class="fane" data-fane="personer" role="tab">Personer</button>
+    <button class="fane" data-fane="ideer" role="tab">Løse ideer</button>
+  </div>
+
+  <div id="innhold"></div>
+
+  <!-- Gave / idé -->
+  <div class="modal-bg" id="gave-modal" style="display:none">
+    <div class="modal" role="dialog" aria-modal="true" aria-labelledby="gm-tittel">
+      <p class="modal-title" id="gm-tittel">Gave</p>
+      <div id="gm-forslag"></div>
+      <label for="gm-tekst">Hva</label>
+      <input class="hinput" id="gm-tekst" maxlength="120" placeholder="F.eks. pysj, bok, gavekort kino" />
+      <div class="to-felt">
+        <div><label for="gm-mottaker">Til</label><select class="hinput" id="gm-mottaker"></select></div>
+        <div><label for="gm-anledning">Anledning</label><select class="hinput" id="gm-anledning"></select></div>
+      </div>
+      <label>Status</label>
+      <div class="st-velg" id="gm-status"></div>
+      <div class="to-felt">
+        <div><label for="gm-pris">Pris (kr)</label><input class="hinput" id="gm-pris" type="number" inputmode="numeric" min="0" step="1" /></div>
+        <div><label for="gm-kjoper">Hvem kjøper</label><select class="hinput" id="gm-kjoper"></select></div>
+      </div>
+      <label for="gm-lenke">Lenke til butikk</label>
+      <input class="hinput" id="gm-lenke" inputmode="url" autocapitalize="off" autocorrect="off" spellcheck="false" placeholder="https://…" />
+      <label for="gm-notat">Notat</label>
+      <input class="hinput" id="gm-notat" maxlength="140" placeholder="F.eks. deles med søsken, må vippses" />
+      <label class="sjekk"><input type="checkbox" id="gm-usikker" /> Usikker idé (vises med «?»)</label>
+      <div class="modal-actions">
+        <button class="btn-danger" id="gm-slett">Slett</button>
+        <button class="btn-ghost" id="gm-avbryt">Avbryt</button>
+        <button class="btn-primary" id="gm-lagre">Lagre</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Person / mottaker -->
+  <div class="modal-bg" id="mot-modal" style="display:none">
+    <div class="modal" role="dialog" aria-modal="true" aria-labelledby="mm-tittel">
+      <p class="modal-title" id="mm-tittel">Rediger</p>
+      <label for="mm-navn">Navn (person, par eller gruppe)</label>
+      <input class="hinput" id="mm-navn" maxlength="40" />
+      <label for="mm-onsk">Lenke til ønskeliste</label>
+      <input class="hinput" id="mm-onsk" inputmode="url" autocapitalize="off" autocorrect="off" spellcheck="false" placeholder="https://…" />
+      <label for="mm-notat">Notat</label>
+      <input class="hinput" id="mm-notat" maxlength="140" placeholder="F.eks. størrelser, liker ikke, har allerede" />
+      <div class="modal-actions">
+        <button class="btn-danger" id="mm-slett">Slett</button>
+        <button class="btn-ghost" id="mm-avbryt">Avbryt</button>
+        <button class="btn-primary" id="mm-lagre">Lagre</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Anledning -->
+  <div class="modal-bg" id="anl-modal" style="display:none">
+    <div class="modal" role="dialog" aria-modal="true" aria-labelledby="am-tittel">
+      <p class="modal-title" id="am-tittel">Rediger anledningen</p>
+      <label for="am-navn">Navn</label>
+      <input class="hinput" id="am-navn" maxlength="40" />
+      <div class="to-felt">
+        <div><label for="am-dato">Dato</label><input class="hinput" id="am-dato" type="date" /></div>
+        <div><label for="am-budsjett">Budsjett (kr)</label><input class="hinput" id="am-budsjett" type="number" inputmode="numeric" min="0" step="1" /></div>
+      </div>
+      <button class="btn-ghost" id="am-avslutt" style="width:100%;margin-top:12px"></button>
+      <div class="modal-actions">
+        <button class="btn-danger" id="am-slett">Slett</button>
+        <button class="btn-ghost" id="am-avbryt">Avbryt</button>
+        <button class="btn-primary" id="am-lagre">Lagre</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Lim inn -->
+  <div class="modal-bg" id="lim-modal" style="display:none">
+    <div class="modal" role="dialog" aria-modal="true" aria-labelledby="lm-tittel">
+      <p class="modal-title" id="lm-tittel">Lim inn</p>
+      <p style="font-size:11.5px;color:var(--text3);margin-bottom:8px" id="lm-hjelp"></p>
+      <textarea class="hinput" id="lm-tekst" rows="8"></textarea>
+      <div class="modal-actions">
+        <button class="btn-ghost" id="lm-avbryt">Avbryt</button>
+        <button class="btn-primary" id="lm-legg">Legg til</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="status-bar" id="status-bar"></div>
+</div>
+
+<script type="module">
+// ── Gavebanken ───────────────────────────────────────────────
+// Hvem skal ha gave, hva ønsker de seg, og hva har vi kjøpt.
+//   mottakere   – person, par eller gruppe, med idébank som lever på tvers av år
+//   anledninger – «Jul 2026», «Bestemor 70 år»: hvem som skal ha gave, budsjett
+//   gaver       – én idé/gave: mottaker (eller ingen = løs idé), anledning (eller ingen = idébank),
+//                 status ide → kjopt → pakket → gitt, pris, lenke, hvem kjøper, notat, usikker
+// Alt er synlig for alle i husstanden. Lagring med felles/flett.js (les ferskt, slå sammen, skriv).
+import { requireAuth } from './felles/auth.js';
+import { dbGet, dbListen } from './felles/storage.js';
+import { esc, todayStr, initTheme, toggleTheme, setStatus } from './felles/ui.js';
+import { monterNav } from './felles/nav.js';
+import { visAngre } from './felles/angre.js';
+import { flettLager } from './felles/flett.js';
+import { monterHjelp } from './felles/hjelp.js';
+monterHjelp('gaver');
+
+initTheme();
+document.getElementById('theme-btn').addEventListener('click', toggleTheme);
+
+const APP='gaver';
+const STATUS=['ide','kjopt','pakket','gitt'];
+const ST_NAVN={ide:'Idé',kjopt:'Kjøpt',pakket:'Pakket',gitt:'Gitt'};
+let FAMILIE=null, MITT='', voksne=[], data=null, lager=null, dataLoaded=false;
+let fane='anledninger', aktivAnl=null, aktivMot=null, anlFilter='alle';
+const $=id=>document.getElementById(id);
+
+// ── Data ─────────────────────────────────────────────────────
+// Firebase dropper tomme lister og felt, så alt fylles inn igjen her. Rekkefølgen på
+// nøklene er fast: lageret sammenligner data som tekst.
+function tekst(x,maks){return typeof x==='string'?x.slice(0,maks):'';}
+function normaliser(d){
+  const b=d&&typeof d==='object'?d:{};
+  const liste=x=>(Array.isArray(x)?x:[]).filter(o=>o&&typeof o==='object');
+  let mottakere=liste(b.mottakere).filter(m=>typeof m.id==='number').map(m=>{
+    const o={id:m.id,navn:tekst(m.navn,40)||'Uten navn'};
+    if(m.onsk)o.onsk=tekst(m.onsk,400);
+    if(m.notat)o.notat=tekst(m.notat,140);
+    return o;
+  });
+  const mId=new Set(mottakere.map(m=>m.id));
+  let anledninger=liste(b.anledninger).filter(a=>typeof a.id==='number').map(a=>{
+    const o={id:a.id,navn:tekst(a.navn,40)||'Uten navn'};
+    if(/^\d{4}-\d{2}-\d{2}$/.test(a.dato||''))o.dato=a.dato;
+    if(typeof a.budsjett==='number'&&a.budsjett>0)o.budsjett=Math.round(a.budsjett);
+    if(a.avsluttet)o.avsluttet=true;
+    const mm=[...new Set((Array.isArray(a.mottakere)?a.mottakere:[]).filter(x=>mId.has(x)))];
+    if(mm.length)o.mottakere=mm;
+    return o;
+  });
+  const aId=new Set(anledninger.map(a=>a.id));
+  let gaver=liste(b.gaver).filter(g=>typeof g.id==='number').map(g=>{
+    const o={id:g.id,tekst:tekst(g.tekst,120)||'Uten navn',status:STATUS.includes(g.status)?g.status:'ide'};
+    if(mId.has(g.mottaker))o.mottaker=g.mottaker;
+    if(aId.has(g.anledning))o.anledning=g.anledning;
+    if(typeof g.pris==='number'&&g.pris>0)o.pris=Math.round(g.pris);
+    if(g.lenke)o.lenke=tekst(g.lenke,400);
+    if(g.kjoper)o.kjoper=tekst(g.kjoper,30);
+    if(g.notat)o.notat=tekst(g.notat,140);
+    if(g.usikker)o.usikker=true;
+    return o;
+  });
+  const maks=Math.max(0,...mottakere.map(x=>x.id),...anledninger.map(x=>x.id),...gaver.map(x=>x.id));
+  const nextId=typeof b.nextId==='number'&&b.nextId>maks?b.nextId:maks+1;
+  return {mottakere,anledninger,gaver,nextId};
+}
+const mot=id=>data.mottakere.find(m=>m.id===id)||null;
+const anl=id=>data.anledninger.find(a=>a.id===id)||null;
+const anlMot=a=>a.mottakere||[];
+function finnMot(navn){const n=navn.trim().toLowerCase();return data.mottakere.find(m=>m.navn.toLowerCase()===n)||null;}
+function nyMot(navn){const m={id:data.nextId++,navn:navn.trim().slice(0,40)};data.mottakere.push(m);return m;}
+function nyGave(o){const g={id:data.nextId++,tekst:o.tekst.trim().slice(0,120),status:o.status||'ide'};
+  ['mottaker','anledning','pris','lenke','kjoper','notat','usikker'].forEach(k=>{if(o[k])g[k]=o[k];});
+  data.gaver.push(g);return g;}
+function leggIAnl(a,mid){if(mid&&!anlMot(a).includes(mid))a.mottakere=[...anlMot(a),mid];}
+// Bare http(s)-lenker slipper gjennom til href («www.…» får https foran)
+function tryggLenke(u){
+  u=(u||'').trim();if(!u)return '';
+  if(/^www\./i.test(u))u='https://'+u;
+  return /^https?:\/\/[^\s"'<>]+$/i.test(u)?u.slice(0,400):'';
+}
+function kr(n){return Math.round(n).toLocaleString('nb-NO')+' kr';}
+function dagerTil(ds){const [y,m,d]=ds.split('-').map(Number);const [ty,tm,td]=todayStr().split('-').map(Number);
+  return Math.round((new Date(y,m-1,d)-new Date(ty,tm-1,td))/86400000);}
+function fmtDato(ds){return new Date(ds+'T12:00:00').toLocaleDateString('nb-NO',{weekday:'short',day:'numeric',month:'short',year:'numeric'});}
+function narTekst(ds){const n=dagerTil(ds);return n===0?'i dag':n===1?'i morgen':n>1?'om '+n+' dager':n===-1?'i går':'for '+(-n)+' dager siden';}
+
+// ── Last og lagre ────────────────────────────────────────────
+async function load(){
+  setStatus('Laster...');
+  try{
+    const ctx=await requireAuth();
+    if(!ctx.familieId){setStatus('Ingen husstand – kontakt administrator','err');return;}
+    FAMILIE=ctx.familieId;
+    MITT=(ctx.medlem?.navn||'').trim().split(/\s+/)[0]||'';
+    monterNav(FAMILIE,APP);
+    const personer=await dbGet(FAMILIE,'personer');
+    voksne=((personer&&personer.voksne)||[]).filter(x=>typeof x==='string'&&x.trim());
+    // dbGet gir null bare når noden er tom (ny husstand) – da er det trygt å starte blankt
+    const saved=await dbGet(FAMILIE,APP);
+    data=normaliser(saved);
+    lager=flettLager('familier/'+FAMILIE+'/'+APP,{hent:()=>data,bruk:d=>{data=d;if(!opptatt())render();},normaliser});
+    lager.mottatt(saved,{brukDem:false});
+    dataLoaded=true;
+    setStatus('');
+    startListen();
+  }catch(e){setStatus('Kunne ikke laste – '+(e.message||'prøv igjen'),'err');return;}
+  render();
+}
+async function save(){
+  if(!dataLoaded||!lager){setStatus('Ikke lagret – data er ikke lastet ennå. Last siden på nytt.','err');return false;}
+  const treg=setTimeout(()=>setStatus('Venter på nett – lagres når forbindelsen er tilbake','err'),8000);
+  try{
+    const ok=await lager.lagre();
+    setStatus(ok?'Lagret ✓':'Ikke lagret – prøv igjen',ok?'ok':'err');
+    return ok;
+  }catch(e){setStatus('Kunne ikke lagre – prøv igjen','err');return false;}
+  finally{clearTimeout(treg);}
+}
+// Tegn først, lagre etterpå
+function endret(){render();return save();}
+function modalAapen(){return ['gave-modal','mot-modal','anl-modal','lim-modal'].some(id=>$(id).style.display==='flex');}
+// Opptatt = dialog oppe eller noe skrevet i et felt som ikke er lagt til ennå
+function opptatt(){
+  if(modalAapen())return true;
+  return [...document.querySelectorAll('#innhold input[type=text]')].some(e=>e.value.trim());
+}
+let ventende=null;
+function startListen(){
+  dbListen(FAMILIE,APP,saved=>{
+    if(!lager)return;
+    if(opptatt()){ventende={saved};return;}
+    ventende=null;lager.mottatt(saved);
+  });
+}
+setInterval(()=>{if(ventende&&lager&&!opptatt()){const v=ventende;ventende=null;lager.mottatt(v.saved);}},3000);
+
+// ── Tegning ──────────────────────────────────────────────────
+function render(){
+  if(!data)return;
+  if(aktivAnl&&!anl(aktivAnl))aktivAnl=null;
+  if(aktivMot&&!mot(aktivMot))aktivMot=null;
+  document.querySelectorAll('#faner .fane').forEach(b=>{const on=b.dataset.fane===fane;b.classList.toggle('on',on);b.setAttribute('aria-selected',String(on));});
+  const el=$('innhold');
+  // Behold det som er skrevet i felt som overlever en ny tegning
+  const skrevet={};el.querySelectorAll('input[id]').forEach(i=>{if(i.value)skrevet[i.id]=i.value;});
+  const fokus=document.activeElement&&el.contains(document.activeElement)?document.activeElement.id:'';
+  el.innerHTML=fane==='anledninger'?(aktivAnl?htmlAnledning(anl(aktivAnl)):htmlAnledninger())
+    :fane==='personer'?(aktivMot?htmlPerson(mot(aktivMot)):htmlPersoner()):htmlIdeer();
+  Object.entries(skrevet).forEach(([id,v])=>{const i=$(id);if(i&&i.type!=='date'&&i.type!=='number')i.value=v;});
+  if(fokus&&$(fokus))$(fokus).focus();
+}
+function gaveRad(g,{visMot=false,visAnl=false}={}){
+  const meta=[];
+  if(visMot)meta.push(g.mottaker?mot(g.mottaker).navn:'Ingen mottaker');
+  if(visAnl&&g.anledning)meta.push(anl(g.anledning).navn);
+  if(g.pris)meta.push(kr(g.pris));
+  if(g.kjoper)meta.push(g.kjoper+' kjøper');
+  if(g.notat)meta.push(g.notat);
+  const l=tryggLenke(g.lenke);
+  return '<div class="gave">'
+    +'<button class="st '+g.status+'" data-status="'+g.id+'" title="Trykk for neste status" aria-label="Status '+ST_NAVN[g.status]+' – trykk for neste">'+ST_NAVN[g.status]+'</button>'
+    +'<button class="g-tekst'+(g.status==='gitt'?' gitt':'')+'" data-gave="'+g.id+'">'+esc(g.tekst)+(g.usikker?' <span style="color:var(--text3)">?</span>':'')
+      +(meta.length?'<span class="g-meta">'+esc(meta.join(' · '))+'</span>':'')+'</button>'
+    +(l?'<a class="g-lenke" href="'+esc(l)+'" target="_blank" rel="noopener noreferrer" title="Åpne lenken" aria-label="Åpne lenken"><i class="ti ti-external-link"></i></a>':'')
+    +'</div>';
+}
+function anlTall(a){
+  const gg=data.gaver.filter(g=>g.anledning===a.id);
+  const mm=anlMot(a);
+  const medGave=mm.filter(id=>gg.some(g=>g.mottaker===id)).length;
+  const klare=mm.filter(id=>{const egne=gg.filter(g=>g.mottaker===id);return egne.length&&egne.every(g=>g.status!=='ide');}).length;
+  const brukt=gg.filter(g=>g.status!=='ide').reduce((s,g)=>s+(g.pris||0),0);
+  const planlagt=gg.filter(g=>g.status==='ide').reduce((s,g)=>s+(g.pris||0),0);
+  return {gg,antall:mm.length,medGave,klare,brukt,planlagt};
+}
+function budsjettLinje(a,t){
+  if(!a.budsjett&&!t.brukt&&!t.planlagt)return '';
+  let s='Brukt '+kr(t.brukt)+(a.budsjett?' av '+kr(a.budsjett):'');
+  if(t.planlagt)s+=' · planlagt '+kr(t.planlagt);
+  const over=a.budsjett&&t.brukt+t.planlagt>a.budsjett;
+  return '<span'+(over?' class="over"':'')+'>'+esc(s)+(over?' – over budsjett':'')+'</span>';
+}
+function anlKort(a){
+  const t=anlTall(a),ferdig=t.antall>0&&t.klare===t.antall;
+  return '<button class="card kort-knapp" data-aapne-anl="'+a.id+'">'
+    +'<div class="k-topp"><span class="k-emoji">'+(a.avsluttet?'📦':'🎁')+'</span><span class="k-navn">'+esc(a.navn)+'</span>'
+    +'<span class="k-tall'+(ferdig?' ferdig':'')+'">'+(t.antall?t.klare+'/'+t.antall+(ferdig?' ✓':''):'tom')+'</span></div>'
+    +'<div class="k-sub">'+(a.dato?'<span><i class="ti ti-calendar" style="font-size:11px"></i> '+esc(fmtDato(a.dato))+(a.avsluttet?'':' · '+esc(narTekst(a.dato)))+'</span>':'')
+      +(t.antall&&!a.avsluttet&&t.medGave<t.antall?'<span>'+(t.antall-t.medGave)+' mangler idé</span>':'')+budsjettLinje(a,t)+'</div>'
+    +'<div class="bar'+(ferdig?' ferdig':'')+'"><div style="width:'+(t.antall?Math.round(t.klare/t.antall*100):0)+'%"></div></div></button>';
+}
+function htmlAnledninger(){
+  const sorter=(x,y)=>(x.dato&&y.dato?x.dato.localeCompare(y.dato):x.dato?-1:y.dato?1:x.navn.localeCompare(y.navn,'nb'));
+  const aktive=data.anledninger.filter(a=>!a.avsluttet).sort(sorter);
+  const eldre=data.anledninger.filter(a=>a.avsluttet).sort((x,y)=>-sorter(x,y));
+  const medMot=data.anledninger.filter(a=>anlMot(a).length);
+  return '<div class="card"><div class="card-title">Ny anledning</div>'
+    +'<div style="display:flex;gap:6px"><input type="text" id="ny-anl-navn" class="hinput" maxlength="40" placeholder="F.eks. Jul '+new Date().getFullYear()+', Bestemor 70 år" style="flex:1;min-width:0" aria-label="Navn på ny anledning" />'
+    +'<button class="btn-ghost" id="ny-anl-btn">Opprett</button></div>'
+    +'<div class="rad2"><label for="ny-anl-dato">Dato:</label><input type="date" id="ny-anl-dato" class="hinput" style="flex:0 1 160px" />'
+    +'<label for="ny-anl-budsjett">Budsjett:</label><input type="number" id="ny-anl-budsjett" class="hinput" inputmode="numeric" min="0" placeholder="kr" style="flex:1;min-width:0" /></div>'
+    +(medMot.length?'<div class="rad2"><label for="ny-anl-kopi">Samme personer som:</label><select id="ny-anl-kopi" class="hinput" style="flex:1;min-width:0"><option value="">Ingen – start tom</option>'
+      +medMot.map(a=>'<option value="'+a.id+'">'+esc(a.navn)+' ('+anlMot(a).length+')</option>').join('')+'</select></div>':'')
+    +'</div>'
+    +(aktive.map(anlKort).join('')||(eldre.length?'':'<div class="empty-state">Ingen anledninger ennå.<br>Lag den første – f.eks. «Jul '+new Date().getFullYear()+'» – og legg inn hvem som skal ha gave.</div>'))
+    +(eldre.length?'<details class="eldre"><summary>Tidligere ('+eldre.length+')</summary>'+eldre.map(anlKort).join('')+'</details>':'');
+}
+function htmlAnledning(a){
+  const t=anlTall(a),ferdig=t.antall>0&&t.klare===t.antall;
+  const egne=id=>t.gg.filter(g=>g.mottaker===id);
+  let mm=anlMot(a).map(mot).filter(Boolean);
+  if(anlFilter==='mangler')mm=mm.filter(m=>!egne(m.id).length);
+  if(anlFilter==='igjen')mm=mm.filter(m=>!egne(m.id).length||egne(m.id).some(g=>g.status==='ide'));
+  const uten=t.gg.filter(g=>!g.mottaker);
+  const chip=(k,n)=>'<button class="chip'+(anlFilter===k?' on':'')+'" data-anlfilter="'+k+'" aria-pressed="'+(anlFilter===k)+'">'+n+'</button>';
+  const ledige=data.mottakere.filter(m=>!anlMot(a).includes(m.id));
+  return '<button class="tilbake" data-tilbake="1">‹ Alle anledninger</button>'
+    +'<div class="card"><div class="k-topp"><span class="k-emoji">'+(a.avsluttet?'📦':'🎁')+'</span><span class="k-navn">'+esc(a.navn)+'</span>'
+    +'<span class="k-tall'+(ferdig?' ferdig':'')+'">'+(t.antall?t.klare+'/'+t.antall+' klare'+(ferdig?' ✓':''):'')+'</span>'
+    +'<button class="mini" data-rediger-anl="'+a.id+'" aria-label="Rediger anledningen"><i class="ti ti-edit"></i></button></div>'
+    +'<div class="k-sub">'+(a.dato?'<span><i class="ti ti-calendar" style="font-size:11px"></i> '+esc(fmtDato(a.dato))+(a.avsluttet?'':' · '+esc(narTekst(a.dato)))+'</span>':'')
+      +(a.avsluttet?'<span>Avsluttet</span>':'')+budsjettLinje(a,t)+'</div>'
+    +'<div class="bar'+(ferdig?' ferdig':'')+'"><div style="width:'+(t.antall?Math.round(t.klare/t.antall*100):0)+'%"></div></div>'
+    +'<div class="legg-rad"><input type="text" id="ny-anl-mot" class="hinput" maxlength="40" list="mot-liste" placeholder="Hvem skal ha gave?" aria-label="Legg til person" />'
+    +'<datalist id="mot-liste">'+ledige.map(m=>'<option value="'+esc(m.navn)+'">').join('')+'</datalist>'
+    +'<button class="btn-ghost" data-lim="anledning" title="Lim inn flere (én per linje)" aria-label="Lim inn flere"><i class="ti ti-clipboard-plus"></i></button>'
+    +'<button class="btn-ghost" id="ny-anl-mot-btn">+</button></div>'
+    +(t.antall?'<div class="chips">'+chip('alle','Alle '+t.antall)+chip('mangler','Mangler idé '+(t.antall-t.medGave))+chip('igjen','Ikke kjøpt '+(t.antall-t.klare))+'</div>':'')
+    +'<div style="margin-top:6px">'
+    +(mm.map(m=>{
+      const gg=egne(m.id);
+      return '<div class="mot"><div class="mot-topp"><button class="mot-navn" data-aapne-mot="'+m.id+'">'+esc(m.navn)+'</button>'
+        +(gg.length?'':'<span class="mangler">mangler idé</span>')
+        +'<button class="mini" data-ny-gave="'+m.id+'" aria-label="Ny gave til '+esc(m.navn)+'">+ gave</button>'
+        +'<button class="hrow-del" data-fjern-fra-anl="'+m.id+'" title="Ta ut av anledningen" aria-label="Ta '+esc(m.navn)+' ut av anledningen">×</button></div>'
+        +gg.map(g=>gaveRad(g)).join('')+'</div>';
+    }).join('')||'<div class="empty-state" style="padding:.8rem">'+(t.antall?'Ingen i dette utvalget.':'Legg inn hvem som skal ha gave over.')+'</div>')
+    +(uten.length&&anlFilter==='alle'?'<div class="gruppe-tittel"><span>Uten mottaker</span></div>'+uten.map(g=>gaveRad(g)).join(''):'')
+    +'</div></div>';
+}
+function htmlPersoner(){
+  const liste=[...data.mottakere].sort((x,y)=>x.navn.localeCompare(y.navn,'nb'));
+  return '<div class="card"><div class="card-title">Ny person</div>'
+    +'<div style="display:flex;gap:6px"><input type="text" id="ny-mot-navn" class="hinput" maxlength="40" placeholder="Person, par eller gruppe" style="flex:1;min-width:0" aria-label="Navn på ny person" />'
+    +'<button class="btn-ghost" id="ny-mot-btn">Legg til</button></div>'
+    +'<p style="font-size:11px;color:var(--text3);margin-top:6px">Skriv ned ønsker og ideer hele året, så er de klare når neste anledning kommer.</p></div>'
+    +(liste.length?'<div class="card">'+liste.map(m=>{
+      const gg=data.gaver.filter(g=>g.mottaker===m.id);
+      const ideer=gg.filter(g=>!g.anledning).length;
+      const sub=[ideer?ideer+(ideer===1?' idé':' ideer'):'ingen ideer ennå',gg.length-ideer?(gg.length-ideer)+' i anledninger':''].filter(Boolean).join(' · ');
+      return '<div class="hrow" style="cursor:pointer" data-aapne-mot="'+m.id+'" role="button" tabindex="0"><div class="hrow-main"><div class="hrow-title">'+esc(m.navn)+'</div>'
+        +'<div class="hrow-sub">'+esc(sub)+'</div></div>'+(tryggLenke(m.onsk)?'<i class="ti ti-list-heart" style="color:var(--text3)" title="Har ønskeliste"></i>':'')
+        +'<i class="ti ti-chevron-right" style="color:var(--text4)"></i></div>';
+    }).join('')+'</div>':'<div class="empty-state">Ingen personer ennå.<br>Legg inn dem dere pleier å gi gaver til.</div>');
+}
+function htmlPerson(m){
+  const gg=data.gaver.filter(g=>g.mottaker===m.id);
+  const ideer=gg.filter(g=>!g.anledning);
+  const l=tryggLenke(m.onsk);
+  const perAnl=[...data.anledninger].filter(a=>gg.some(g=>g.anledning===a.id))
+    .sort((x,y)=>(y.dato||'').localeCompare(x.dato||''));
+  return '<button class="tilbake" data-tilbake="1">‹ Alle personer</button>'
+    +'<div class="card"><div class="k-topp"><span class="k-navn">'+esc(m.navn)+'</span>'
+    +'<button class="mini" data-rediger-mot="'+m.id+'" aria-label="Rediger '+esc(m.navn)+'"><i class="ti ti-edit"></i></button></div>'
+    +(m.notat?'<div class="k-sub"><span>'+esc(m.notat)+'</span></div>':'')
+    +(l?'<a class="btn-ghost" href="'+esc(l)+'" target="_blank" rel="noopener noreferrer" style="display:block;text-align:center;text-decoration:none;margin-top:10px"><i class="ti ti-list-heart"></i> Åpne ønskelista</a>':'')
+    +'<div class="gruppe-tittel"><span>Ideer og ønsker</span><span>'+ideer.length+'</span></div>'
+    +(ideer.map(g=>gaveRad(g)).join('')||'<div style="font-size:12px;color:var(--text3);padding:4px 0">Ingen ideer ennå.</div>')
+    +'<div class="legg-rad"><input type="text" id="ny-ide" class="hinput" maxlength="120" placeholder="Ny idé – komma gir flere" aria-label="Ny idé" />'
+    +'<button class="btn-ghost" data-lim="ideer" title="Lim inn flere (én per linje)" aria-label="Lim inn flere"><i class="ti ti-clipboard-plus"></i></button>'
+    +'<button class="btn-ghost" id="ny-ide-btn">+</button></div>'
+    +perAnl.map(a=>'<div class="gruppe-tittel"><span>'+esc(a.navn)+'</span><span>'+(a.dato?esc(a.dato.slice(0,4)):'')+'</span></div>'
+      +gg.filter(g=>g.anledning===a.id).map(g=>gaveRad(g)).join('')).join('')
+    +'</div>';
+}
+function htmlIdeer(){
+  const lose=data.gaver.filter(g=>!g.mottaker&&!g.anledning);
+  return '<div class="card"><div class="card-title">Løse ideer</div>'
+    +'<p style="font-size:11.5px;color:var(--text3);margin-bottom:8px">Gode gaveideer som ikke hører til noen bestemt ennå – barnegaver, vertinnegaver, ting du kom over. Trykk på en idé for å gi den til noen.</p>'
+    +(lose.map(g=>gaveRad(g)).join('')||'<div style="font-size:12px;color:var(--text3);padding:4px 0">Ingen løse ideer ennå.</div>')
+    +'<div class="legg-rad"><input type="text" id="ny-ide" class="hinput" maxlength="120" placeholder="Ny idé – komma gir flere" aria-label="Ny idé" />'
+    +'<button class="btn-ghost" data-lim="ideer" title="Lim inn flere (én per linje)" aria-label="Lim inn flere"><i class="ti ti-clipboard-plus"></i></button>'
+    +'<button class="btn-ghost" id="ny-ide-btn">+</button></div></div>';
+}
+
+// ── Handlinger ───────────────────────────────────────────────
+// Én linje → idé. «??» til slutt = usikker. En ren lenke blir en idé med lenke.
+function ideFraTekst(linje){
+  let t=linje.replace(/^[\s*\-•·–]+/,'').trim();
+  if(!t)return null;
+  const o={};
+  const m=/(https?:\/\/\S+|www\.\S+)/i.exec(t);
+  if(m){const l=tryggLenke(m[1]);if(l){o.lenke=l;t=t.replace(m[1],'').trim();
+    if(!t){try{t=new URL(l).hostname.replace(/^www\./,'');}catch(e){t='Lenke';}}}}
+  if(/\?+$/.test(t)){o.usikker=true;t=t.replace(/\s*\?+$/,'').trim();}
+  if(!t)return null;
+  o.tekst=t.slice(0,120);
+  return o;
+}
+function leggIdeer(linjer){
+  let n=0;
+  linjer.forEach(l=>{const o=ideFraTekst(l);if(!o)return;if(aktivMot&&fane==='personer')o.mottaker=aktivMot;nyGave(o);n++;});
+  return n;
+}
+function nyIde(){
+  const inp=$('ny-ide');if(!inp||!inp.value.trim())return;
+  const n=leggIdeer(inp.value.split(','));
+  inp.value='';
+  if(n)endret();
+  $('ny-ide')?.focus();
+}
+function nyAnledning(){
+  const inp=$('ny-anl-navn'),navn=inp.value.trim();if(!navn)return;
+  if(!dataLoaded){setStatus('Dataene er ikke lastet – last siden på nytt','err');return;}
+  const a={id:data.nextId++,navn:navn.slice(0,40)};
+  const dato=$('ny-anl-dato').value,bud=parseInt($('ny-anl-budsjett').value);
+  if(dato)a.dato=dato;
+  if(bud>0)a.budsjett=bud;
+  const kopi=anl(parseInt($('ny-anl-kopi')?.value));
+  if(kopi)a.mottakere=[...anlMot(kopi)];
+  data.anledninger.push(a);
+  inp.value='';aktivAnl=a.id;anlFilter='alle';
+  endret();
+}
+function leggMotIAnl(){
+  const a=anl(aktivAnl),inp=$('ny-anl-mot');if(!a||!inp)return;
+  const navn=inp.value.trim();if(!navn)return;
+  const m=finnMot(navn)||nyMot(navn);
+  if(anlMot(a).includes(m.id))setStatus(m.navn+' står allerede på lista','err');
+  else leggIAnl(a,m.id);
+  inp.value='';
+  endret();
+  $('ny-anl-mot')?.focus();
+}
+function nyPerson(){
+  const inp=$('ny-mot-navn'),navn=inp.value.trim();if(!navn)return;
+  const fins=finnMot(navn);
+  if(fins){inp.value='';aktivMot=fins.id;render();return;}
+  const m=nyMot(navn);
+  inp.value='';aktivMot=m.id;
+  endret();
+}
+function nesteStatus(id){
+  const g=data.gaver.find(x=>x.id===id);if(!g)return;
+  g.status=STATUS[(STATUS.indexOf(g.status)+1)%STATUS.length];
+  // Den som merker gaven som kjøpt, står som kjøper hvis ingen er satt
+  if(g.status==='kjopt'&&!g.kjoper&&MITT)g.kjoper=MITT;
+  endret();
+}
+function fjernFraAnl(mid){
+  const a=anl(aktivAnl),m=mot(mid);if(!a||!m)return;
+  const gg=data.gaver.filter(g=>g.anledning===a.id&&g.mottaker===mid);
+  if(gg.some(g=>g.status!=='ide')&&!confirm(m.navn+' har gaver som er kjøpt til «'+a.navn+'». Ta ut likevel? Gavene blir liggende hos '+m.navn+'.'))return;
+  const idx=anlMot(a).indexOf(mid),aid=a.id,ids=gg.map(g=>g.id);
+  a.mottakere=anlMot(a).filter(x=>x!==mid);
+  gg.forEach(g=>{delete g.anledning;}); // tilbake i idébanken
+  endret();
+  visAngre(m.navn+' tatt ut av «'+a.navn+'»',()=>{
+    const aa=anl(aid);if(!aa||!mot(mid))return;
+    if(!anlMot(aa).includes(mid)){const l=[...anlMot(aa)];l.splice(Math.min(idx,l.length),0,mid);aa.mottakere=l;}
+    data.gaver.forEach(g=>{if(ids.includes(g.id)&&!g.anledning)g.anledning=aid;});
+    endret();
+  });
+}
+
+// ── Gave-dialogen ────────────────────────────────────────────
+let gm=null; // {id|null, status}
+function valg(sel,alt,valgt){sel.innerHTML=alt.map(([v,n])=>'<option value="'+esc(v)+'"'+(String(v)===String(valgt??'')?' selected':'')+'>'+esc(n)+'</option>').join('');}
+function aapneGave(id,forvalg={}){
+  const g=id?data.gaver.find(x=>x.id===id):null;
+  if(id&&!g)return;
+  const v=g||forvalg;
+  gm={id:g?g.id:null,status:v.status||'ide'};
+  $('gm-tittel').textContent=g?'Rediger':(v.mottaker?'Ny gave til '+mot(v.mottaker).navn:'Ny idé');
+  $('gm-tekst').value=v.tekst||'';
+  valg($('gm-mottaker'),[['','Ingen (løs idé)'],...[...data.mottakere].sort((x,y)=>x.navn.localeCompare(y.navn,'nb')).map(m=>[m.id,m.navn])],v.mottaker);
+  valg($('gm-anledning'),[['','Ingen (idébank)'],...data.anledninger.filter(a=>!a.avsluttet||a.id===v.anledning).map(a=>[a.id,a.navn])],v.anledning);
+  const kj=[...new Set([...voksne.map(x=>x.split(/\s+/)[0]),MITT,v.kjoper].filter(Boolean))];
+  valg($('gm-kjoper'),[['','Ikke bestemt'],...kj.map(x=>[x,x])],v.kjoper);
+  $('gm-pris').value=v.pris||'';
+  $('gm-lenke').value=v.lenke||'';
+  $('gm-notat').value=v.notat||'';
+  $('gm-usikker').checked=!!v.usikker;
+  $('gm-slett').style.display=g?'':'none';
+  // Ny gave i en anledning: foreslå det som ligger i personens idébank
+  const forslag=!g&&v.mottaker&&v.anledning?data.gaver.filter(x=>x.mottaker===v.mottaker&&!x.anledning):[];
+  $('gm-forslag').innerHTML=forslag.length?'<label>Fra idébanken</label><div class="forslag">'
+    +forslag.map(x=>'<button class="chip" data-bruk-ide="'+x.id+'">'+esc(x.tekst)+(x.usikker?' ?':'')+'</button>').join('')+'</div>':'';
+  tegnStatusValg();
+  $('gave-modal').style.display='flex';
+  if(!g)setTimeout(()=>$('gm-tekst').focus(),50);
+}
+function tegnStatusValg(){
+  $('gm-status').innerHTML=STATUS.map(s=>'<button type="button" class="chip'+(gm.status===s?' on':'')+'" data-velg-status="'+s+'" aria-pressed="'+(gm.status===s)+'">'+ST_NAVN[s]+'</button>').join('');
+}
+function lukk(id){$(id).style.display='none';if(ventende&&lager&&!opptatt()){const v=ventende;ventende=null;lager.mottatt(v.saved);}}
+function lagreGave(){
+  const t=$('gm-tekst').value.trim();
+  if(!t){$('gm-tekst').focus();return;}
+  const ny={tekst:t.slice(0,120),status:gm.status,
+    mottaker:parseInt($('gm-mottaker').value)||0,anledning:parseInt($('gm-anledning').value)||0,
+    pris:Math.max(0,parseInt($('gm-pris').value)||0),lenke:tryggLenke($('gm-lenke').value),
+    kjoper:$('gm-kjoper').value,notat:$('gm-notat').value.trim().slice(0,140),usikker:$('gm-usikker').checked};
+  if($('gm-lenke').value.trim()&&!ny.lenke){setStatus('Lenken må starte med https://','err');$('gm-lenke').focus();return;}
+  let g=gm.id?data.gaver.find(x=>x.id===gm.id):null;
+  if(gm.id&&!g){lukk('gave-modal');setStatus('Gaven er slettet på en annen telefon','err');render();return;}
+  if(!g)g=nyGave({tekst:t});
+  g.tekst=ny.tekst;g.status=ny.status;
+  ['mottaker','anledning','pris','lenke','kjoper','notat','usikker'].forEach(k=>{if(ny[k])g[k]=ny[k];else delete g[k];});
+  // Mottakeren skal stå på lista i anledningen gaven hører til
+  if(g.anledning&&g.mottaker)leggIAnl(anl(g.anledning),g.mottaker);
+  lukk('gave-modal');endret();
+}
+function slettGave(){
+  const idx=data.gaver.findIndex(x=>x.id===gm.id);if(idx<0){lukk('gave-modal');return;}
+  const g=data.gaver[idx];
+  data.gaver.splice(idx,1);
+  lukk('gave-modal');endret();
+  visAngre('«'+g.tekst+'» slettet',()=>{
+    if(data.gaver.some(x=>x.id===g.id))return;
+    data.gaver.splice(Math.min(idx,data.gaver.length),0,g);endret();
+  });
+}
+
+// ── Person-dialogen ──────────────────────────────────────────
+let mmId=null;
+function aapneMot(id){
+  const m=mot(id);if(!m)return;
+  mmId=id;
+  $('mm-tittel').textContent='Rediger '+m.navn;
+  $('mm-navn').value=m.navn;$('mm-onsk').value=m.onsk||'';$('mm-notat').value=m.notat||'';
+  $('mot-modal').style.display='flex';
+}
+function lagreMot(){
+  const m=mot(mmId);if(!m){lukk('mot-modal');return;}
+  const navn=$('mm-navn').value.trim();if(!navn){$('mm-navn').focus();return;}
+  const annen=finnMot(navn);
+  if(annen&&annen.id!==m.id){setStatus(navn+' finnes allerede','err');return;}
+  const onsk=tryggLenke($('mm-onsk').value);
+  if($('mm-onsk').value.trim()&&!onsk){setStatus('Lenken må starte med https://','err');$('mm-onsk').focus();return;}
+  m.navn=navn.slice(0,40);
+  if(onsk)m.onsk=onsk;else delete m.onsk;
+  const notat=$('mm-notat').value.trim().slice(0,140);
+  if(notat)m.notat=notat;else delete m.notat;
+  lukk('mot-modal');endret();
+}
+function slettMot(){
+  const m=mot(mmId);if(!m){lukk('mot-modal');return;}
+  const gg=data.gaver.filter(g=>g.mottaker===m.id);
+  if(!confirm('Slette '+m.navn+(gg.length?' og '+gg.length+' ideer/gaver':'')+'? Historikken for '+m.navn+' forsvinner også.'))return;
+  const foer=JSON.stringify({mottakere:data.mottakere,anledninger:data.anledninger,gaver:data.gaver});
+  data.mottakere=data.mottakere.filter(x=>x.id!==m.id);
+  data.gaver=data.gaver.filter(g=>g.mottaker!==m.id);
+  data.anledninger.forEach(a=>{if(a.mottakere){a.mottakere=a.mottakere.filter(x=>x!==m.id);if(!a.mottakere.length)delete a.mottakere;}});
+  aktivMot=null;
+  lukk('mot-modal');endret();
+  const etter=JSON.stringify({mottakere:data.mottakere,anledninger:data.anledninger,gaver:data.gaver});
+  visAngre(m.navn+' slettet',()=>{
+    // Bare trygt å legge tilbake når ingenting annet er endret i mellomtiden
+    if(JSON.stringify({mottakere:data.mottakere,anledninger:data.anledninger,gaver:data.gaver})!==etter){setStatus('Kan ikke angre – noe er endret etterpå','err');return;}
+    Object.assign(data,JSON.parse(foer));endret();
+  });
+}
+
+// ── Anledning-dialogen ───────────────────────────────────────
+let amId=null;
+function aapneAnl(id){
+  const a=anl(id);if(!a)return;
+  amId=id;
+  $('am-navn').value=a.navn;$('am-dato').value=a.dato||'';$('am-budsjett').value=a.budsjett||'';
+  $('am-avslutt').innerHTML=a.avsluttet?'<i class="ti ti-arrow-back-up"></i> Gjenåpne anledningen':'<i class="ti ti-archive"></i> Avslutt – flytt til «Tidligere»';
+  $('anl-modal').style.display='flex';
+}
+function lagreAnl(){
+  const a=anl(amId);if(!a){lukk('anl-modal');return;}
+  const navn=$('am-navn').value.trim();if(!navn){$('am-navn').focus();return;}
+  a.navn=navn.slice(0,40);
+  if($('am-dato').value)a.dato=$('am-dato').value;else delete a.dato;
+  const b=parseInt($('am-budsjett').value);
+  if(b>0)a.budsjett=b;else delete a.budsjett;
+  lukk('anl-modal');endret();
+}
+function avsluttAnl(){
+  const a=anl(amId);if(!a){lukk('anl-modal');return;}
+  if(a.avsluttet)delete a.avsluttet;
+  else{
+    a.avsluttet=true;
+    // Det som er kjøpt eller pakket regnes som gitt; ideer som ikke ble brukt går tilbake til idébanken
+    const gg=data.gaver.filter(g=>g.anledning===a.id);
+    const ubrukt=gg.filter(g=>g.status==='ide').length;
+    gg.forEach(g=>{if(g.status==='ide')delete g.anledning;else g.status='gitt';});
+    if(ubrukt)setStatus(ubrukt+(ubrukt===1?' ubrukt idé':' ubrukte ideer')+' flyttet tilbake til idébanken','ok');
+    aktivAnl=null;
+  }
+  lukk('anl-modal');endret();
+}
+function slettAnl(){
+  const a=anl(amId);if(!a){lukk('anl-modal');return;}
+  const gg=data.gaver.filter(g=>g.anledning===a.id);
+  if(!confirm('Slette «'+a.navn+'»?'+(gg.length?' De '+gg.length+' gavene blir liggende som ideer hos personene.':'')))return;
+  const idx=data.anledninger.indexOf(a),ids=gg.map(g=>g.id);
+  data.anledninger.splice(idx,1);
+  gg.forEach(g=>{delete g.anledning;});
+  aktivAnl=null;
+  lukk('anl-modal');endret();
+  visAngre('«'+a.navn+'» slettet',()=>{
+    if(anl(a.id))return;
+    const kopi={...a};if(kopi.mottakere)kopi.mottakere=kopi.mottakere.filter(x=>mot(x));
+    data.anledninger.splice(Math.min(idx,data.anledninger.length),0,kopi);
+    data.gaver.forEach(g=>{if(ids.includes(g.id)&&!g.anledning)g.anledning=a.id;});
+    endret();
+  });
+}
+
+// ── Lim inn ──────────────────────────────────────────────────
+// I en anledning: én person per linje, med gaven i parentes eller etter kolon.
+//   «Kari (pysj)», «Ola: gavekort kino + godteri», «Bestemor?»
+let limModus='ideer';
+function aapneLim(modus){
+  limModus=modus;
+  $('lm-tittel').textContent=modus==='anledning'?'Lim inn personer':'Lim inn ideer';
+  $('lm-hjelp').textContent=modus==='anledning'
+    ?'Én person per linje. Skriv gaven i parentes eller etter kolon: «Kari (pysj)» eller «Ola: gavekort kino». Linjer uten gave legges inn som «mangler idé».'
+    :'Én idé per linje. «?» til slutt merker ideen som usikker. En lenke blir lagret på ideen.';
+  $('lm-tekst').placeholder=modus==='anledning'?'Kari (pysj)\nOla: gavekort kino\nBestemor':'Kaffekvern?\nStor ildfast form\nhttps://…';
+  $('lm-tekst').value='';
+  $('lim-modal').style.display='flex';
+  setTimeout(()=>$('lm-tekst').focus(),50);
+}
+function limLegg(){
+  const linjer=$('lm-tekst').value.split('\n');
+  let n=0,g=0;
+  if(limModus==='anledning'){
+    const a=anl(aktivAnl);if(!a){lukk('lim-modal');return;}
+    linjer.forEach(raa=>{
+      let l=raa.replace(/^[\s*\-•·–]+/,'').trim();if(!l)return;
+      let navn=l,gave='';
+      const p=/^([^(:]+)\(([^)]*)\)\s*$/.exec(l),k=/^([^:(]{1,40}):\s*(.*)$/.exec(l);
+      if(p){navn=p[1];gave=p[2];}else if(k&&!/^https?$/i.test(k[1].trim())){navn=k[1];gave=k[2];}
+      const usikker=/\?\s*$/.test(navn);
+      navn=navn.replace(/[\s?]+$/,'').trim();
+      if(!navn||navn.length>40)return;
+      const m=finnMot(navn)||nyMot(navn);
+      leggIAnl(a,m.id);n++;
+      const o=gave.trim()?ideFraTekst(gave):null;
+      if(o&&!data.gaver.some(x=>x.mottaker===m.id&&x.anledning===a.id&&x.tekst.toLowerCase()===o.tekst.toLowerCase())){
+        if(usikker)o.usikker=true;
+        nyGave({...o,mottaker:m.id,anledning:a.id});g++;
+      }
+    });
+  }else n=leggIdeer(linjer);
+  lukk('lim-modal');
+  if(n){endret().then(ok=>{if(ok)setStatus(limModus==='anledning'?n+' personer'+(g?' og '+g+' gaver':'')+' lagt inn ✓':n+(n===1?' idé':' ideer')+' lagt inn ✓','ok');});}
+  else setStatus('Fant ingenting å legge til','err');
+}
+
+// ── Lyttere (delegert – ingen brukerdata i inline-kode) ──────
+$('faner').addEventListener('click',e=>{
+  const b=e.target.closest('[data-fane]');if(!b)return;
+  fane=b.dataset.fane;aktivAnl=null;aktivMot=null;render();
+});
+$('innhold').addEventListener('click',e=>{
+  const t=s=>e.target.closest(s);
+  let b;
+  if(t('a[href]'))return;
+  if((b=t('[data-status]'))){nesteStatus(parseInt(b.dataset.status));return;}
+  if((b=t('[data-gave]'))){aapneGave(parseInt(b.dataset.gave));return;}
+  if((b=t('[data-ny-gave]'))){aapneGave(null,{mottaker:parseInt(b.dataset.nyGave),anledning:aktivAnl});return;}
+  if((b=t('[data-fjern-fra-anl]'))){fjernFraAnl(parseInt(b.dataset.fjernFraAnl));return;}
+  if((b=t('[data-rediger-anl]'))){aapneAnl(parseInt(b.dataset.redigerAnl));return;}
+  if((b=t('[data-rediger-mot]'))){aapneMot(parseInt(b.dataset.redigerMot));return;}
+  if((b=t('[data-lim]'))){aapneLim(b.dataset.lim);return;}
+  if((b=t('[data-anlfilter]'))){anlFilter=b.dataset.anlfilter;render();return;}
+  if((b=t('[data-aapne-anl]'))){aktivAnl=parseInt(b.dataset.aapneAnl);anlFilter='alle';render();window.scrollTo(0,0);return;}
+  if((b=t('[data-aapne-mot]'))){fane='personer';aktivAnl=null;aktivMot=parseInt(b.dataset.aapneMot);render();window.scrollTo(0,0);return;}
+  if(t('[data-tilbake]')){aktivAnl=null;aktivMot=null;render();return;}
+  if(t('#ny-anl-btn')){nyAnledning();return;}
+  if(t('#ny-anl-mot-btn')){leggMotIAnl();return;}
+  if(t('#ny-mot-btn')){nyPerson();return;}
+  if(t('#ny-ide-btn')){nyIde();return;}
+});
+$('innhold').addEventListener('keydown',e=>{
+  if(e.key!=='Enter'&&e.key!==' ')return;
+  if(e.target.matches('[role="button"]')){e.preventDefault();e.target.click();return;}
+  if(e.key!=='Enter')return;
+  const id=e.target.id;
+  if(id==='ny-anl-navn')nyAnledning();
+  else if(id==='ny-anl-mot')leggMotIAnl();
+  else if(id==='ny-mot-navn')nyPerson();
+  else if(id==='ny-ide')nyIde();
+});
+$('gm-status').addEventListener('click',e=>{const b=e.target.closest('[data-velg-status]');if(b){gm.status=b.dataset.velgStatus;tegnStatusValg();}});
+$('gm-forslag').addEventListener('click',e=>{
+  const b=e.target.closest('[data-bruk-ide]');if(!b)return;
+  const g=data.gaver.find(x=>x.id===parseInt(b.dataset.brukIde)),a=anl(aktivAnl);
+  if(g&&a){g.anledning=a.id;leggIAnl(a,g.mottaker);}
+  lukk('gave-modal');endret();
+});
+$('gm-lagre').addEventListener('click',lagreGave);
+$('gm-slett').addEventListener('click',slettGave);
+$('gm-avbryt').addEventListener('click',()=>lukk('gave-modal'));
+$('gm-tekst').addEventListener('keydown',e=>{if(e.key==='Enter')lagreGave();});
+$('mm-lagre').addEventListener('click',lagreMot);
+$('mm-slett').addEventListener('click',slettMot);
+$('mm-avbryt').addEventListener('click',()=>lukk('mot-modal'));
+$('am-lagre').addEventListener('click',lagreAnl);
+$('am-slett').addEventListener('click',slettAnl);
+$('am-avslutt').addEventListener('click',avsluttAnl);
+$('am-avbryt').addEventListener('click',()=>lukk('anl-modal'));
+$('lm-legg').addEventListener('click',limLegg);
+$('lm-avbryt').addEventListener('click',()=>lukk('lim-modal'));
+['gave-modal','mot-modal','anl-modal','lim-modal'].forEach(id=>$(id).addEventListener('click',e=>{if(e.target.id===id)lukk(id);}));
+document.addEventListener('keydown',e=>{
+  if(e.key!=='Escape')return;
+  ['gave-modal','mot-modal','anl-modal','lim-modal'].forEach(id=>{if($(id).style.display==='flex')lukk(id);});
+});
+
+load();
+</script>
+</body>
+</html>

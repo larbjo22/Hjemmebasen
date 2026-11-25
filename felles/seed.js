@@ -15,6 +15,7 @@ export const APP_NAVN = {
   beskjeder: 'Beskjeder',
   pakkelister: 'Pakkelister',
   vekst: 'Vekst',
+  gaver: 'Gaver',
 };
 
 // Tabler-ikonklasser (gran-designet): render som <i class="ti ${APP_IKON[app]}">
@@ -23,6 +24,7 @@ export const APP_IKON = {
   handleliste: 'ti-shopping-cart', middag: 'ti-tools-kitchen-2', oppgaver: 'ti-checkbox', fryser: 'ti-snowflake',
   plikter: 'ti-star', sovn: 'ti-moon', helse: 'ti-first-aid-kit',
   beskjeder: 'ti-pin', pakkelister: 'ti-backpack', vekst: 'ti-ruler-2',
+  gaver: 'ti-gift',
 };
 
 export function seedFamilie(navn, opprettetAv) {
@@ -32,7 +34,7 @@ export function seedFamilie(navn, opprettetAv) {
       opprettet: Date.now(),
       opprettetAv,
       onboardet: false,
-      apper: { handleliste: true, middag: true, oppgaver: true, fryser: true, plikter: true, sovn: true, helse: true, beskjeder: true, pakkelister: true, vekst: true },
+      apper: { handleliste: true, middag: true, oppgaver: true, fryser: true, plikter: true, sovn: true, helse: true, beskjeder: true, pakkelister: true, vekst: true, gaver: true },
     },
     personer: { voksne: [], barn: [] },
 
@@ -95,6 +97,8 @@ export function seedFamilie(navn, opprettetAv) {
 
     beskjeder: { lapper: [], nextId: 1 },
     vekst: { maalinger: [], nextId: 1 },
+    // Gavebanken starter tom – Firebase lagrer ikke tomme lister, så noden oppstår ved første gave
+    gaver: { nextId: 1 },
     pakkelister: {
       lister: [
         { id: 1, navn: 'Hytta', emoji: '🏔️', items: [
