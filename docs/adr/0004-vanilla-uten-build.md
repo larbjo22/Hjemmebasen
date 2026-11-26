@@ -7,7 +7,8 @@ som ESM-moduler fra CDN (`type="module"`), som ikke krever toolchain.
 
 Begrunnelsen er vedlikeholdskost over tid: prosjektet vedlikeholdes i
 kveldsøkter, og en toolchain som må holdes i live er en større risiko enn
-litt lengre HTML-filer. Deploy er `git push` til GitHub Pages.
+litt lengre HTML-filer. Deploy er `git push` til GitHub Pages. (Fra ADR-0008: Cloudflare Pages,
+som kjører `scripts/bygg-side.sh` – en ren kopi av appfilene, ikke et build-steg i denne ADR-ens forstand.)
 
 ## Consequences
 

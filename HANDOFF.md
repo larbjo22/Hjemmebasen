@@ -52,7 +52,9 @@ lagt under `.claude/skills/`: `emil-design-eng`, `review-animations`,
 2. **Aktiver FormSubmit:** første innsending av kontaktskjemaet utløser en aktiverings-
    e-post til `larspebj@gmail.com` som må bekreftes **én gang** før meldinger kommer inn.
    Send en testmelding selv etter deploy.
-3. **DNS for `hjemmebasen.no`:** var under arbeid ved øktas slutt. Sjekk
+3. **Hosting er flyttet til Cloudflare Pages** (privat repo, se README «Deploy» og ADR-0008).
+   Punktet under om GitHub Pages-DNS gjelder bare til flyttingen er gjort.
+   **DNS for `hjemmebasen.no` (gammelt):** var under arbeid ved øktas slutt. Sjekk
    **Settings → Pages** for grønn hake. Rot-domenet trenger fire A-records mot GitHub:
    `185.199.108.153`, `.109.153`, `.110.153`, `.111.153`. `CNAME`-fila (`hjemmebasen.no`)
    skal **ikke** fjernes. Til `main` er deployet, ligger siden også på
