@@ -79,6 +79,22 @@
 @starting-style{#meny{opacity:0;transform:scale(.96)}}
 #meny a,#meny button{display:block;width:100%;text-align:left;padding:10px 14px;font-size:13px;border:none;background:none;color:var(--text);cursor:pointer;text-decoration:none}
 @media(hover:hover) and (pointer:fine){#meny a:hover,#meny button:hover{background:var(--surface2)}}
+/* «I morgen» (fra kl. 17) */
+.imorgen{background:var(--surface);border:1px solid var(--accent-border);border-radius:14px;padding:11px 13px;margin-bottom:12px}
+.imorgen-tittel{font-size:11px;font-weight:700;color:var(--accent-text);text-transform:uppercase;letter-spacing:.06em;margin-bottom:5px;display:flex;align-items:center;gap:6px}
+.imorgen a{display:flex;align-items:center;gap:9px;padding:4px 0;font-size:13.5px;color:var(--text);text-decoration:none;line-height:1.35}
+.imorgen a i{color:var(--text3);font-size:16px;flex-shrink:0}
+.imorgen a.viktig{font-weight:600}
+.imorgen a.viktig i{color:var(--accent-text)}
+/* Kaosknappen */
+.kaos-rad{display:flex;justify-content:center;margin:-4px 0 12px}
+.kaos-btn{font-size:12.5px;font-weight:600;padding:7px 14px;border-radius:18px;border:1px dashed var(--border);background:transparent;color:var(--text2);cursor:pointer}
+@media(hover:hover) and (pointer:fine){.kaos-btn:hover{border-color:var(--accent);color:var(--accent-text)}}
+.kaos-valg{display:flex;gap:10px;align-items:flex-start;padding:10px 0;border-bottom:1px solid var(--border2);font-size:13.5px;line-height:1.4}
+.kaos-valg:last-of-type{border-bottom:none}
+.kaos-valg input[type=checkbox]{width:20px;height:20px;flex-shrink:0;margin-top:1px}
+.kaos-valg small{display:block;color:var(--text3);font-size:11.5px;margin-top:2px}
+.kaos-valg select,.kaos-valg input[type=text]{margin-top:6px;width:100%;font-size:13px;padding:7px 8px;border-radius:8px;border:1px solid var(--border);background:var(--surface2);color:var(--text)}
 /* PC: bredere brett og flere kolonner */
 @media(min-width:700px){
   .fw{max-width:760px}
@@ -131,7 +147,9 @@
     <i class="ti ti-chevron-right" style="margin-left:auto;align-self:center"></i>
   </a>
 
+  <div id="imorgen"></div>
   <div class="varsler" id="varsler"></div>
+  <div class="kaos-rad" id="kaos-rad" style="display:none"><button class="kaos-btn" id="kaos-btn">😮‍💨 Dårlig dag?</button></div>
   <div class="hjem-angre" id="hjem-angre" role="status" aria-live="polite"><span id="hjem-angre-tekst"></span><small id="hjem-angre-flere"></small><button type="button" id="hjem-angre-btn">Angre</button></div>
 
   <div class="app-grid" id="app-grid"></div>
@@ -141,6 +159,18 @@
 </div>
 
 <!-- Inviter til husstanden -->
+<div class="modal-bg" id="kaos-modal" style="display:none">
+  <div class="modal" role="dialog" aria-modal="true" aria-labelledby="kaos-tittel">
+    <p class="modal-title" id="kaos-tittel">😮‍💨 Dårlig dag</p>
+    <p style="font-size:12.5px;color:var(--text2);margin-bottom:4px">Gjør dagen litt lettere. Velg det som hjelper – alt kan angres.</p>
+    <div id="kaos-innhold"></div>
+    <div class="modal-actions">
+      <button class="btn-ghost" id="kaos-avbryt">Avbryt</button>
+      <button class="btn-primary" id="kaos-ok">Gjør det</button>
+    </div>
+  </div>
+</div>
+
 <div class="modal-bg" id="inviter-modal" style="display:none">
   <div class="modal">
     <p class="modal-title"><i class="ti ti-mail-forward" style="color:var(--accent-text)"></i> Inviter til husstanden</p>
@@ -212,6 +242,8 @@ import { ref, onValue, set } from 'https://www.gstatic.com/firebasejs/10.14.1/fi
 
 import { ingCore, navnTreff } from './felles/vare.js';
 import { endreTrygt } from './felles/flett.js';
+import { imorgenLinjer, leveringFor, leveringTekst, datoPluss as dPluss } from './felles/imorgen.js';
+import { visAngre } from './felles/angre.js';
 import { monterHjelp } from './felles/hjelp.js';
 import { NYHETER, nyheterUlest } from './felles/nyheter.js';
 monterHjelp('hjem');
@@ -230,7 +262,7 @@ document.getElementById('meny-btn').addEventListener('click', () => {
 });
 document.getElementById('logg-ut-btn').addEventListener('click', loggUt);
 
-const BYGGET = new Set(['kalender', 'handleliste', 'middag', 'oppgaver', 'fryser', 'plikter', 'sovn', 'helse', 'beskjeder', 'pakkelister', 'vekst', 'gaver']);
+const BYGGET = new Set(['kalender', 'handleliste', 'middag', 'oppgaver', 'fryser', 'plikter', 'sovn', 'helse', 'beskjeder', 'pakkelister', 'vekst', 'gaver', 'levering', 'klaer', 'barnevakt', 'intervju']);
 const UKEDAG = ['søndag', 'mandag', 'tirsdag', 'onsdag', 'torsdag', 'fredag', 'lørdag'];
 
 const { user, erAdmin, familieId, medlem } = await requireAuth();
@@ -291,6 +323,7 @@ if (!familieId) {
     document.getElementById('fam-navn').textContent = meta.navn || 'Hjemmebasen';
     document.title = meta.navn ? meta.navn + ' – Hjemmebasen' : 'Hjemmebasen';
     tegnVarsler(fam, meta);
+    tegnImorgen(fam);
     tegnDashbord(fam, meta);
     visHilsen(); // oppdater hilsen-avatar når husstanden (med bilder) er lastet
   });
@@ -416,7 +449,8 @@ function tegnVarsler(fam, meta) {
       if (idag) v.push({ prio: 3, ikon: 'ti-tools-kitchen-2', href: 'middag.html',
         tekst: 'I dag til middag: ' + idag.meal + (idag.cook ? ' (' + idag.cook + ' lager)' : '') });
       else v.push({ prio: 3, ikon: 'ti-tools-kitchen-2', href: 'middag.html', tekst: 'Ingen middag planlagt i dag – spinn ruletten?' });
-      const tine = aktiv('fryser') ? tineTekst(fam) : '';
+      // Etter kl. 17 står tine-påminnelsen i «I morgen»-kortet i stedet
+      const tine = aktiv('fryser') && new Date().getHours() < 17 ? tineTekst(fam) : '';
       if (tine) v.push({ prio: 2, ikon: 'ti-snowflake', href: 'fryser.html', tekst: tine });
     }
     // Ferske beskjeder på tavla (siste 24 t) – minus utløpte og de du har skjult
@@ -567,6 +601,42 @@ function appStatus(app, fam) {
       const deler = [siste.hoyde ? siste.hoyde + ' cm' : null, siste.vekt ? siste.vekt + ' kg' : null, siste.sko ? 'sko ' + siste.sko : null].filter(Boolean);
       return { txt: 'Sist: ' + navn + ' – ' + deler.join(' · ') };
     }
+    if (app === 'levering') {
+      // Før kl. 17: i dag. Etter: neste dag med noe satt (i morgen, eller mandag i helga)
+      const kl = new Date().getHours();
+      if (kl < 17) { const v = leveringFor(fam, todayStr()); if (v) return { txt: 'I dag: ' + leveringTekst(v) }; }
+      for (let i = 1; i <= 3; i++) {
+        const ds = dPluss(todayStr(), i), v = leveringFor(fam, ds);
+        if (v) return { txt: (i === 1 ? 'I morgen: ' : UKEDAG[new Date(ds + 'T12:00:00').getDay()].replace(/^./, c => c.toUpperCase()) + ': ') + leveringTekst(v) };
+      }
+      return { txt: d ? 'Ingen plan satt' : 'Sett opp fast ukemønster' };
+    }
+    if (app === 'klaer') {
+      const pl = d?.plagg || [];
+      const trengs = pl.filter(p => p && p.status === 'trengs');
+      if (trengs.length) return { txt: trengs.length + ' trengs: ' + trengs.slice(0, 2).map(p => p.type).join(', ') + (trengs.length > 2 ? ' …' : ''), varsel: true };
+      const ut = pl.filter(p => p && p.status === 'ut').length;
+      return { txt: pl.length ? pl.length + ' plagg' + (ut ? ' · ' + ut + ' vokst ut av' : '') : 'Sjekk vinterlista' };
+    }
+    if (app === 'barnevakt') {
+      const n = (d?.felles?.telefoner || []).length;
+      return { txt: d?.barn || n ? 'Klar til barnevakt' + (n ? ' · ' + n + ' tlf' : '') : 'Fyll ut før neste barnevakt' };
+    }
+    if (app === 'intervju') {
+      // Nærmeste bursdag innen 21 dager uten intervju for alderen
+      const svar = d?.svar || {};
+      for (const b of (fam.personer?.barn || [])) {
+        if (!b?.fodt) continue;
+        const [, fm, fd] = b.fodt.split('-').map(Number), i = todayStr(), y = Number(i.slice(0, 4));
+        let ds = y + '-' + String(fm).padStart(2, '0') + '-' + String(fd).padStart(2, '0');
+        if (ds < i) ds = (y + 1) + ds.slice(4);
+        const dager = dagerMellom(ds, i), alder = Number(ds.slice(0, 4)) - Number(b.fodt.slice(0, 4));
+        if (dager <= 21 && !(svar['b' + b.id] || {})['a' + alder])
+          return { txt: b.navn + ' fyller ' + alder + (dager === 0 ? ' i dag 🎉' : ' om ' + dager + ' d') + ' – tid for intervju', varsel: true };
+      }
+      const n = Object.values(svar).reduce((s, x) => s + Object.keys(x || {}).length, 0);
+      return { txt: n ? n + ' intervju' + (n === 1 ? '' : 'er') + ' lagret' : 'De samme ti spørsmålene hvert år' };
+    }
     if (app === 'gaver') {
       // Nærmeste anledning som ikke er avsluttet: hvor mange har fått gaven sin kjøpt
       const gaver = d?.gaver || [];
@@ -586,6 +656,118 @@ function appStatus(app, fam) {
   } catch (e) { /* defensivt */ }
   return { txt: '' };
 }
+
+// ── «I morgen» (fra kl. 17) ──────────────────────────────────
+function tegnImorgen(fam) {
+  const el = document.getElementById('imorgen');
+  document.getElementById('kaos-rad').style.display = '';
+  if (new Date().getHours() < 17) { el.innerHTML = ''; return; }
+  const ds = dPluss(todayStr(), 1);
+  const l = imorgenLinjer(fam, ds);
+  if (!l.length) { el.innerHTML = ''; return; }
+  const dag = UKEDAG[new Date(ds + 'T12:00:00').getDay()];
+  el.innerHTML = '<div class="imorgen"><div class="imorgen-tittel"><i class="ti ti-moon-stars"></i> I morgen, ' + dag + '</div>'
+    + l.map(x => '<a href="' + x.href + '"' + (x.viktig ? ' class="viktig"' : '') + '><i class="ti ' + x.ikon + '"></i><span>' + esc(x.tekst) + '</span></a>').join('') + '</div>';
+}
+
+// ── Kaosknappen: «Dårlig dag?» ───────────────────────────────
+// Gjør dagen lettere i ett trykk: nødmiddag i stedet for dagens plan, dagens oppgaver
+// (ikke høy prioritet) skyves til i morgen, og en lapp til de andre på tavla. Alt kan angres.
+const NODMIDDAG_FALLBACK = 'Pizza eller takeaway 🍕';
+function nodmiddager(fam) {
+  const fra = (fam.fryser?.items || []).filter(i => i && i.name && (i.qty == null || i.qty > 0)
+    && (/^middag$/i.test(i.cat || '') || /^rester:/i.test(i.name)))
+    .sort((a, b) => (a.added || '').localeCompare(b.added || '')).map(i => '❄️ ' + i.name);
+  const kjapt = (fam.middag?.ideas || []).filter(i => i && i.name && /kjapt|rask/i.test(i.tag || '')).map(i => i.name);
+  return [...new Set([...fra, ...kjapt, NODMIDDAG_FALLBACK])].slice(0, 8);
+}
+function kaosOppgaver(fam) {
+  return (fam.oppgaver?.tasks || []).filter(t => t && !t.done && t.date && t.date <= todayStr() && t.prio !== 'high');
+}
+function aapneKaos() {
+  const fam = sisteFam || {}, apper = fam.meta?.apper || {}, pa = a => apper[a] !== false;
+  const idag = (fam.middag?.meals || []).find(m => m.date === todayStr());
+  const opp = pa('oppgaver') ? kaosOppgaver(fam) : [];
+  const navn = (medlem?.navn || '').split(' ')[0];
+  let h = '';
+  if (pa('middag')) h += '<label class="kaos-valg"><input type="checkbox" id="kaos-middag" checked><span>Nødmiddag i dag'
+    + (idag?.meal ? '<small>I stedet for «' + esc(idag.meal) + '»</small>' : '<small>Ingen middag var planlagt</small>')
+    + '<select id="kaos-rett" aria-label="Nødmiddag">' + nodmiddager(fam).map(r => '<option>' + esc(r) + '</option>').join('') + '</select></span></label>';
+  if (pa('oppgaver')) h += '<label class="kaos-valg"><input type="checkbox" id="kaos-opp"' + (opp.length ? ' checked' : ' disabled') + '><span>Skyv dagens oppgaver til i morgen'
+    + '<small>' + (opp.length ? opp.length + ' oppgave' + (opp.length === 1 ? '' : 'r') + ': ' + esc(opp.slice(0, 3).map(t => t.title).join(', ')) + (opp.length > 3 ? ' …' : '') + '. Høy prioritet blir stående.' : 'Ingen oppgaver i dag 🎉') + '</small></span></label>';
+  if (pa('beskjeder')) h += '<label class="kaos-valg"><input type="checkbox" id="kaos-lapp" checked><span>Si fra til de andre på tavla'
+    + '<input type="text" id="kaos-tekst" maxlength="140" value="' + esc('😮‍💨 Tung dag' + (navn ? ' for ' + navn : '') + ' – litt ekstra hjelp i kveld hadde vært fint') + '"></span></label>';
+  if (!h) h = '<p style="font-size:13px;color:var(--text3)">Slå på Middag, Oppgaver eller Beskjeder for å bruke denne.</p>';
+  document.getElementById('kaos-innhold').innerHTML = h;
+  document.getElementById('kaos-modal').style.display = 'flex';
+}
+async function utforKaos() {
+  const v = id => document.getElementById(id);
+  const gjort = [], angre = [];
+  const ds = todayStr(), imorgen = dPluss(ds, 1);
+  document.getElementById('kaos-modal').style.display = 'none';
+  try {
+    if (v('kaos-middag')?.checked) {
+      const rett = v('kaos-rett').value.replace(/^❄️\s*/, '');
+      let for_ = null;
+      if (await endreTrygt('familier/' + familieId + '/middag', m => {
+        if (!Array.isArray(m.meals)) m.meals = [];
+        for_ = m.meals.find(x => x.date === ds) || null;
+        m.meals = m.meals.filter(x => x.date !== ds);
+        m.meals.push({ date: ds, meal: rett, note: 'Dårlig dag', cook: null });
+        return m;
+      })) {
+        gjort.push('middag: ' + rett);
+        angre.push(() => endreTrygt('familier/' + familieId + '/middag', m => {
+          if (!Array.isArray(m.meals)) m.meals = [];
+          const naa = m.meals.find(x => x.date === ds);
+          if (!naa || naa.meal !== rett) return m; // endret siden – la det stå
+          m.meals = m.meals.filter(x => x.date !== ds);
+          if (for_) m.meals.push(for_);
+          return m;
+        }));
+      }
+    }
+    if (v('kaos-opp')?.checked) {
+      const flyttet = {};
+      if (await endreTrygt('familier/' + familieId + '/oppgaver', o => {
+        (o.tasks || []).forEach(t => { if (t && !t.done && t.date && t.date <= ds && t.prio !== 'high') { flyttet[t.id] = t.date; t.date = imorgen; } });
+        return o;
+      }) && Object.keys(flyttet).length) {
+        gjort.push(Object.keys(flyttet).length + ' oppgaver til i morgen');
+        angre.push(() => endreTrygt('familier/' + familieId + '/oppgaver', o => {
+          (o.tasks || []).forEach(t => { if (t && flyttet[t.id] && t.date === imorgen && !t.done) t.date = flyttet[t.id]; });
+          return o;
+        }));
+      }
+    }
+    if (v('kaos-lapp')?.checked && v('kaos-tekst').value.trim()) {
+      const tekst = v('kaos-tekst').value.trim().slice(0, 140);
+      const midnatt = new Date(); midnatt.setHours(23, 59, 0, 0);
+      let lid = null;
+      if (await endreTrygt('familier/' + familieId + '/beskjeder', b => {
+        if (!Array.isArray(b.lapper)) b.lapper = [];
+        const maks = Math.max(0, ...b.lapper.map(l => l?.id || 0));
+        if (!b.nextId || b.nextId <= maks) b.nextId = maks + 1;
+        lid = b.nextId++;
+        b.lapper.push({ id: lid, tekst, fra: (medlem?.navn || 'Noen').split(' ')[0], ts: Date.now(), utlop: midnatt.getTime() });
+        return b;
+      })) {
+        gjort.push('lapp på tavla');
+        angre.push(() => endreTrygt('familier/' + familieId + '/beskjeder', b => { b.lapper = (b.lapper || []).filter(l => l?.id !== lid); return b; }));
+      }
+    }
+  } catch (e) { setStatus('Noe gikk ikke – prøv igjen', 'err'); }
+  if (!gjort.length) return;
+  visAngre('Gjort: ' + gjort.join(', ') + '. Ta det med ro 💛', async () => {
+    for (const a of angre) { try { await a(); } catch (e) {} }
+    setStatus('Angret ✓', 'ok');
+  }, 10000);
+}
+document.getElementById('kaos-btn').addEventListener('click', aapneKaos);
+document.getElementById('kaos-avbryt').addEventListener('click', () => { document.getElementById('kaos-modal').style.display = 'none'; });
+document.getElementById('kaos-ok').addEventListener('click', utforKaos);
+document.getElementById('kaos-modal').addEventListener('click', e => { if (e.target.id === 'kaos-modal') e.currentTarget.style.display = 'none'; });
 
 function tegnDashbord(fam, meta) {
   sisteFam = fam;
