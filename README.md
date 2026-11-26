@@ -52,11 +52,34 @@ python3 -m http.server 8000
 # → http://localhost:8000/login.html
 ```
 
-## Deploy (GitHub Pages)
+## Deploy (Cloudflare Pages)
 
-Settings → Pages → «Deploy from a branch» → `main` / rot (`/`) → Save.
-Siden blir liggende på `https://larbjo22.github.io/hjemmebasen/`.
-Hver push til `main` deployer automatisk.
+Repoet er privat, og siden publiseres av Cloudflare Pages (se `docs/adr/0008-cloudflare-pages.md`).
+Hver push til `main` deployer automatisk. Andre grener får en forhåndsvisning på `<gren>.<prosjekt>.pages.dev`.
+
+- **Build command:** `sh scripts/bygg-side.sh` – kopierer bare appfilene til `dist/` (ingen kompilering)
+- **Build output directory:** `dist`
+- **Ny fil eller mappe som appen laster** (utenfor `*.html`, `felles/`, `ikoner/`)? Legg den til i `scripts/bygg-side.sh`.
+
+### Flytte fra GitHub Pages til Cloudflare Pages (én gang)
+
+Rekkefølgen holder siden oppe hele veien – GitHub Pages serverer til Cloudflare har tatt over.
+
+1. **Cloudflare → Workers & Pages → Create → Pages → Connect to Git.** Gi Cloudflare-appen tilgang
+   til bare `Hjemmebasen`. Framework: *None*, build command og output som over. Deploy.
+2. **Firebase → Authentication → Settings → Authorized domains:** legg til `<prosjekt>.pages.dev`.
+   Logg inn der og sjekk at appene virker.
+3. **Cloudflare → Add a domain → `hjemmebasen.no`** (Free). Sjekk at de importerte DNS-postene er med
+   (særlig MX/TXT hvis domenet har e-post). Bytt navnetjenere hos registraren til de to Cloudflare oppgir,
+   og vent til domenet står som *Active*. Imens peker de importerte postene fortsatt til GitHub.
+4. **Pages-prosjektet → Custom domains → `hjemmebasen.no`** (og `www.hjemmebasen.no` om den brukes).
+   Cloudflare bytter selv postene over til Pages. Sjekk siden, innlogging og et push-varsel.
+5. **GitHub → Settings → Pages:** fjern det egne domenet og slå av Pages.
+   **Actions:** slå av «Deploy static content to Pages» og «Deploy Jekyll with GitHub Pages dependencies preinstalled».
+6. **GitHub → Settings → General → Change visibility → Private.**
+7. **Actions → «Daglig push-digest» → Run workflow** for å sjekke at de planlagte jobbene
+   (push, kalendersynk, backup) fortsatt kjører. I et privat repo teller de mot 2 000 gratis minutter i måneden;
+   forbruket er anslått til ca. 500.
 
 ## Førstegangsoppsett (Firebase)
 
